@@ -11,10 +11,32 @@ from DICOMReader.DICOMReader import dicom_to_np
 from preprocessing_tool import preprocessing as PP
 
 class DataSet(object):
-    def __init__(self, Paths, Target, Kth = 3, Size = 512,
+    def __init__(self, Paths,
+                 Supervised,
+                 BoxList,
+                 BenchMarkList,
+                 Target, Kth = 3, Size = 512,
                  Augment = True):
         self.Size = Size
         self.Augmentation = Augment
+        # 所見リストの作成 (TBD)
+        self.Findings = {}
+        with open(BenchMarkList, 'rU') as f:
+            bench = csv.reader(f, delimiter = '\t')
+            for line in bench:
+                if line != []:
+                    self.Findings.setdefault(line[0].replace(".IMG", ""),
+                                             line[10])
+        with open(Supervised, 'rU') as f:
+            sp = csv.reader(f)
+            sp.next()
+            for line in sp:
+                self.Findings.setdefault(line[0], line[1])
+
+        print(self.Findings)
+
+
+
         # ファイルパスの取得
         Files = []
         for Path in Paths:
@@ -54,13 +76,19 @@ class DataSet(object):
         if ext == ".dcm":
             img, _ = dicom_to_np(f)
         elif ext == ".png":
-            img = []
+            img = cv2.imread(f, cv2.IMREAD_GRAYSCALE)
         else:
             img = []
         if f.find("BenchMark") >= 0:
             label = [1, 0] if root.find('JPCLN') >= 0 else [0, 1]
         elif f.find("AdditialnalData") >= 0:
             label = [1, 0]
+        elif f.find("Open/images") >= 0:
+            finding = self.Findings[os.path.basename(f)]
+            if finding.find("Nodule") >= 0:
+                label = [1, 0]
+            else:
+                label = [0, 1]
         else:
             label = [0, 0]
         # 画像サイズの調整
@@ -122,22 +150,38 @@ class DataSet(object):
             imgs.append(img), labels.append(label)
         return [np.array(imgs), np.array(labels, dtype = np.int32)]
 
-def read_data_sets(Paths, Train = [1, 2], Test = [3], Size = 512,
+def read_data_sets(Paths,
+                   Supervised,
+                   BoxList,
+                   BenchMarkList,
+                   Train = [1, 2], Test = [3], Size = 512,
                    Augment = True):
     class DataSets(object):
         pass
     Kth = len(Train) + len(Test)
     data_sets = DataSets()
-    data_sets.train = DataSet(Paths = Paths, Target = Train, Kth = Kth, Size = Size,
+    data_sets.train = DataSet(Paths = Paths,
+                              Supervised = Supervised,
+                              BoxList = BoxList,
+                              BenchMarkList = BenchMarkList,
+                              Target = Train, Kth = Kth, Size = Size,
                               Augment = Augment)
-    data_sets.test = DataSet(Paths = Paths, Target = Test, Kth = Kth, Size = Size,
+    data_sets.test = DataSet(Paths = Paths,
+                             Supervised = Supervised,
+                             BoxList = BoxList,
+                             BenchMarkList = BenchMarkList,
+                             Target = Test, Kth = Kth, Size = Size,
                              Augment = Augment)
 
     return data_sets
 
 if __name__ == '__main__':
     data = read_data_sets(Paths = ["./Data/CR_DATA/BenchMark/*/*.dcm",
-                                   "./Data/CR_DATA/AdditionalData/*.dcm"])
+                                   "./Data/CR_DATA/AdditionalData/*.dcm",
+                                   "./Data/Open/images/*.png"],
+                          Supervised = "./Data/Open/Data_Entry_2017.csv",
+                          BoxList = "./Data/Open/BBox_List_2017.csv",
+                          BenchMarkList = "./Data/CR_DATA/BenchMark/CLNDAT_EN.txt")
     print(len(data.train.get_all_data()[1]))
     print(len(data.test.get_all_data()[1]))
     for i in range(2):
