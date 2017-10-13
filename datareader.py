@@ -9,6 +9,7 @@ import numpy as np
 import cv2
 from DICOMReader.DICOMReader import dicom_to_np
 from preprocessing_tool import preprocessing as PP
+from LinearMotor.Pretraining import Pretraining, gray_to_rgb
 
 class DataSet(object):
     def __init__(self, Paths,
@@ -16,10 +17,18 @@ class DataSet(object):
                  BoxList,
                  BenchMarkList,
                  Target, Kth = 3, Size = 512,
-                 Augment = True):
+                 Augment = True,
+                 ZCA = True,
+                 Pretrain = None):
         self.Size = Size
         self.Augmentation = Augment
-        # 所見リストの作成 (TBD)
+        self.ZCA = ZCA
+        self.Pretrain = Pretrain
+        if self.Pretrain in ['Resnet', 'Inception_v3', 'Xception']:
+            self.Model = Pretraining(Model = self.Pretrain)
+        else:
+            self.Model = None
+        # 所見リストの作成
         self.Findings = {}
         with open(BenchMarkList, 'rU') as f:
             bench = csv.reader(f, delimiter = '\t')
@@ -32,8 +41,6 @@ class DataSet(object):
             sp.next()
             for line in sp:
                 self.Findings.setdefault(line[0], line[1])
-
-        print(self.Findings)
 
 
 
@@ -75,6 +82,8 @@ class DataSet(object):
         root, ext = os.path.splitext(f)
         if ext == ".dcm":
             img, _ = dicom_to_np(f)
+            if self.Pretrain != None:
+                img = img / float(4095) * 255
         elif ext == ".png":
             img = cv2.imread(f, cv2.IMREAD_GRAYSCALE)
         else:
@@ -91,14 +100,33 @@ class DataSet(object):
                 label = [0, 1]
         else:
             label = [0, 0]
-        # 画像サイズの調整
-        img = cv2.resize(img,(self.Size,self.Size), interpolation = cv2.INTER_AREA)
-        # ZCA whitening
-        img = PP.PreProcessing(np.reshape(img, (self.Size,self.Size, 1)))
-        # データオーギュメンテーション
-        if self.Augmentation:
-            img = self.flip(img)
-            img = self.shift(img = img, move_x = 0.05, move_y = 0.05)
+        # 転移学習しない場合
+        if self.Pretrain == None:
+            # 画像サイズの調整
+            img = cv2.resize(img,(self.Size,self.Size), interpolation = cv2.INTER_AREA)
+            # ZCA whitening
+            if self.ZCA:
+                img = PP.PreProcessing(np.reshape(img, (self.Size,self.Size, 1)))
+            else:
+                img = np.reshape(img, (self.Size,self.Size, 1))
+            # データオーギュメンテーション
+            if self.Augmentation:
+                img = self.flip(img)
+                img = self.shift(img = img, move_x = 0.05, move_y = 0.05)
+        # 転移学習する場合
+        else:
+            ModelSize = 224 if self.Pretrain in ['Resnet', 'Inception_v3'] else 299
+            img = cv2.resize(img, (ModelSize, ModelSize), interpolation = cv2.INTER_AREA)
+            img = np.reshape(img, (ModelSize, ModelSize, 1))
+            # データオーギュメンテーション
+            if self.Augmentation:
+                img = self.flip(img)
+                img = self.shift(img = img, move_x = 0.05, move_y = 0.05)
+            img = gray_to_rgb(img)
+            img = self.Model.prediction(img)
+            print(img.shape)
+
+
         return img, label
 
     def flip(self,img):
@@ -155,7 +183,9 @@ def read_data_sets(Paths,
                    BoxList,
                    BenchMarkList,
                    Train = [1, 2], Test = [3], Size = 512,
-                   Augment = True):
+                   Augment = True,
+                   ZCA = True,
+                   Pretrain = None):
     class DataSets(object):
         pass
     Kth = len(Train) + len(Test)
@@ -165,24 +195,31 @@ def read_data_sets(Paths,
                               BoxList = BoxList,
                               BenchMarkList = BenchMarkList,
                               Target = Train, Kth = Kth, Size = Size,
-                              Augment = Augment)
+                              Augment = Augment,
+                              ZCA = ZCA,
+                              Pretrain = Pretrain)
     data_sets.test = DataSet(Paths = Paths,
                              Supervised = Supervised,
                              BoxList = BoxList,
                              BenchMarkList = BenchMarkList,
                              Target = Test, Kth = Kth, Size = Size,
-                             Augment = Augment)
+                             Augment = Augment,
+                             ZCA = ZCA,
+                             Pretrain = Pretrain)
 
     return data_sets
 
 if __name__ == '__main__':
-    data = read_data_sets(Paths = ["./Data/CR_DATA/BenchMark/*/*.dcm",
-                                   "./Data/CR_DATA/AdditionalData/*.dcm",
-                                   "./Data/Open/images/*.png"],
-                          Supervised = "./Data/Open/Data_Entry_2017.csv",
-                          BoxList = "./Data/Open/BBox_List_2017.csv",
-                          BenchMarkList = "./Data/CR_DATA/BenchMark/CLNDAT_EN.txt")
-    print(len(data.train.get_all_data()[1]))
-    print(len(data.test.get_all_data()[1]))
+    train_data = read_data_sets(Paths = ["./Data/Open/images/*.png"],
+                                Supervised = "./Data/Open/Data_Entry_2017.csv",
+                                BoxList = "./Data/Open/BBox_List_2017.csv",
+                                BenchMarkList = "./Data/CR_DATA/BenchMark/CLNDAT_EN.txt")
+    test_data = read_data_sets(Paths = ["./Data/CR_DATA/BenchMark/*/*.dcm"],
+                               Supervised = "./Data/Open/Data_Entry_2017.csv",
+                               BoxList = "./Data/Open/BBox_List_2017.csv",
+                               BenchMarkList = "./Data/CR_DATA/BenchMark/CLNDAT_EN.txt")
+    print(len(train_data.train.get_all_data()[1]))
+    print(len(test_data.test.get_all_data()[1]))
     for i in range(2):
-        print(data.train.next_batch(10))
+        print(train_data.train.next_batch(2))
+        print(test_data.train.next_batch(2))
