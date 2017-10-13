@@ -42,6 +42,14 @@ class DataSet(object):
             for line in sp:
                 self.Findings.setdefault(line[0], line[1])
 
+        summary = {}
+        for pic, findings in self.Findings.items():
+            if pic.find(".png") >= 0:
+                finding = findings.split("|")
+                for f in finding:
+                    summary.setdefault(f, 0)
+                    summary[f] += 1
+        print(summary)
 
 
         # ファイルパスの取得
