@@ -42,14 +42,13 @@ class DataSet(object):
             for line in sp:
                 self.Findings.setdefault(line[0], line[1])
 
-        summary = {}
+        self.summary = {}
         for pic, findings in self.Findings.items():
             if pic.find(".png") >= 0:
                 finding = findings.split("|")
                 for f in finding:
-                    summary.setdefault(f, 0)
-                    summary[f] += 1
-        print(summary)
+                    self.summary.setdefault(f, 0)
+                    self.summary[f] += 1
 
 
         # ファイルパスの取得
@@ -74,6 +73,9 @@ class DataSet(object):
         self._labels = np.array(labels)
         self.order_shuffle()
 
+
+    def get_summary(self):
+        return self.summary
 
     def get_all_data(self):
         imgs, labels = [], []
@@ -226,6 +228,7 @@ if __name__ == '__main__':
                                Supervised = "./Data/Open/Data_Entry_2017.csv",
                                BoxList = "./Data/Open/BBox_List_2017.csv",
                                BenchMarkList = "./Data/CR_DATA/BenchMark/CLNDAT_EN.txt")
+    print(train_data.train.get_summary())
     print(len(train_data.train.get_all_data()[1]))
     print(len(test_data.test.get_all_data()[1]))
     for i in range(2):
