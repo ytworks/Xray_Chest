@@ -103,11 +103,12 @@ class DataSet(object):
         elif f.find("AdditialnalData") >= 0:
             label = [1, 0]
         elif f.find("Open/images") >= 0:
+            # 14疾患対応をあとで
             finding = self.Findings[os.path.basename(f)]
-            if finding.find("Nodule") >= 0:
-                label = [1, 0]
-            else:
+            if finding.find("No Finding") >= 0:
                 label = [0, 1]
+            else:
+                label = [1, 0]
         else:
             label = [0, 0]
         # 転移学習しない場合
