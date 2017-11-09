@@ -12,7 +12,11 @@ from preprocessing_tool import preprocessing as PP
 
 
 class DataSet(object):
-    def __init__(self):
+    def __init__(self,
+                 data, label,
+                 size,
+                 zca,
+                 augment):
         pass
 
 
@@ -53,6 +57,18 @@ def make_supevised_data_for_nih(path):
         findings[file_name].setdefault('label', np.array([label0, label1]))
     return findings, finding_count, binary_def
 
+def make_supevised_data_for_conf(path, labels):
+    findings = {}
+    for p in path:
+        label0 = np.zeros(len(labels))
+        label1 = np.zeros(2)
+        if p.find('JPCNN') >= 0:
+            label1[0] = 1
+        else:
+            label1[1] = 1
+        findings.setdefault(p, {'label' : np.array([label0, label1])})
+    print(findings)
+    return findings
 
 def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
                    nih_supervised_datapath = "./Data/Open/Data_Entry_2017.csv",
@@ -75,22 +91,21 @@ def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
 
     # NIHの教師データを読み込む
     nih_labels, nih_count, label_def = make_supevised_data_for_nih(nih_supervised_datapath)
-    ## ラベルの種類を計測する
-    ## ファイルごとの所見を作る
-    ## Binarize
 
     # 学会データの教師データを読み込む
-    ## ファイルごとの所見を作る
-    ## Binarize
+    conf_labels = make_supevised_data_for_conf(conf_data,
+                                               label_def)
 
-    # NIHのデータをラベルごとにファイルパスを分類する
-
-    # 訓練データとテストデータを分割する
-    ## 学会データをテストデータにする場合
-    ## NIHデータを分割してテストデータにする場合
-
-    # 訓練データのバッチ管理モジュール
-    # テストデータのバッチ管理モジュール
+    data_sets.train = DataSet(data = nih_data,
+                              label = nih_labels,
+                              size = img_size,
+                              zca = zca,
+                              augment = augment)
+    data_sets.test  = DataSet(data = conf_data,
+                              label = conf_labels,
+                              size = img_size,
+                              zca = zca,
+                              augment = augment)
 
     return data_sets
 
