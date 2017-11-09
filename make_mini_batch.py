@@ -106,6 +106,7 @@ def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
                               size = img_size,
                               zca = zca,
                               augment = augment)
+    data_sets.train_summary = nih_count
 
     return data_sets
 
