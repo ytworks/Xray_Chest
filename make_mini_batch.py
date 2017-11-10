@@ -9,6 +9,7 @@ import numpy as np
 import cv2
 from DICOMReader.DICOMReader import dicom_to_np
 from preprocessing_tool import preprocessing as PP
+from tqdm import tqdm
 
 
 class DataSet(object):
@@ -17,7 +18,109 @@ class DataSet(object):
                  size,
                  zca,
                  augment):
-        pass
+        self.size = size
+        self.augment = augment
+        self.zca = zca
+        self.files = data
+        self.labels = label
+        # ファイル配列のIDのリストを作成
+        self.start = 0
+        imgs, labels= [], []
+        for i in range(len(self.files)):
+            imgs.append(i)
+            labels.append(i)
+        self._images = np.array(imgs)
+        self._labels = np.array(labels)
+        self.order_shuffle()
+
+    def order_shuffle(self):
+        perm = np.arange(len(self._images))
+        np.random.shuffle(perm)
+        self._images = self._images[perm]
+        self._labels = self._labels[perm]
+
+    def flip(self,img):
+        if random.random() >= 0.8:
+            img = cv2.flip(img, 0)
+        if random.random() >= 0.8:
+            img = cv2.flip(img, 1)
+        img = img.reshape((img.shape[0], img.shape[1], 1))
+        return img
+
+    def shift(self, img, move_x = 0.1, move_y = 0.1):
+        if random.random() >= 0.8:
+            size = tuple(np.array([img.shape[0], img.shape[1]]))
+            mx = int(img.shape[0] * move_x * random.random())
+            my = int(img.shape[1] * move_y * random.random())
+            matrix = [
+                        [1,  0, mx],
+                        [0,  1, my]
+                    ]
+            affine_matrix = np.float32(matrix)
+            img = cv2.warpAffine(img, affine_matrix, size, flags=cv2.INTER_LINEAR)
+            img = img.reshape((img.shape[0], img.shape[1], 1))
+            return img
+        else:
+            return img
+
+    def get_all_data(self):
+        imgs, labels0, labels1 = [], [], []
+        for i in tqdm(range(len(self.files))):
+            # ファイルの読み込み
+            img, label0, label1 = self.img_reader(self.files[i])
+            # 出力配列の作成
+            imgs.append(img)
+            labels0.append(label0)
+            labels1.append(label1)
+        return [np.array(imgs), np.array(labels0), np.array(labels1)]
+
+    def img_reader(self, f):
+        root, ext = os.path.splitext(f)
+        filename = os.path.basename(f)
+        # 画像の読み込み
+        if ext == ".dcm":
+            img, _ = dicom_to_np(f)
+        elif ext == ".png":
+            img = cv2.imread(f, cv2.IMREAD_GRAYSCALE)
+        else:
+            img = []
+
+        # 教師データの読み込み
+        label = self.labels[filename]['label']
+
+        # 画像サイズの調整
+        img = cv2.resize(img,(self.size,self.size), interpolation = cv2.INTER_AREA)
+        # ZCA whitening
+        if self.zca:
+            img = PP.PreProcessing(np.reshape(img, (self.size,self.size, 1)))
+        else:
+            img = np.reshape(img, (self.size,self.size, 1))
+        # データオーギュメンテーション
+        if self.augment:
+            img = self.flip(img)
+            img = self.shift(img = img, move_x = 0.05, move_y = 0.05)
+
+        return img, label[0], label[1]
+
+    def next_batch(self, batch_size):
+        start = self.start
+        if self.start + batch_size >= len(self._images):
+            print("Next epoch")
+            self.order_shuffle()
+            start = 0
+            end = batch_size
+        else:
+            end = min(self.start + batch_size, len(self._images) - 1)
+        self.start = end
+        imgs, labels0, labels1 = [], [], []
+        for i in range(start, end):
+            # ファイルの読み込み
+            img, label0, label1 = self.img_reader(self.files[self._images[i]])
+            # 出力配列の作成
+            imgs.append(img)
+            labels0.append(label0)
+            labels1.append(label1)
+        return [np.array(imgs), np.array(labels0), np.array(labels1)]
 
 
 def get_filepath(datapaths):
@@ -66,8 +169,8 @@ def make_supevised_data_for_conf(path, labels):
             label1[0] = 1
         else:
             label1[1] = 1
-        findings.setdefault(p, {'label' : np.array([label0, label1])})
-    print(findings)
+        findings.setdefault(os.path.basename(p),
+                            {'label' : np.array([label0, label1])})
     return findings
 
 def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
@@ -107,7 +210,6 @@ def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
                               zca = zca,
                               augment = augment)
     data_sets.train_summary = nih_count
-
     return data_sets
 
 if __name__ == '__main__':
@@ -120,3 +222,9 @@ if __name__ == '__main__':
                              img_size = 512,
                              augment = True,
                              zca = True)
+    print(len(dataset.test.get_all_data()), len(dataset.test.get_all_data()[2]))
+    for i in range(2):
+        x = dataset.train.next_batch(1)
+        print(x[2])
+        y = dataset.train.next_batch(2)
+        print(y[1])
