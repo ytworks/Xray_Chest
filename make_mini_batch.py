@@ -67,7 +67,7 @@ class DataSet(object):
         imgs, labels0, labels1 = [], [], []
         for i in tqdm(range(len(self.files))):
             # ファイルの読み込み
-            img, label0, label1 = self.img_reader(self.files[i])
+            img, label0, label1, _, _ = self.img_reader(self.files[i])
             # 出力配列の作成
             imgs.append(img)
             labels0.append(label0)
@@ -100,7 +100,7 @@ class DataSet(object):
             img = self.flip(img)
             img = self.shift(img = img, move_x = 0.05, move_y = 0.05)
 
-        return img, label[0], label[1]
+        return img, label[0], label[1], filename, self.labels[filename]['raw']
 
     def next_batch(self, batch_size):
         start = self.start
@@ -113,14 +113,17 @@ class DataSet(object):
             end = min(self.start + batch_size, len(self._images) - 1)
         self.start = end
         imgs, labels0, labels1 = [], [], []
+        filenames, raw_data = [], []
         for i in range(start, end):
             # ファイルの読み込み
-            img, label0, label1 = self.img_reader(self.files[self._images[i]])
+            img, label0, label1, filename, raw = self.img_reader(self.files[self._images[i]])
             # 出力配列の作成
             imgs.append(img)
             labels0.append(label0)
             labels1.append(label1)
-        return [np.array(imgs), np.array(labels0), np.array(labels1)]
+            filenames.append(filename)
+            raw_data.append(raw)
+        return [np.array(imgs), np.array(labels0), np.array(labels1), filenames, raw_data]
 
 
 def get_filepath(datapaths):
@@ -170,7 +173,8 @@ def make_supevised_data_for_conf(path, labels):
         else:
             label1[1] = 1
         findings.setdefault(os.path.basename(p),
-                            {'label' : np.array([label0, label1])})
+                            {'label' : np.array([label0, label1]),
+                             'raw' : p})
     return findings
 
 def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
@@ -225,6 +229,6 @@ if __name__ == '__main__':
     print(len(dataset.test.get_all_data()), len(dataset.test.get_all_data()[2]))
     for i in range(2):
         x = dataset.train.next_batch(1)
-        print(x[2])
-        y = dataset.train.next_batch(2)
-        print(y[1])
+        print(x[1], x[2], x[3], x[4])
+        y = dataset.test.next_batch(2)
+        print(y[1], y[2], y[3], y[4])
