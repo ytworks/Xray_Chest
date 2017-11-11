@@ -10,6 +10,11 @@ import cv2
 from DICOMReader.DICOMReader import dicom_to_np
 from preprocessing_tool import preprocessing as PP
 from tqdm import tqdm
+from logging import getLogger, StreamHandler
+logger = getLogger(__name__)
+sh = StreamHandler()
+logger.addHandler(sh)
+logger.setLevel(10)
 
 
 class DataSet(object):
@@ -105,13 +110,12 @@ class DataSet(object):
     def next_batch(self, batch_size):
         start = self.start
         if self.start + batch_size >= len(self._images):
-            print("Next epoch")
-            self.order_shuffle()
-            start = 0
-            end = batch_size
+            logger.debug('Next Epoch')
+            shuffle = True
         else:
-            end = min(self.start + batch_size, len(self._images) - 1)
-        self.start = end
+            shuffle = False
+        end = min(self.start + batch_size, len(self._images) - 1)
+
         imgs, labels0, labels1 = [], [], []
         filenames, raw_data = [], []
         for i in range(start, end):
@@ -123,6 +127,12 @@ class DataSet(object):
             labels1.append(label1)
             filenames.append(filename)
             raw_data.append(raw)
+        if shuffle:
+            self.order_shuffle()
+            self.start = 0
+        else:
+            self.start = end
+
         return [np.array(imgs), np.array(labels0), np.array(labels1), filenames, raw_data]
 
 
@@ -232,3 +242,5 @@ if __name__ == '__main__':
         print(x[1], x[2], x[3], x[4])
         y = dataset.test.next_batch(2)
         print(y[1], y[2], y[3], y[4])
+    for i in tqdm(range(100)):
+        y = dataset.test.next_batch(20)
