@@ -48,6 +48,7 @@ class Detecter(Core2.Core):
 
     def io_def(self):
         self.CH = 1
-        self.x = tf.placeholder("float", shape=[None, self.SIZE, self.SIZE, self.CH])
-        self.y_ = tf.placeholder("float", shape=[None, 2])
+        self.x = tf.placeholder("float", shape=[None, self.SIZE, self.SIZE, self.CH], name = "Input")
+        self.y_ = tf.placeholder("float", shape=[None, 2], name = "Label_Judgement")
+        self.z_ = tf.placeholder("float", shape=[None, 14], name = "Label_Diagnosis")
         self.keep_probs = []
