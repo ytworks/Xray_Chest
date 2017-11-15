@@ -68,11 +68,17 @@ class Detecter(Core2.Core):
         self.training()
         logger.debug("05: TF Training operation done")
         # 精度の定義
-        #self.get_accuracy()
-        #print(self.accuracy)
+        self.get_accuracy()
+        logger.debug("06: TF Accuracy measure definition done")
         # チェックポイントの呼び出し
-        #self.saver = tf.train.Saver()
-        #self.restore()
+        self.saver = tf.train.Saver()
+        self.restore()
+        logger.debug("07: TF Model file definition done")
+
+    def get_accurary(self):
+        self.accuracy_y = UT.correct_rate(self.y, self.y_)
+        self.accuracy_z = tf.sqrt(tf.reduce_mean(tf.multiply(tf.sigmoid(self.z) -self.z_, tf.sigmoid(self.z) -self.z_)))
+
 
     def io_def(self):
         self.CH = 1
