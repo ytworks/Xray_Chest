@@ -42,7 +42,7 @@ def main():
         writer = csv.writer(open("./result.csv", "w"))
         for i, t in tqdm(enumerate(testdata[0])):
             x = obj.prediction(data = [t])
-            logger.debug("%g %g" %(x, testdata[1][i]))
+            print(x, testdata[1][i])
             writer.writerow([x[0][0], x[0][1], testdata[1][i][0], testdata[1][i][1]])
 
 
