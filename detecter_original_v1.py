@@ -15,6 +15,11 @@ from LinearMotor import TrainOptimizers as TO
 from LinearMotor import Utilities as UT
 from LinearMotor import Loss
 from LinearMotor import Cells
+from logging import getLogger, StreamHandler
+logger = getLogger(__name__)
+sh = StreamHandler()
+logger.addHandler(sh)
+logger.setLevel(10)
 
 class Detecter(Core2.Core):
     def __init__(self,
@@ -45,6 +50,25 @@ class Detecter(Core2.Core):
                                        )
         self.SIZE = size
 
+    def construct(self):
+        # セッションの定義
+        self.sess = tf.InteractiveSession()
+        logger.debug("01: TF session Start")
+        # 入出力の定義
+        self.io_def()
+        logger.debug("02: TF I/O definition done")
+        # ネットワークの構成
+        #self.network()
+        # 誤差関数の定義
+        #self.loss()
+        # 学習
+        #self.training()
+        # 精度の定義
+        #self.get_accuracy()
+        #print(self.accuracy)
+        # チェックポイントの呼び出し
+        #self.saver = tf.train.Saver()
+        #self.restore()
 
     def io_def(self):
         self.CH = 1
