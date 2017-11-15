@@ -15,6 +15,7 @@ from LinearMotor import TrainOptimizers as TO
 from LinearMotor import Utilities as UT
 from LinearMotor import Loss
 from LinearMotor import Cells
+from LinearMotor.Cells2 import inception_res_cell
 from logging import getLogger, StreamHandler
 logger = getLogger(__name__)
 sh = StreamHandler()
@@ -58,7 +59,8 @@ class Detecter(Core2.Core):
         self.io_def()
         logger.debug("02: TF I/O definition done")
         # ネットワークの構成
-        #self.network()
+        self.network()
+        logger.debug("03: TF network construction done")
         # 誤差関数の定義
         #self.loss()
         # 学習
@@ -76,3 +78,102 @@ class Detecter(Core2.Core):
         self.y_ = tf.placeholder("float", shape=[None, 2], name = "Label_Judgement")
         self.z_ = tf.placeholder("float", shape=[None, 14], name = "Label_Diagnosis")
         self.keep_probs = []
+
+    def network(self):
+        Channels = 10
+        Initializer = 'He'
+        Parallels = 9
+        Activation = 'PRelu'
+        Regularization = False
+        prob = 1.0
+        self.y11 = inception_res_cell(x = self.x,
+                                           Act = Activation,
+                                           InputNode = [self.SIZE, self.SIZE, self.CH],
+                                           Channels = [Channels, Channels],
+                                           Strides0 = [1, 1, 1, 1],
+                                           Strides1 = [1, 1, 1, 1],
+                                           Initializer = Initializer,
+                                           Regularization = Regularization,
+                                           vname = 'Res0')
+        self.y12 = Layers.pooling(x = self.y11, ksize=[2, 2], strides=[2, 2],
+                                  padding='SAME', algorithm = 'Max')
+
+        self.y21 = inception_res_cell(x = self.y12,
+                                           Act = Activation,
+                                           InputNode = [self.SIZE / 2, self.SIZE / 2, Channels * Parallels],
+                                           Channels = [Channels * 2, Channels * 2],
+                                           Strides0 = [1, 1, 1, 1],
+                                           Strides1 = [1, 1, 1, 1],
+                                           Initializer = Initializer,
+                                           Regularization = Regularization,
+                                           vname = 'Res1')
+        self.y21 = Layers.pooling(x = self.y21, ksize=[2, 2], strides=[2, 2],
+                                  padding='SAME', algorithm = 'Max')
+
+
+        self.y31 = inception_res_cell(x = self.y21,
+                                           Act = Activation,
+                                           InputNode = [self.SIZE / 4, self.SIZE / 4, Channels * 2 * Parallels],
+                                           Channels = [Channels * 4, Channels * 4],
+                                           Strides0 = [1, 1, 1, 1],
+                                           Strides1 = [1, 1, 1, 1],
+                                           Initializer = Initializer,
+                                           Regularization = Regularization,
+                                           vname = 'Res3')
+        self.y31 = Layers.pooling(x = self.y31, ksize=[2, 2], strides=[2, 2],
+                                  padding='SAME', algorithm = 'Max')
+
+        self.y41 = inception_res_cell(x = self.y31,
+                                           Act = Activation,
+                                           InputNode = [self.SIZE / 8, self.SIZE / 8, Channels * 4 * Parallels],
+                                           Channels = [Channels * 8, Channels * 8],
+                                           Strides0 = [1, 1, 1, 1],
+                                           Strides1 = [1, 1, 1, 1],
+                                           Initializer = Initializer,
+                                           Regularization = Regularization,
+                                           vname = 'Res4')
+        self.y41 = Layers.pooling(x = self.y41, ksize=[2, 2], strides=[2, 2],
+                                  padding='SAME', algorithm = 'Max')
+
+
+        self.y51 = inception_res_cell(x = self.y41,
+                                           Act = Activation,
+                                           InputNode = [self.SIZE / 16, self.SIZE / 16, Channels * 8 * Parallels],
+                                           Channels = [Channels * 16, Channels * 16],
+                                           Strides0 = [1, 1, 1, 1],
+                                           Strides1 = [1, 1, 1, 1],
+                                           Initializer = Initializer,
+                                           Regularization = Regularization,
+                                           vname = 'Res5')
+        # Sparse Target Layer
+        self.y51 = Layers.pooling(x = self.y51, ksize=[2, 2], strides=[2, 2],
+                                  padding='SAME', algorithm = 'Max')
+        # Dropout Layer
+        self.y52 = Layers.dropout(x = self.y51, keep_probs = self.keep_probs, training_prob = prob, vname = 'V5')
+
+        self.y61 = Layers.pooling(x = self.y52,
+                                  ksize=[self.SIZE / 16, self.SIZE / 16],
+                                  strides=[self.SIZE / 16, self.SIZE / 16],
+                                  padding='SAME',
+                                  algorithm = 'Avg')
+
+
+        # reshape
+        self.y71 = Layers.reshape_tensor(x = self.y61, shape = [1 * 1 * Channels * 16 * Parallels])
+        # fnn
+        self.y72 = Outputs.output(x = self.y71,
+                                  InputSize = Channels * 16 * Parallels,
+                                  OutputSize = 2,
+                                  Initializer = 'Xavier',
+                                  BatchNormalization = False,
+                                  Regularization = Regularization,
+                                  vname = 'Output_y')
+        self.y = self.y72
+        self.y73 = Outputs.output(x = self.y71,
+                                  InputSize = Channels * 16 * Parallels,
+                                  OutputSize = 14,
+                                  Initializer = 'Xavier',
+                                  BatchNormalization = False,
+                                  Regularization = Regularization,
+                                  vname = 'Output_z')
+        self.z = self.y73
