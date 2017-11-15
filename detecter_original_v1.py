@@ -65,7 +65,8 @@ class Detecter(Core2.Core):
         self.loss()
         logger.debug("04: TF Loss definition done")
         # 学習
-        #self.training()
+        self.training()
+        logger.debug("05: TF Training operation done")
         # 精度の定義
         #self.get_accuracy()
         #print(self.accuracy)
