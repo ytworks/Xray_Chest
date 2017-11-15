@@ -72,14 +72,14 @@ class DataSet(object):
         imgs, labels0, labels1 = [], [], []
         for i in tqdm(range(len(self.files))):
             # ファイルの読み込み
-            img, label0, label1, _, _ = self.img_reader(self.files[i])
+            img, label0, label1, _, _ = self.img_reader(self.files[i], augment = False)
             # 出力配列の作成
             imgs.append(img)
             labels0.append(label0)
             labels1.append(label1)
-        return [np.array(imgs), np.array(labels0), np.array(labels1)]
+        return [np.array(imgs), np.array(labels1), np.array(labels0)]
 
-    def img_reader(self, f):
+    def img_reader(self, f, augment = True):
         root, ext = os.path.splitext(f)
         filename = os.path.basename(f)
         # 画像の読み込み
@@ -104,10 +104,15 @@ class DataSet(object):
         if self.augment:
             img = self.flip(img)
             img = self.shift(img = img, move_x = 0.05, move_y = 0.05)
+        else:
+            if augment:
+                img = self.flip(img)
+                img = self.shift(img = img, move_x = 0.05, move_y = 0.05)
+
 
         return img, label[0], label[1], filename, self.labels[filename]['raw']
 
-    def next_batch(self, batch_size):
+    def next_batch(self, batch_size, augment = True):
         start = self.start
         if self.start + batch_size >= len(self._images):
             logger.debug('Next Epoch')
@@ -120,7 +125,8 @@ class DataSet(object):
         filenames, raw_data = [], []
         for i in range(start, end):
             # ファイルの読み込み
-            img, label0, label1, filename, raw = self.img_reader(self.files[self._images[i]])
+            img, label0, label1, filename, raw = self.img_reader(self.files[self._images[i]],
+                                                                 augment = augment)
             # 出力配列の作成
             imgs.append(img)
             labels0.append(label0)
@@ -133,7 +139,7 @@ class DataSet(object):
         else:
             self.start = end
 
-        return [np.array(imgs), np.array(labels0), np.array(labels1), filenames, raw_data]
+        return [np.array(imgs), np.array(labels1), np.array(labels0), filenames, raw_data]
 
 
 def get_filepath(datapaths):

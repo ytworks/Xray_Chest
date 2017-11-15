@@ -7,6 +7,7 @@ import numpy as np
 import sys
 import os
 import math
+from datetime import datetime
 from LinearMotor import Core2
 from LinearMotor import ActivationFunctions as AF
 from LinearMotor import Layers
@@ -68,16 +69,15 @@ class Detecter(Core2.Core):
         self.training()
         logger.debug("05: TF Training operation done")
         # 精度の定義
-        self.get_accuracy()
+        self.accuracy_y = UT.correct_rate(self.y, self.y_)
+        self.accuracy_z = tf.sqrt(tf.reduce_mean(tf.multiply(tf.sigmoid(self.z) -self.z_, tf.sigmoid(self.z) -self.z_)))
         logger.debug("06: TF Accuracy measure definition done")
         # チェックポイントの呼び出し
         self.saver = tf.train.Saver()
         self.restore()
         logger.debug("07: TF Model file definition done")
 
-    def get_accurary(self):
-        self.accuracy_y = UT.correct_rate(self.y, self.y_)
-        self.accuracy_z = tf.sqrt(tf.reduce_mean(tf.multiply(tf.sigmoid(self.z) -self.z_, tf.sigmoid(self.z) -self.z_)))
+
 
 
     def io_def(self):
@@ -200,3 +200,63 @@ class Detecter(Core2.Core):
                                              output_type = 'classified-sigmoid')
         # For Gear Mode (TBD)
         #+ tf.reduce_mean(tf.abs(self.y51)) * self.GearLevel
+
+    # 入出力ベクトルの配置
+    def make_feed_dict(self, prob, batch):
+        feed_dict = {}
+        feed_dict.setdefault(self.x, batch[0])
+        feed_dict.setdefault(self.y_, batch[1])
+        feed_dict.setdefault(self.z_, batch[2])
+        feed_dict.setdefault(self.learning_rate, self.learning_rate_value)
+        #feed_dict.setdefault(self.GearLevel, self.GearLevelValue)
+        i = 0
+        for keep_prob in self.keep_probs:
+            if prob:
+                feed_dict.setdefault(keep_prob['var'], 1.0)
+            else:
+                feed_dict.setdefault(keep_prob['var'], keep_prob['prob'])
+            i += 1
+        return feed_dict
+
+
+    def learning(self, data, save_at_log = False, validation_batch_num = 40):
+        for i in range(self.epoch):
+
+            batch = data.train.next_batch(self.batch)
+
+            # 途中経過のチェック
+            if i%self.log == 0:
+                # Train
+                feed_dict = self.make_feed_dict(prob = True, batch = batch)
+                train_accuracy_y = self.accuracy_y.eval(feed_dict=feed_dict)
+                train_accuracy_z = self.accuracy_z.eval(feed_dict=feed_dict)
+                losses = self.loss_function.eval(feed_dict=feed_dict)
+                # Test
+                val_accuracy_y, val_accuracy_z, val_losses = [], [], []
+                for num in range(validation_batch_num):
+                    validation_batch = data.test.next_batch(self.batch, augment = False)
+                    feed_dict_val = self.make_feed_dict(prob = False, batch = validation_batch)
+                    val_accuracy_y.append(self.accuracy_y.eval(feed_dict=feed_dict_val) * float(self.batch))
+                    val_accuracy_z.append(self.accuracy_z.eval(feed_dict=feed_dict_val) * float(self.batch))
+                    val_losses.append(self.loss_function.eval(feed_dict=feed_dict_val) * float(self.batch))
+                val_accuracy_y = np.mean(val_accuracy_y) / float(self.batch)
+                val_accuracy_z = np.mean(val_accuracy_z) / float(self.batch)
+                val_losses = np.mean(val_losses) / float(self.batch)
+                # Output
+                logger.debug("step %d train acc judgement %g train acc diagnosis %g Loss train %g validation acc judgement %g validation acc diagnosis %g Loss validation %g" % (i,train_accuracy_y,train_accuracy_z,losses,val_accuracy_y,val_accuracy_z,val_losses))
+                #logger.debug(datetime.now().strftime("%Y/%m/%d %H:%M:%S"),
+                #             "step %d" % i)
+                             #"train acc judgement %g"% train_accuracy_y,
+                             #"train acc diagnosis %g"% train_accuracy_z,
+                             #"Loss train %g"%losses,
+                             #"validation acc judgement %g"%val_accuracy_y,
+                             #"validation acc diagnosis %g"%val_accuracy_z)
+                             #"Loss validation %g"%val_losses)
+                if save_at_log:
+                    self.save_checkpoint()
+            # 学習
+            feed_dict = self.make_feed_dict(prob = False, batch = batch)
+            if self.DP and i != 0:
+                self.dynamic_learning_rate(feed_dict)
+            self.train_op.run(feed_dict=feed_dict)
+        self.save_checkpoint()
