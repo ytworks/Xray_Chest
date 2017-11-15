@@ -37,7 +37,7 @@ def main():
     logger.debug("Finish learning")
     testdata = dataset.test.get_all_data()
     for i, t in enumerate(testdata[0]):
-        x = obj.prediction(data = t)
+        x = obj.prediction(data = [t])
         logger.debug(x)
 
 
