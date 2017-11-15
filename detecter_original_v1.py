@@ -62,7 +62,8 @@ class Detecter(Core2.Core):
         self.network()
         logger.debug("03: TF network construction done")
         # 誤差関数の定義
-        #self.loss()
+        self.loss()
+        logger.debug("04: TF Loss definition done")
         # 学習
         #self.training()
         # 精度の定義
@@ -177,3 +178,18 @@ class Detecter(Core2.Core):
                                   Regularization = Regularization,
                                   vname = 'Output_z')
         self.z = self.y73
+
+
+    def loss(self):
+        self.loss_function = Loss.loss_func(y = self.y,
+                                            y_ = self.y_,
+                                            regularization = self.regularization,
+                                            regularization_type = self.regularization_type,
+                                            output_type = self.output_type)
+        self.loss_function += Loss.loss_func(y = self.z,
+                                             y_ = self.z_,
+                                             regularization = 0.0,
+                                             regularization_type = self.regularization_type,
+                                             output_type = 'classified-sigmoid')
+        # For Gear Mode (TBD)
+        #+ tf.reduce_mean(tf.abs(self.y51)) * self.GearLevel
