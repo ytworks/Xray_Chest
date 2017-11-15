@@ -7,6 +7,7 @@ import numpy as np
 import sys
 import os
 import math
+from tqdm import tqdm
 from datetime import datetime
 from LinearMotor import Core2
 from LinearMotor import ActivationFunctions as AF
@@ -220,7 +221,7 @@ class Detecter(Core2.Core):
 
 
     def learning(self, data, save_at_log = False, validation_batch_num = 40):
-        for i in range(self.epoch):
+        for i in tqdm(range(self.epoch)):
 
             batch = data.train.next_batch(self.batch)
 
@@ -244,14 +245,6 @@ class Detecter(Core2.Core):
                 val_losses = np.mean(val_losses) / float(self.batch)
                 # Output
                 logger.debug("step %d train acc judgement %g train acc diagnosis %g Loss train %g validation acc judgement %g validation acc diagnosis %g Loss validation %g" % (i,train_accuracy_y,train_accuracy_z,losses,val_accuracy_y,val_accuracy_z,val_losses))
-                #logger.debug(datetime.now().strftime("%Y/%m/%d %H:%M:%S"),
-                #             "step %d" % i)
-                             #"train acc judgement %g"% train_accuracy_y,
-                             #"train acc diagnosis %g"% train_accuracy_z,
-                             #"Loss train %g"%losses,
-                             #"validation acc judgement %g"%val_accuracy_y,
-                             #"validation acc diagnosis %g"%val_accuracy_z)
-                             #"Loss validation %g"%val_losses)
                 if save_at_log:
                     self.save_checkpoint()
             # 学習
