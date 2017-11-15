@@ -3,6 +3,8 @@
 from make_mini_batch import read_data_sets
 from detecter_original_v1 import Detecter
 from logging import getLogger, StreamHandler
+from tqdm import tqdm
+import csv
 logger = getLogger(__name__)
 sh = StreamHandler()
 logger.addHandler(sh)
@@ -36,9 +38,13 @@ def main():
                  validation_batch_num = 1)
     logger.debug("Finish learning")
     testdata = dataset.test.get_all_data()
-    for i, t in enumerate(testdata[0]):
-        x = obj.prediction(data = [t])
-        logger.debug(x)
+    with open("./result.csv", "w") as f:
+        writer = csv.writer(open("./result.csv", "w"))
+        for i, t in tqdm(enumerate(testdata[0])):
+            x = obj.prediction(data = [t])
+            logger.debug("%g %g" %(x, testdata[1][i]))
+            writer.writerow([x[0][0], x[0][1], testdata[1][i][0], testdata[1][i][1]])
+
 
 
 if __name__ == '__main__':
