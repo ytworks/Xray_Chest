@@ -9,37 +9,64 @@ logger = getLogger(__name__)
 sh = StreamHandler()
 logger.addHandler(sh)
 logger.setLevel(10)
+import argparse
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-size')
+    parser.add_argument('-augment')
+    parser.add_argument('-checkpoint')
+    parser.add_argument('-lr')
+    parser.add_argument('-dlr')
+    parser.add_argument('-rtype')
+    parser.add_argument('-rr')
+    parser.add_argument('-epoch')
+    parser.add_argument('-batch')
+    parser.add_argument('-log')
+    parser.add_argument('-outfile')
+    args = parser.parse_args()
+    size = args.size if args.size != None else 256
+    augment = True if args.augment != None else False
+    checkpoint = args.checkpoint if args.checkpoint != None else './Model/Core.ckpt'
+    lr = args.lr if args.lr != None else 0.0001
+    dlr = args.dlr if args.dlr != None else 0.0
+    rtype = args.rtype if args.rtype != None else 'L2'
+    rr = args.rr if args.rr != None else 0.0
+    epoch = args.epoch if args.epoch != None else 3
+    batch = args.batch if args.batch != None else 5
+    log = args.log if args.log != None else 1
+    outfile = args.outfile if args.outfile != None else './result.csv'
+
+
     dataset = read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
                              nih_supervised_datapath = "./Data/Open/Data_Entry_2017.csv",
                              nih_boxlist = "./Data/Open/BBox_List_2017.csv",
                              benchmark_datapath = ["./Data/CR_DATA/BenchMark/*/*.dcm"],
                              benchmark_supervised_datapath = "./Data/CR_DATA/BenchMark/CLNDAT_EN.txt",
                              kfold = 1,
-                             img_size = 256,
-                             augment = True,
+                             img_size = size,
+                             augment = augment,
                              zca = True)
 
     obj = Detecter(output_type = 'classified-softmax',
-                   epoch = 3, batch = 5, log = 1,
+                   epoch = epoch, batch = batch, log = log,
                    optimizer_type = 'Adam',
-                   learning_rate = 0.0001,
-                   dynamic_learning_rate = 0.0,
+                   learning_rate = lr,
+                   dynamic_learning_rate = dlr,
                    beta1 = 0.9, beta2 = 0.999,
-                   regularization = 0.0,
-                   regularization_type = 'L2',
-                   checkpoint = './Model/Core.ckpt',
+                   regularization = rr,
+                   regularization_type = rtype,
+                   checkpoint = checkpoint,
                    init = True,
-                   size = 256)
+                   size = size)
     obj.construct()
     obj.learning(data = dataset,
                  validation_batch_num = 1)
     logger.debug("Finish learning")
     testdata = dataset.test.get_all_data()
-    with open("./result.csv", "w") as f:
-        writer = csv.writer(open("./result.csv", "w"))
+    with open(outfile, "w") as f:
+        writer = csv.writer(f)
         for i, t in tqdm(enumerate(testdata[0])):
             x = obj.prediction(data = [t])
             print(x, testdata[1][i])
