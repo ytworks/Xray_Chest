@@ -25,6 +25,7 @@ def main():
     parser.add_argument('-batch')
     parser.add_argument('-log')
     parser.add_argument('-outfile')
+    parser.add_argument('-mode', required = True)
     args = parser.parse_args()
     size = args.size if args.size != None else 256
     augment = True if args.augment != None else False
@@ -36,7 +37,13 @@ def main():
     epoch = args.epoch if args.epoch != None else 3
     batch = args.batch if args.batch != None else 5
     log = args.log if args.log != None else 1
-    outfile = args.outfile if args.outfile != None else './result.csv'
+    outfile = args.outfile if args.outfile != None else './Result/result.csv'
+    if args.mode in ['learning']:
+        init = True
+    elif args.mode in ['update', 'prediction']:
+        init = False
+    else:
+        init = False
 
 
     dataset = read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
@@ -58,12 +65,16 @@ def main():
                    regularization = rr,
                    regularization_type = rtype,
                    checkpoint = checkpoint,
-                   init = True,
+                   init = init,
                    size = size)
     obj.construct()
-    obj.learning(data = dataset,
-                 validation_batch_num = 1)
-    logger.debug("Finish learning")
+    if args.mode != 'prediction':
+        logger.debug("Start learning")
+        obj.learning(data = dataset,
+                     validation_batch_num = 1)
+        logger.debug("Finish learning")
+    else:
+        logger.debug("Skipped learning")
     testdata = dataset.test.get_all_data()
     with open(outfile, "w") as f:
         writer = csv.writer(f)

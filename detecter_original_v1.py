@@ -24,6 +24,15 @@ sh = StreamHandler()
 logger.addHandler(sh)
 logger.setLevel(10)
 
+'''
+ToDo
+    1. weighted lossの実装
+    2. CAMの実装
+
+
+'''
+
+
 class Detecter(Core2.Core):
     def __init__(self,
                  output_type,
@@ -172,20 +181,21 @@ class Detecter(Core2.Core):
         # fnn
         self.y72 = Outputs.output(x = self.y71,
                                   InputSize = Channels * 16 * Parallels,
-                                  OutputSize = 2,
-                                  Initializer = 'Xavier',
-                                  BatchNormalization = False,
-                                  Regularization = Regularization,
-                                  vname = 'Output_y')
-        self.y = self.y72
-        self.y73 = Outputs.output(x = self.y71,
-                                  InputSize = Channels * 16 * Parallels,
                                   OutputSize = 14,
                                   Initializer = 'Xavier',
                                   BatchNormalization = False,
                                   Regularization = Regularization,
                                   vname = 'Output_z')
-        self.z = self.y73
+        self.z0 = Layers.concat([self.y72, self.y71], concat_type = 'Vector')
+        self.y73 = Outputs.output(x = self.z0,
+                                  InputSize = Channels * 16 * Parallels + 14,
+                                  OutputSize = 2,
+                                  Initializer = 'Xavier',
+                                  BatchNormalization = False,
+                                  Regularization = Regularization,
+                                  vname = 'Output_y')
+        self.y = self.y73
+        self.z = self.y72
 
 
     def loss(self):
