@@ -45,7 +45,7 @@ def main():
     else:
         init = False
 
-
+    print("read dataset")
     dataset = read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
                              nih_supervised_datapath = "./Data/Open/Data_Entry_2017.csv",
                              nih_boxlist = "./Data/Open/BBox_List_2017.csv",

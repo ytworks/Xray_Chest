@@ -31,6 +31,7 @@ class DataSet(object):
         # ファイル配列のIDのリストを作成
         self.start = 0
         imgs, labels= [], []
+        logger.debug("File num: %g"%len(self.files))
         for i in range(len(self.files)):
             imgs.append(i)
             labels.append(i)
