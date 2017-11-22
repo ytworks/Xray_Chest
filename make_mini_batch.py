@@ -71,7 +71,7 @@ class DataSet(object):
 
     def get_all_data(self):
         imgs, labels0, labels1 = [], [], []
-        filenames, row_data = [], []
+        filenames, raw_data = [], []
         for i in tqdm(range(len(self.files))):
             # ファイルの読み込み
             img, label0, label1, filename, raw = self.img_reader(self.files[i], augment = False)
