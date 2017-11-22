@@ -306,5 +306,5 @@ class Detecter(Core2.Core):
             for channel in range(roi_base.shape[2]):
                 c = roi_base[:, :, channel]
                 print(c.shape)
-                image = np.stack((c, c, c), axiis = -1)
+                image = np.stack((c, c, c), axis = -1)
                 print(image.shape)
