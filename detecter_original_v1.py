@@ -292,8 +292,6 @@ class Detecter(Core2.Core):
             result = self.sess.run(tf.nn.softmax(self.y), feed_dict = feed_dict)
             weights = self.get_output_weights(feed_dict = feed_dict)
             roi_base = self.get_roi_map_base(feed_dict = feed_dict)
-            print(weights[0].shape)
-            print(roi_base[0].shape)
             self.make_roi(weights = weights[0],
                           roi_base = roi_base[0],
                           save_dir = save_dir,
@@ -319,6 +317,5 @@ class Detecter(Core2.Core):
             images = 255.0 * (images - np.min(images)) / (np.max(images) - np.min(images))
             images = cv2.applyColorMap(images.astype(np.uint8), cv2.COLORMAP_JET)
             images = cv2.resize(images, (self.SIZE, self.SIZE))
-            print(images.shape, img.shape)
             roi_img = cv2.addWeighted(img, 0.7, images, 0.3, 1.0)
             cv2.imwrite(save_dir + '/' + str(filename[0]) + '_' + str(finding) + '.png', roi_img)
