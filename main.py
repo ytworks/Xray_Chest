@@ -34,7 +34,7 @@ def main():
     dlr = args.dlr if args.dlr != None else 0.0
     rtype = args.rtype if args.rtype != None else 'L2'
     rr = args.rr if args.rr != None else 0.0
-    epoch = args.epoch if args.epoch != None else 3
+    epoch = args.epoch if args.epoch != None else 1
     batch = args.batch if args.batch != None else 5
     log = args.log if args.log != None else 1
     outfile = args.outfile if args.outfile != None else './Result/result.csv'
@@ -46,7 +46,7 @@ def main():
         init = False
 
     print("read dataset")
-    dataset = read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
+    dataset, label_def = read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
                              nih_supervised_datapath = "./Data/Open/Data_Entry_2017.csv",
                              nih_boxlist = "./Data/Open/BBox_List_2017.csv",
                              benchmark_datapath = ["./Data/CR_DATA/BenchMark/*/*.dcm"],
@@ -55,6 +55,8 @@ def main():
                              img_size = size,
                              augment = augment,
                              zca = True)
+    print("label definitions:")
+    print(label_def)
 
     obj = Detecter(output_type = 'classified-softmax',
                    epoch = epoch, batch = batch, log = log,
@@ -79,7 +81,7 @@ def main():
     with open(outfile, "w") as f:
         writer = csv.writer(f)
         for i, t in tqdm(enumerate(testdata[0])):
-            x = obj.prediction(data = [t])
+            x = obj.prediction(data = [t], roi = True, label_def = label_def)
             print(x, testdata[1][i])
             writer.writerow([x[0][0], x[0][1], testdata[1][i][0], testdata[1][i][1]])
 

@@ -71,14 +71,17 @@ class DataSet(object):
 
     def get_all_data(self):
         imgs, labels0, labels1 = [], [], []
+        filenames, row_data = [], []
         for i in tqdm(range(len(self.files))):
             # ファイルの読み込み
-            img, label0, label1, _, _ = self.img_reader(self.files[i], augment = False)
+            img, label0, label1, filename, raw = self.img_reader(self.files[i], augment = False)
             # 出力配列の作成
             imgs.append(img)
             labels0.append(label0)
             labels1.append(label1)
-        return [np.array(imgs), np.array(labels1), np.array(labels0)]
+            filenames.append(filename)
+            raw_data.append(raw)
+        return [np.array(imgs), np.array(labels1), np.array(labels0), filenames, raw_data]
 
     def img_reader(self, f, augment = True):
         root, ext = os.path.splitext(f)
@@ -231,7 +234,7 @@ def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
                               zca = zca,
                               augment = augment)
     data_sets.train_summary = nih_count
-    return data_sets
+    return data_sets, label_def
 
 if __name__ == '__main__':
     dataset = read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],

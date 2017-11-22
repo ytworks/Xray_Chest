@@ -163,12 +163,8 @@ class Detecter(Core2.Core):
                                            Initializer = Initializer,
                                            Regularization = Regularization,
                                            vname = 'Res5')
-        # Sparse Target Layer
-        self.y51 = Layers.pooling(x = self.y51, ksize=[2, 2], strides=[2, 2],
-                                  padding='SAME', algorithm = 'Max')
         # Dropout Layer
         self.y52 = Layers.dropout(x = self.y51, keep_probs = self.keep_probs, training_prob = prob, vname = 'V5')
-
         self.y61 = Layers.pooling(x = self.y52,
                                   ksize=[self.SIZE / 16, self.SIZE / 16],
                                   strides=[self.SIZE / 16, self.SIZE / 16],
@@ -263,3 +259,34 @@ class Detecter(Core2.Core):
                 self.dynamic_learning_rate(feed_dict)
             self.train_op.run(feed_dict=feed_dict)
         self.save_checkpoint()
+
+
+    def get_output_weights(self, feed_dict):
+        tvar = self.get_trainable_var()
+        output_vars = []
+        for var in tvar:
+            if var.name.find('Output_z') >= 0:
+                output_vars.append(var)
+        weights = self.sess.run(output_vars, feed_dict = feed_dict)
+        return weights
+
+
+    def get_roi_map_base(self, feed_dict):
+        return self.sess.run([self.y51], feed_dict = feed_dict)
+
+
+    # 予測器
+    def prediction(self, data, roi = False, label_def = None):
+        # Make feed dict for prediction
+        feed_dict = {self.x : data}
+        for keep_prob in self.keep_probs:
+            feed_dict.setdefault(keep_prob['var'], 1.0)
+
+        if not roi:
+            result = self.sess.run(tf.nn.softmax(self.y), feed_dict = feed_dict)
+            return result, None
+        else:
+            result = self.sess.run(tf.nn.softmax(self.y), feed_dict = feed_dict)
+            weights = self.get_output_weights(feed_dict = feed_dict)
+            roi_base = self.get_roi_map_base(feed_dict = feed_dict)
+            return result, None
