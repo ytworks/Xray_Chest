@@ -4,12 +4,14 @@ from make_mini_batch import read_data_sets
 from detecter_original_v1 import Detecter
 from logging import getLogger, StreamHandler
 from tqdm import tqdm
+import os
 import csv
+import argparse
 logger = getLogger(__name__)
 sh = StreamHandler()
 logger.addHandler(sh)
 logger.setLevel(10)
-import argparse
+
 
 
 def main():
@@ -81,7 +83,9 @@ def main():
     with open(outfile, "w") as f:
         writer = csv.writer(f)
         for i, t in tqdm(enumerate(testdata[0])):
-            x = obj.prediction(data = [t], roi = True, label_def = label_def)
+            x, _ = obj.prediction(data = [t], roi = True, label_def = label_def, save_dir = './Pic',
+                                  filename = os.path.splitext(testdata[3][i]))
+            print("File name:", testdata[3][i])
             print(x, testdata[1][i])
             writer.writerow([x[0][0], x[0][1], testdata[1][i][0], testdata[1][i][1]])
 

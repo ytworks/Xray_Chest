@@ -276,7 +276,8 @@ class Detecter(Core2.Core):
 
 
     # 予測器
-    def prediction(self, data, roi = False, label_def = None):
+    def prediction(self, data, roi = False, label_def = None, save_dir = None,
+                   filename = None):
         # Make feed dict for prediction
         feed_dict = {self.x : data}
         for keep_prob in self.keep_probs:
@@ -289,4 +290,21 @@ class Detecter(Core2.Core):
             result = self.sess.run(tf.nn.softmax(self.y), feed_dict = feed_dict)
             weights = self.get_output_weights(feed_dict = feed_dict)
             roi_base = self.get_roi_map_base(feed_dict = feed_dict)
+            print(weights[0].shape)
+            print(roi_base[0].shape)
+            self.make_roi(weights = weights[0],
+                          roi_base = roi_base[0],
+                          save_dir = save_dir,
+                          filename = filename,
+                          label_def = label_def)
+
             return result, None
+    def make_roi(self, weights, roi_base, save_dir, filename, label_def):
+        for x, finding in enumerate(label_def):
+            logger.debug('Make ROI: %s'%finding)
+            images = np.zeros((roi_base.shape[0], roi_base.shape[1], 3))
+            for channel in range(roi_base.shape[2]):
+                c = roi_base[:, :, channel]
+                print(c.shape)
+                image = np.stack((c, c, c), axiis = -1)
+                print(image.shape)
