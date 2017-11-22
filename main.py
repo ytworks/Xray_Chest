@@ -84,7 +84,8 @@ def main():
         writer = csv.writer(f)
         for i, t in tqdm(enumerate(testdata[0])):
             x, _ = obj.prediction(data = [t], roi = True, label_def = label_def, save_dir = './Pic',
-                                  filename = os.path.splitext(testdata[3][i]))
+                                  filename = os.path.splitext(testdata[3][i]),
+                                  path = testdata[4][i])
             print("File name:", testdata[3][i])
             print(x, testdata[1][i])
             writer.writerow([x[0][0], x[0][1], testdata[1][i][0], testdata[1][i][1]])

@@ -4,9 +4,11 @@
 
 import tensorflow as tf
 import numpy as np
+import cv2
 import sys
 import os
 import math
+from DICOMReader.DICOMReader import dicom_to_np
 from tqdm import tqdm
 from datetime import datetime
 from LinearMotor import Core2
@@ -277,7 +279,7 @@ class Detecter(Core2.Core):
 
     # 予測器
     def prediction(self, data, roi = False, label_def = None, save_dir = None,
-                   filename = None):
+                   filename = None, path = None):
         # Make feed dict for prediction
         feed_dict = {self.x : data}
         for keep_prob in self.keep_probs:
@@ -296,15 +298,27 @@ class Detecter(Core2.Core):
                           roi_base = roi_base[0],
                           save_dir = save_dir,
                           filename = filename,
-                          label_def = label_def)
+                          label_def = label_def,
+                          path = path)
 
             return result, None
-    def make_roi(self, weights, roi_base, save_dir, filename, label_def):
+
+    def make_roi(self, weights, roi_base, save_dir, filename, label_def, path):
+        img, bits = dicom_to_np(path)
+        img = img / bits * 255
+        img = img.astype(np.uint8)
+        img = cv2.resize(img, (self.SIZE, self.SIZE), interpolation = cv2.INTER_AREA)
+        img = np.stack((img, img, img), axis = -1)
         for x, finding in enumerate(label_def):
             logger.debug('Make ROI: %s'%finding)
-            images = np.zeros((roi_base.shape[0], roi_base.shape[1], 3))
+            images = np.zeros((roi_base.shape[1], roi_base.shape[2], 3))
             for channel in range(roi_base.shape[2]):
-                c = roi_base[:, :, channel]
-                print(c.shape)
+                c = roi_base[0, :, :, channel]
                 image = np.stack((c, c, c), axis = -1)
-                print(image.shape)
+                images += image * weights[channel][x]
+            images = 255.0 * (images - np.min(images)) / (np.max(images) - np.min(images))
+            images = cv2.applyColorMap(images.astype(np.uint8), cv2.COLORMAP_JET)
+            images = cv2.resize(images, (self.SIZE, self.SIZE))
+            print(images.shape, img.shape)
+            roi_img = cv2.addWeighted(img, 0.7, images, 0.3, 1.0)
+            cv2.imwrite(save_dir + '/' + str(filename) + '_' + str(finding) + '.png', roi_img)
