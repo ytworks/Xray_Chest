@@ -321,4 +321,4 @@ class Detecter(Core2.Core):
             images = cv2.resize(images, (self.SIZE, self.SIZE))
             print(images.shape, img.shape)
             roi_img = cv2.addWeighted(img, 0.7, images, 0.3, 1.0)
-            cv2.imwrite(save_dir + '/' + str(filename) + '_' + str(finding) + '.png', roi_img)
+            cv2.imwrite(save_dir + '/' + str(filename[0]) + '_' + str(finding) + '.png', roi_img)
