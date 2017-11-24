@@ -1,5 +1,6 @@
 #! /usr/bin/bash
 
+source activate tensorflow_p27
 size='256'
 augment='True'
 checkpoint='./Model/run.ckpt'
