@@ -255,7 +255,7 @@ class Detecter(Core2.Core):
                 e = time.time()
                 elasped = e - s
                 logger.debug("elasped time: %g" % elasped)
-                 s= e
+                s = e
 
             # 学習
             feed_dict = self.make_feed_dict(prob = False, batch = batch)
