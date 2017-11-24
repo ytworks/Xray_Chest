@@ -224,6 +224,7 @@ class Detecter(Core2.Core):
 
 
     def learning(self, data, save_at_log = False, validation_batch_num = 40):
+        s = time.time()
         for i in range(self.epoch):
             batch = data.train.next_batch(self.batch)
 
@@ -251,6 +252,11 @@ class Detecter(Core2.Core):
 
                 if save_at_log:
                     self.save_checkpoint()
+                e = time.time()
+                elasped = e - s
+                logger.debug("elasped time: %g" % elasped)
+                 s= e
+
             # 学習
             feed_dict = self.make_feed_dict(prob = False, batch = batch)
             if self.DP and i != 0:
