@@ -35,7 +35,7 @@ def main():
     lr = float(args.lr) if args.lr != None else 0.0001
     dlr = float(args.dlr) if args.dlr != None else 0.0
     rtype = args.rtype if args.rtype != None else 'L2'
-    rr = args.rr if args.rr != None else 0.0
+    rr = float(args.rr) if args.rr != None else 0.0
     epoch = int(args.epoch) if args.epoch != None else 2
     batch = int(args.batch) if args.batch != None else 5
     log = int(args.log) if args.log != None else 2
@@ -75,7 +75,7 @@ def main():
     if args.mode != 'prediction':
         logger.debug("Start learning")
         obj.learning(data = dataset,
-                     validation_batch_num = 1)
+                     validation_batch_num = 10)
         logger.debug("Finish learning")
     else:
         logger.debug("Skipped learning")
