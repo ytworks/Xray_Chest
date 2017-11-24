@@ -36,9 +36,9 @@ def main():
     dlr = args.dlr if args.dlr != None else 0.0
     rtype = args.rtype if args.rtype != None else 'L2'
     rr = args.rr if args.rr != None else 0.0
-    epoch = args.epoch if args.epoch != None else 1
+    epoch = args.epoch if args.epoch != None else 2
     batch = args.batch if args.batch != None else 5
-    log = args.log if args.log != None else 1
+    log = args.log if args.log != None else 2
     outfile = args.outfile if args.outfile != None else './Result/result.csv'
     if args.mode in ['learning']:
         init = True

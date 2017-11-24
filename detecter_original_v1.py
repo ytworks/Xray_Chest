@@ -240,6 +240,7 @@ class Detecter(Core2.Core):
 
             # 途中経過のチェック
             if i%self.log == 0:
+                s = time.time()
                 # Train
                 feed_dict = self.make_feed_dict(prob = True, batch = batch)
                 train_accuracy_y = self.accuracy_y.eval(feed_dict=feed_dict)
@@ -261,6 +262,9 @@ class Detecter(Core2.Core):
 
                 if save_at_log:
                     self.save_checkpoint()
+                e = time.time()
+                elapsed = e - s
+                logger.debug("validation elasped: %g"%elapsed)
             # 学習
             feed_dict = self.make_feed_dict(prob = False, batch = batch)
             s = time.time()
