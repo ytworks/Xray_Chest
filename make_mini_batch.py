@@ -7,6 +7,7 @@ import random
 import csv
 import numpy as np
 import cv2
+import time
 from DICOMReader.DICOMReader import dicom_to_np
 from preprocessing_tool import preprocessing as PP
 from tqdm import tqdm
@@ -116,7 +117,7 @@ class DataSet(object):
 
         return img, label[0], label[1], filename, self.labels[filename]['raw']
 
-    def next_batch(self, batch_size, augment = True):
+    def next_batch(self, batch_size, augment = True, debug = True):
         start = self.start
         if self.start + batch_size >= len(self._images):
             logger.debug('Next Epoch')
@@ -129,8 +130,12 @@ class DataSet(object):
         filenames, raw_data = [], []
         for i in range(start, end):
             # ファイルの読み込み
+            st_time = time.time()
             img, label0, label1, filename, raw = self.img_reader(self.files[self._images[i]],
                                                                  augment = augment)
+            ed_time = time.time()
+            elapsed = ed_time - st_time
+            logger.debug("make preprocessing elapsed: %g [s]"%elapsed)
             # 出力配列の作成
             imgs.append(img)
             labels0.append(label0)

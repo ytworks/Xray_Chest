@@ -8,6 +8,7 @@ import cv2
 import sys
 import os
 import math
+import time
 from DICOMReader.DICOMReader import dicom_to_np
 from tqdm import tqdm
 from datetime import datetime
@@ -230,8 +231,12 @@ class Detecter(Core2.Core):
 
     def learning(self, data, save_at_log = False, validation_batch_num = 40):
         for i in tqdm(range(self.epoch)):
-
+            s = time.time()
             batch = data.train.next_batch(self.batch)
+            e = time.time()
+            elapsed = e - s
+            logger.debug("make batch elasped: %g"%elapsed)
+
 
             # 途中経過のチェック
             if i%self.log == 0:
@@ -253,13 +258,18 @@ class Detecter(Core2.Core):
                 val_losses = np.mean(val_losses) / float(self.batch)
                 # Output
                 logger.debug("step %d train acc judgement %g train acc diagnosis %g Loss train %g validation acc judgement %g validation acc diagnosis %g Loss validation %g" % (i,train_accuracy_y,train_accuracy_z,losses,val_accuracy_y,val_accuracy_z,val_losses))
+
                 if save_at_log:
                     self.save_checkpoint()
             # 学習
             feed_dict = self.make_feed_dict(prob = False, batch = batch)
+            s = time.time()
             if self.DP and i != 0:
                 self.dynamic_learning_rate(feed_dict)
             self.train_op.run(feed_dict=feed_dict)
+            e = time.time()
+            elapsed = e - s
+            logger.debug("learning elasped: %g"%elapsed)
         self.save_checkpoint()
 
 
