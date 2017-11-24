@@ -224,7 +224,7 @@ class Detecter(Core2.Core):
 
 
     def learning(self, data, save_at_log = False, validation_batch_num = 40):
-        for i in tqdm(range(self.epoch)):
+        for i in range(self.epoch):
             batch = data.train.next_batch(self.batch)
 
 
