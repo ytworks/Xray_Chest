@@ -130,12 +130,8 @@ class DataSet(object):
         filenames, raw_data = [], []
         for i in range(start, end):
             # ファイルの読み込み
-            st_time = time.time()
             img, label0, label1, filename, raw = self.img_reader(self.files[self._images[i]],
                                                                  augment = augment)
-            ed_time = time.time()
-            elapsed = ed_time - st_time
-            logger.debug("make preprocessing elapsed: %g [s]"%elapsed)
             # 出力配列の作成
             imgs.append(img)
             labels0.append(label0)

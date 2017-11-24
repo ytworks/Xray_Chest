@@ -27,13 +27,7 @@ sh = StreamHandler()
 logger.addHandler(sh)
 logger.setLevel(10)
 
-'''
-ToDo
-    1. weighted lossの実装
-    2. CAMの実装
 
-
-'''
 
 
 class Detecter(Core2.Core):
@@ -231,16 +225,11 @@ class Detecter(Core2.Core):
 
     def learning(self, data, save_at_log = False, validation_batch_num = 40):
         for i in tqdm(range(self.epoch)):
-            s = time.time()
             batch = data.train.next_batch(self.batch)
-            e = time.time()
-            elapsed = e - s
-            logger.debug("make batch elasped: %g"%elapsed)
 
 
             # 途中経過のチェック
-            if i%self.log == 0:
-                s = time.time()
+            if i%self.log == 0 and 1 != 0:
                 # Train
                 feed_dict = self.make_feed_dict(prob = True, batch = batch)
                 train_accuracy_y = self.accuracy_y.eval(feed_dict=feed_dict)
@@ -262,18 +251,11 @@ class Detecter(Core2.Core):
 
                 if save_at_log:
                     self.save_checkpoint()
-                e = time.time()
-                elapsed = e - s
-                logger.debug("validation elasped: %g"%elapsed)
             # 学習
             feed_dict = self.make_feed_dict(prob = False, batch = batch)
-            s = time.time()
             if self.DP and i != 0:
                 self.dynamic_learning_rate(feed_dict)
             self.train_op.run(feed_dict=feed_dict)
-            e = time.time()
-            elapsed = e - s
-            logger.debug("learning elasped: %g"%elapsed)
         self.save_checkpoint()
 
 
