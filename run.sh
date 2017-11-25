@@ -10,7 +10,6 @@ batch='20'
 log='10'
 lr='0.001'
 python main.py -mode learning -size $size \
-              -augment $augment \
               -checkpoint $checkpoint \
               -epoch $epoch \
               -batch $batch \

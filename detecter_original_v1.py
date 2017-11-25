@@ -95,10 +95,10 @@ class Detecter(Core2.Core):
         self.keep_probs = []
 
     def network(self):
-        Channels = 7
+        Channels = 8
         Initializer = 'He'
         Parallels = 9
-        Activation = 'PRelu'
+        Activation = 'Geru'
         Regularization = False
         prob = 1.0
         self.y11 = inception_res_cell(x = self.x,
