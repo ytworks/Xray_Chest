@@ -227,6 +227,8 @@ class Detecter(Core2.Core):
     def get_auc(self, test, prob):
         t, p = [], []
         for i in range(len(test[0])):
+            print(test[0][i])
+            print(prob[0][i])
             t.append(test[0][i][0])
             p.append(prob[0][i][0])
         fpr, tpr, thresholds = roc_curve(t, p, pos_label = 1)
