@@ -226,13 +226,9 @@ class Detecter(Core2.Core):
 
     def get_auc(self, test, prob):
         t, p = [], []
-        print(test)
-        print(prob)
         for i in range(len(test)):
-            print(test[i])
-            print(prob[i])
             t.append(test[i][0])
-            p.append(prob[i][0])
+            p.append(prob[0][i][0])
         fpr, tpr, thresholds = roc_curve(t, p, pos_label = 1)
         roc_auc = auc(fpr, tpr)
         return roc_auc
