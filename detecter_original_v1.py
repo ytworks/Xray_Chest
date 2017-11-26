@@ -245,7 +245,7 @@ class Detecter(Core2.Core):
                 train_prediction = self.prediction(data = batch[0], roi = False)
                 test = [batch[1][i][0] for i in range(len(batch[1]))]
                 prob = [train_prediction[0][i][0] for i in range(len(train_prediction[0]))]
-                train_auc = self.get_auc(test = batch[1], prob = train_prediction)
+                train_auc = self.get_auc(test = test, prob = prob)
                 # Test
                 val_accuracy_y, val_accuracy_z, val_losses, test, prob = [], [], [], [], []
                 for num in range(validation_batch_num):
