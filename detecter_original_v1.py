@@ -225,6 +225,8 @@ class Detecter(Core2.Core):
 
 
     def get_auc(self, test, prob):
+        print(prob)
+        print(test)
         t, p = [], []
         for i in range(len(test)):
             t.append(test[i][0])
