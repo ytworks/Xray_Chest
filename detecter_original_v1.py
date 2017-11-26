@@ -249,26 +249,20 @@ class Detecter(Core2.Core):
                 train_prediction = self.prediction(data = batch[0], roi = False)
                 train_auc = self.get_auc(test = batch[1], prob = train_prediction)
                 # Test
-                validation_batch = data.test.get_all_data()
-                feed_dict_val = self.make_feed_dict(prob = False, batch = validation_batch)
-                val_accuracy_y = self.accuracy_y.eval(feed_dict=feed_dict_val)
-                val_accuracy_z = self.accuracy_z.eval(feed_dict=feed_dict_val)
-                val_losses = self.loss_function.eval(feed_dict=feed_dict_val)
-                val_prediction = self.prediction(data = validation_batch[0], roi = False)
-                val_auc = self.get_auc(test = validation_batch[1], prob = val_prediction)
-
-                '''
-                val_accuracy_y, val_accuracy_z, val_losses = [], [], []
+                val_accuracy_y, val_accuracy_z, val_losses, val_auc = [], [], [], []
                 for num in range(validation_batch_num):
                     validation_batch = data.test.next_batch(self.batch, augment = False)
                     feed_dict_val = self.make_feed_dict(prob = False, batch = validation_batch)
                     val_accuracy_y.append(self.accuracy_y.eval(feed_dict=feed_dict_val) * float(self.batch))
                     val_accuracy_z.append(self.accuracy_z.eval(feed_dict=feed_dict_val) * float(self.batch))
                     val_losses.append(self.loss_function.eval(feed_dict=feed_dict_val) * float(self.batch))
+                    val_prediction = self.prediction(data = validation_batch[0], roi = False)
+                    val_auc.append(self.get_auc(test = validation_batch[1], prob = val_prediction))
                 val_accuracy_y = np.mean(val_accuracy_y) / float(self.batch)
                 val_accuracy_z = np.mean(val_accuracy_z) / float(self.batch)
                 val_losses = np.mean(val_losses) / float(self.batch)
-                '''
+                val_auc = np.mean(val_auc)
+
                 # Output
                 logger.debug("step %d ================================================================================="% i)
                 logger.debug("Train: (judgement, diagnosis, loss, auc) = (%g, %g, %g, %g)"%(train_accuracy_y,train_accuracy_z,losses,train_auc))
