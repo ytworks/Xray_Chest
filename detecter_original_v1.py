@@ -244,7 +244,7 @@ class Detecter(Core2.Core):
                 losses = self.loss_function.eval(feed_dict=feed_dict)
                 train_prediction = self.prediction(data = batch[0], roi = False)
                 test = [batch[1][i][0] for i in range(len(batch[1]))]
-                prob = [train_prediction[0][i][0] for in in range(len(train_prediction[0]))]
+                prob = [train_prediction[0][i][0] for i in range(len(train_prediction[0]))]
                 train_auc = self.get_auc(test = batch[1], prob = train_prediction)
                 # Test
                 val_accuracy_y, val_accuracy_z, val_losses, test, prob = [], [], [], [], []
@@ -256,7 +256,7 @@ class Detecter(Core2.Core):
                     val_losses.append(self.loss_function.eval(feed_dict=feed_dict_val) * float(self.batch))
                     val_prediction = self.prediction(data = validation_batch[0], roi = False)
                     test.extend([validation_batch[1][i][0] for i in range(len(validation_batch[1]))])
-                    prob.extend([val_prediction[0][i][0] for in in range(len(val_prediction[0]))])
+                    prob.extend([val_prediction[0][i][0] for i in range(len(val_prediction[0]))])
                 val_accuracy_y = np.mean(val_accuracy_y) / float(self.batch)
                 val_accuracy_z = np.mean(val_accuracy_z) / float(self.batch)
                 val_losses = np.mean(val_losses) / float(self.batch)
