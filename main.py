@@ -49,7 +49,7 @@ def main():
 
     print("read dataset")
     dataset, label_def = read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
-                             nih_supervised_datapath = "./Data/Open/Data_Entry_2017.csv",
+                             nih_supervised_datapath = "./Data/Open/Data_Entry_2017_v2.csv",
                              nih_boxlist = "./Data/Open/BBox_List_2017.csv",
                              benchmark_datapath = ["./Data/CR_DATA/BenchMark/*/*.dcm"],
                              benchmark_supervised_datapath = "./Data/CR_DATA/BenchMark/CLNDAT_EN.txt",
