@@ -96,7 +96,7 @@ class Detecter(Core2.Core):
         self.keep_probs = []
 
     def network(self):
-        Channels = 8
+        Channels = 16
         Initializer = 'He'
         Parallels = 9
         Activation = 'Geru'
