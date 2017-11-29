@@ -75,7 +75,7 @@ def main():
     if args.mode != 'prediction':
         logger.debug("Start learning")
         obj.learning(data = dataset,
-                     validation_batch_num = 10)
+                     validation_batch_num = int(250 / batch) + 1)
         logger.debug("Finish learning")
     else:
         logger.debug("Skipped learning")
@@ -83,12 +83,22 @@ def main():
     with open(outfile, "w") as f:
         writer = csv.writer(f)
         for i, t in tqdm(enumerate(testdata[0])):
-            x, _ = obj.prediction(data = [t], roi = True, label_def = label_def, save_dir = './Pic',
+            x, y = obj.prediction(data = [t], roi = True, label_def = label_def, save_dir = './Pic',
                                   filename = os.path.splitext(testdata[3][i]),
                                   path = testdata[4][i])
             print("File name:", testdata[3][i])
             print(x, testdata[1][i])
-            writer.writerow([x[0][0], x[0][1], testdata[1][i][0], testdata[1][i][1]])
+            print(y)
+            record = [x[0][0], x[0][1], testdata[1][i][0], testdata[1][i][1],
+                      y[0][0], y[0][1],
+                      y[0][2], y[0][3],
+                      y[0][4], y[0][5],
+                      y[0][6], y[0][7],
+                      y[0][8], y[0][9],
+                      y[0][10], y[0][11],
+                      y[0][12], y[0][13]
+                      ]
+            writer.writerow(record)
 
 
 

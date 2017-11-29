@@ -180,9 +180,8 @@ class Detecter(Core2.Core):
                                   BatchNormalization = False,
                                   Regularization = Regularization,
                                   vname = 'Output_z')
-        self.z0 = Layers.concat([self.y72, self.y71], concat_type = 'Vector')
-        self.y73 = Outputs.output(x = self.z0,
-                                  InputSize = Channels * 16 * Parallels + 14,
+        self.y73 = Outputs.output(x = self.y71,
+                                  InputSize = Channels * 16 * Parallels,
                                   OutputSize = 2,
                                   Initializer = 'Xavier',
                                   BatchNormalization = False,
@@ -305,10 +304,12 @@ class Detecter(Core2.Core):
             feed_dict.setdefault(keep_prob['var'], 1.0)
 
         if not roi:
-            result = self.sess.run(tf.nn.softmax(self.y), feed_dict = feed_dict)
-            return result, None
+            result_y = self.sess.run(tf.nn.softmax(self.y), feed_dict = feed_dict)
+            result_z = self.sess.run(tf.nn.softmax(self.z), feed_dict = feed_dict)
+            return result_y, result_z
         else:
-            result = self.sess.run(tf.nn.softmax(self.y), feed_dict = feed_dict)
+            result_y = self.sess.run(tf.nn.softmax(self.y), feed_dict = feed_dict)
+            result_z = self.sess.run(tf.nn.softmax(self.z), feed_dict = feed_dict)
             weights = self.get_output_weights(feed_dict = feed_dict)
             roi_base = self.get_roi_map_base(feed_dict = feed_dict)
             self.make_roi(weights = weights[0],
@@ -318,7 +319,7 @@ class Detecter(Core2.Core):
                           label_def = label_def,
                           path = path)
 
-            return result, None
+            return result_y, result_z
 
     def make_roi(self, weights, roi_base, save_dir, filename, label_def, path):
         img, bits = dicom_to_np(path)

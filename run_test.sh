@@ -1,16 +1,15 @@
 #! /usr/bin/bash
 
-source activate tensorflow_p27
+#source activate tensorflow_p27
 size='256'
 augment='True'
 checkpoint='./Model/run.ckpt'
 outfile='./Result/result.csv'
-epoch='40000'
-batch='20'
+epoch='3'
+batch='2'
 log='2'
 lr='0.001'
 python main.py -mode learning -size $size \
-#              -augment $augment \
               -checkpoint $checkpoint \
               -epoch $epoch \
               -batch $batch \
