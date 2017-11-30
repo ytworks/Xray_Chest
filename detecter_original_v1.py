@@ -21,7 +21,7 @@ from LinearMotor import TrainOptimizers as TO
 from LinearMotor import Utilities as UT
 from LinearMotor import Loss
 from LinearMotor import Cells
-from LinearMotor.Cells2 import inception_res_cell
+from LinearMotor.Cells3 import inception_res_cell
 from logging import getLogger, StreamHandler
 logger = getLogger(__name__)
 sh = StreamHandler()
