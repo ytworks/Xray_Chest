@@ -261,7 +261,6 @@ def make_supevised_data_for_conf(path, labels, datapath):
             file_name, _ = os.path.splitext(os.path.basename(p))
             for index in mapper[img2diag[file_name]]:
                     label0[index] = 1
-        print(label0, label1)
         findings.setdefault(os.path.basename(p),
                             {'label' : np.array([label0, label1]),
                              'raw' : p})
