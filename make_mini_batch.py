@@ -242,7 +242,14 @@ def make_supevised_data_for_nih(path):
         findings[file_name].setdefault('label', np.array([label0, label1]))
     return findings, finding_count, binary_def
 
-def make_supevised_data_for_conf(path, labels):
+def make_supevised_data_for_conf(path, labels, datapath):
+    reader = csv.reader(open(datapath, 'rU'), delimiter = '\t')
+    img2diag = {}
+    for row in reader:
+        if row != []:
+            img2diag.setdefault(row[0].replace('.IMG', ''), row[10]+row[11])
+    diags = list(set([v for v in img2diag.values()]))
+    mapper = diagnosis_map(diags, labels)
     findings = {}
     for p in path:
         label0 = np.zeros(len(labels))
@@ -251,10 +258,27 @@ def make_supevised_data_for_conf(path, labels):
             label1[0] = 1
         else:
             label1[1] = 1
+            file_name, _ = os.path.splitext(os.path.basename(p))
+            for index in mapper[img2diag[file_name]]:
+                    label0[index] = 1
+        print(label0, label1)
         findings.setdefault(os.path.basename(p),
                             {'label' : np.array([label0, label1]),
                              'raw' : p})
     return findings
+
+def diagnosis_map(diags, labels):
+    mapper = {}
+    for d in diags:
+        mapper.setdefault(d, [])
+        for i, l in enumerate(labels):
+            if l in ['Mass', 'Nodule']:
+                mapper[d].append(i)
+            if d.find('pneumonia') >= 0 and l == 'Pneumonia':
+                mapper[d].append(i)
+    return mapper
+
+
 
 def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
                    nih_supervised_datapath = "./Data/Open/Data_Entry_2017.csv",
@@ -280,7 +304,8 @@ def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
 
     # 学会データの教師データを読み込む
     conf_labels = make_supevised_data_for_conf(conf_data,
-                                               label_def)
+                                               label_def,
+                                               benchmark_supervised_datapath)
 
     data_sets.train = DataSet(data = nih_data,
                               label = nih_labels,
