@@ -197,11 +197,13 @@ class Detecter(Core2.Core):
                                             regularization = self.regularization,
                                             regularization_type = self.regularization_type,
                                             output_type = self.output_type)
+        diag_output_type = self.output_type if self.output_type.find('hinge') >= 0 else 'classified-sigmoid'
+
         self.loss_function += Loss.loss_func(y = self.z,
                                              y_ = self.z_,
                                              regularization = 0.0,
                                              regularization_type = self.regularization_type,
-                                             output_type = 'classified-sigmoid')
+                                             output_type = diag_output_type)
         # For Gear Mode (TBD)
         #+ tf.reduce_mean(tf.abs(self.y51)) * self.GearLevel
 
@@ -302,14 +304,15 @@ class Detecter(Core2.Core):
         feed_dict = {self.x : data}
         for keep_prob in self.keep_probs:
             feed_dict.setdefault(keep_prob['var'], 1.0)
+        result_y = self.sess.run(tf.nn.softmax(self.y), feed_dict = feed_dict)
+        if self.output_type.find('hinge') >= 0:
+            result_z = self.sess.run(tf.sigmoid(2.0 * self.z - 1.0), feed_dict = feed_dict)
+        else:
+            result_z = self.sess.run(tf.sigmoid(self.z), feed_dict = feed_dict)
 
         if not roi:
-            result_y = self.sess.run(tf.nn.softmax(self.y), feed_dict = feed_dict)
-            result_z = self.sess.run(tf.nn.softmax(self.z), feed_dict = feed_dict)
             return result_y, result_z
         else:
-            result_y = self.sess.run(tf.nn.softmax(self.y), feed_dict = feed_dict)
-            result_z = self.sess.run(tf.nn.softmax(self.z), feed_dict = feed_dict)
             weights = self.get_output_weights(feed_dict = feed_dict)
             roi_base = self.get_roi_map_base(feed_dict = feed_dict)
             self.make_roi(weights = weights[0],

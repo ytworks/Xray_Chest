@@ -60,7 +60,7 @@ def main():
     print("label definitions:")
     print(label_def)
 
-    obj = Detecter(output_type = 'classified-softmax',
+    obj = Detecter(output_type = 'classified-squared-hinge',
                    epoch = epoch, batch = batch, log = log,
                    optimizer_type = 'Adam',
                    learning_rate = lr,
