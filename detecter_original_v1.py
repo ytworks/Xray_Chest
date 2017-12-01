@@ -78,7 +78,10 @@ class Detecter(Core2.Core):
         logger.debug("05: TF Training operation done")
         # 精度の定義
         self.accuracy_y = UT.correct_rate(self.y, self.y_)
-        self.accuracy_z = tf.sqrt(tf.reduce_mean(tf.multiply(tf.sigmoid(self.z) -self.z_, tf.sigmoid(self.z) -self.z_)))
+        if self.output_type.find('hinge') >= 0:
+            self.accuracy_z = tf.sqrt(tf.reduce_mean(tf.multiply(tf.sigmoid(2.0 * self.z - 1.0) -self.z_, tf.sigmoid(2.0 * self.z - 1.0) -self.z_)))
+        else:
+            self.accuracy_z = tf.sqrt(tf.reduce_mean(tf.multiply(tf.sigmoid(self.z) -self.z_, tf.sigmoid(self.z) -self.z_)))
         logger.debug("06: TF Accuracy measure definition done")
         # チェックポイントの呼び出し
         self.saver = tf.train.Saver()
