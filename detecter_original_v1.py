@@ -79,7 +79,7 @@ class Detecter(Core2.Core):
         # 精度の定義
         self.accuracy_y = UT.correct_rate(self.y, self.y_)
         if self.output_type.find('hinge') >= 0:
-            self.accuracy_z = tf.sqrt(tf.reduce_mean(tf.multiply(tf.sigmoid(2.0 * self.z - 1.0) -self.z_, tf.sigmoid(2.0 * self.z - 1.0) -self.z_)))
+            self.accuracy_z = tf.sqrt(tf.reduce_mean(tf.multiply(self.z - self.z_, self.z - self.z_)))
         else:
             self.accuracy_z = tf.sqrt(tf.reduce_mean(tf.multiply(tf.sigmoid(self.z) -self.z_, tf.sigmoid(self.z) -self.z_)))
         logger.debug("06: TF Accuracy measure definition done")
@@ -307,10 +307,12 @@ class Detecter(Core2.Core):
         feed_dict = {self.x : data}
         for keep_prob in self.keep_probs:
             feed_dict.setdefault(keep_prob['var'], 1.0)
-        result_y = self.sess.run(tf.nn.softmax(self.y), feed_dict = feed_dict)
+
         if self.output_type.find('hinge') >= 0:
-            result_z = self.sess.run(tf.sigmoid(2.0 * self.z - 1.0), feed_dict = feed_dict)
+            result_y = self.sess.run(2.0 * self.y - 1.0, feed_dict = feed_dict)
+            result_z = self.sess.run(2.0 * self.z - 1.0, feed_dict = feed_dict)
         else:
+            result_y = self.sess.run(tf.nn.softmax(self.y), feed_dict = feed_dict)
             result_z = self.sess.run(tf.sigmoid(self.z), feed_dict = feed_dict)
 
         if not roi:

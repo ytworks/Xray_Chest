@@ -96,7 +96,14 @@ def main():
                       y[0][6], y[0][7],
                       y[0][8], y[0][9],
                       y[0][10], y[0][11],
-                      y[0][12], y[0][13]
+                      y[0][12], y[0][13],
+                      testdata[2][i][0], testdata[2][i][1],
+                      testdata[2][i][2], testdata[2][i][3],
+                      testdata[2][i][4], testdata[2][i][5],
+                      testdata[2][i][6], testdata[2][i][7],
+                      testdata[2][i][8], testdata[2][i][9],
+                      testdata[2][i][10], testdata[2][i][11],
+                      testdata[2][i][12], testdata[2][i][13]
                       ]
             writer.writerow(record)
 
