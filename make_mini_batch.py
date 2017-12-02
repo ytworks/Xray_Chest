@@ -127,11 +127,11 @@ class DataSet(object):
         # データオーギュメンテーション
         if self.augment:
             img = self.flip(img)
-            img = self.shift(img = img, move_x = 0.05, move_y = 0.05)
+            #img = self.shift(img = img, move_x = 0.05, move_y = 0.05)
         else:
             if augment:
                 img = self.flip(img)
-                img = self.shift(img = img, move_x = 0.05, move_y = 0.05)
+                #img = self.shift(img = img, move_x = 0.05, move_y = 0.05)
 
 
         return img, label[0], label[1], filename, self.labels[filename]['raw']
