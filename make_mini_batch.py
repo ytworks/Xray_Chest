@@ -66,8 +66,8 @@ class DataSet(object):
         self._images_abnormal = self._images_abnormal[perm]
 
     def flip(self,img):
-        if random.random() >= 0.8:
-            img = cv2.flip(img, 0)
+        #if random.random() >= 0.8:
+        #    img = cv2.flip(img, 0)
         if random.random() >= 0.8:
             img = cv2.flip(img, 1)
         img = img.reshape((img.shape[0], img.shape[1], 1))
