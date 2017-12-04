@@ -20,8 +20,7 @@ from LinearMotor import Outputs
 from LinearMotor import TrainOptimizers as TO
 from LinearMotor import Utilities as UT
 from LinearMotor import Loss
-from LinearMotor import Cells
-from LinearMotor.Cells3 import inception_res_cell
+from Cells import inception_res_cell
 from logging import getLogger, StreamHandler
 logger = getLogger(__name__)
 sh = StreamHandler()
@@ -105,8 +104,7 @@ class Detecter(Core2.Core):
         Activation = 'Geru'
         Regularization = False
         prob = 1.0
-        self.x0 = Layers.batch_normalization(x = self.x, shape = [self.CH])
-        self.y11 = inception_res_cell(x = self.x0,
+        self.y11 = inception_res_cell(x = self.x,
                                            Act = Activation,
                                            InputNode = [self.SIZE, self.SIZE, self.CH],
                                            Channels = [Channels, Channels],
