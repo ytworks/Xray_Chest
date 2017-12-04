@@ -25,7 +25,7 @@ def inception_cell(x,
     # 1st Layers
     BN = False
     Act_Internal = 'Equal'
-    x = Layers.batch_normalization(x = x, shape = [InputNode[2]])
+    x = Layers.batch_normalization(x = x, shape = [InputNode[2]], vname = vname + '_BN_Fisrt')
     x = AF.select_activation(Act)(x)
     x01 = Layers.convolution2d(x = x,
                                FilterSize = [1, 1, InputNode[2], Channels],
@@ -243,7 +243,7 @@ def inception_res_cell(x,
                          Big = Big,
                          SE = SE)
     x02 = inception_cell(x = x01,
-                         Act = 'Equal',
+                         Act = Act,
                          InputNode = [InputNode[0] / Strides0[1], InputNode[1] / Strides0[2], Channels[1] * parallels],
                          Channels = Channels[1],
                          Strides0 = Strides1,
