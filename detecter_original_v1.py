@@ -112,7 +112,8 @@ class Detecter(Core2.Core):
                                            Strides1 = [1, 1, 1, 1],
                                            Initializer = Initializer,
                                            Regularization = Regularization,
-                                           vname = 'Res0')
+                                           vname = 'Res0',
+                                           STEM = True)
         self.y12 = Layers.pooling(x = self.y11, ksize=[2, 2], strides=[2, 2],
                                   padding='SAME', algorithm = 'Max')
 

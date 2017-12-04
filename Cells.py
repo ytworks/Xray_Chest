@@ -227,21 +227,34 @@ def inception_res_cell(x,
                         Regularization = False,
                         vname = 'Res',
                         Big = False,
-                        SE = True):
+                        SE = True,
+                        STEM = False):
     if Big:
         parallels = 12
     else:
         parallels = 9
-    x01 = inception_cell(x = x,
-                         Act = Act,
-                         InputNode = InputNode,
-                         Channels = Channels[0],
-                         Strides0 = Strides0,
-                         Initializer = Initializer,
-                         vname = vname + '_inception1',
-                         regularization = Regularization,
-                         Big = Big,
-                         SE = SE)
+    if STEM:
+        x01 = inception_cell(x = x,
+                             Act = 'Equal',
+                             InputNode = InputNode,
+                             Channels = Channels[0],
+                             Strides0 = Strides0,
+                             Initializer = Initializer,
+                             vname = vname + '_inception1',
+                             regularization = Regularization,
+                             Big = Big,
+                             SE = SE)
+    else:
+        x01 = inception_cell(x = x,
+                             Act = Act,
+                             InputNode = InputNode,
+                             Channels = Channels[0],
+                             Strides0 = Strides0,
+                             Initializer = Initializer,
+                             vname = vname + '_inception1',
+                             regularization = Regularization,
+                             Big = Big,
+                             SE = SE)
     x02 = inception_cell(x = x01,
                          Act = Act,
                          InputNode = [InputNode[0] / Strides0[1], InputNode[1] / Strides0[2], Channels[1] * parallels],
