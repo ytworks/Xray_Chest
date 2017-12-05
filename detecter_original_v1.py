@@ -101,7 +101,7 @@ class Detecter(Core2.Core):
         Channels = 16
         Initializer = 'He'
         Parallels = 9
-        Activation = 'Geru'
+        Activation = 'Relu'
         Regularization = False
         prob = 1.0
         self.y11 = inception_res_cell(x = self.x,

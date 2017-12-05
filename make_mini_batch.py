@@ -217,10 +217,7 @@ def make_supevised_data_for_nih(path):
         lines.next()
         for line in lines:
             findings.setdefault(line[0], {'raw' : line[1]})
-    logger.debug('NIH # of Data records: %d'%len(findings
-
-
-                                           ))
+    logger.debug('NIH # of Data records: %d'%len(findings))
     # データ数のカウント
     finding_count = {}
     for file_name, finding in findings.items():
