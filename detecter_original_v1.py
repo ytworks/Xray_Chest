@@ -181,14 +181,14 @@ class Detecter(Core2.Core):
                                   OutputSize = 14,
                                   Initializer = 'Xavier',
                                   BatchNormalization = False,
-                                  Regularization = Regularization,
+                                  Regularization = True,
                                   vname = 'Output_z')
         self.y73 = Outputs.output(x = self.y71,
                                   InputSize = Channels * 16 * Parallels,
                                   OutputSize = 2,
                                   Initializer = 'Xavier',
                                   BatchNormalization = False,
-                                  Regularization = Regularization,
+                                  Regularization = True,
                                   vname = 'Output_y')
         self.y = self.y73
         self.z = self.y72

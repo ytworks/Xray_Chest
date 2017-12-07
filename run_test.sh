@@ -9,12 +9,14 @@ epoch='501'
 batch='10'
 log='100'
 lr='0.001'
+rr='0.5'
 python main.py -mode learning -size $size \
               -augment $augment \
               -checkpoint $checkpoint \
               -epoch $epoch \
               -batch $batch \
               -log $log \
+              -rr $rr \
               -lr $lr
 FLAG=""
 while getopts d: OPT

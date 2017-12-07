@@ -5,16 +5,18 @@ size='256'
 augment='True'
 checkpoint='./Model/run.ckpt'
 outfile='./Result/result.csv'
-epoch='100000'
+epoch='40000'
 batch='10'
 log='10000'
 lr='0.001'
+rr='0.5'
 python main.py -mode learning -size $size \
               -augment $augment \
               -checkpoint $checkpoint \
               -epoch $epoch \
               -batch $batch \
               -log $log \
+              -rr $rr \
               -lr $lr
 
 FLAG=""

@@ -70,8 +70,16 @@ class DataSet(object):
         #    img = cv2.flip(img, 0)
         if random.random() >= 0.8:
             img = cv2.flip(img, 1)
+        if random.random() >= 0.8:
+            img = self.rotation(img, rot = random.choice([0, 90, 180, 270]))
         img = img.reshape((img.shape[0], img.shape[1], 1))
         return img
+
+    def rotation(img, rot = 45):
+        size = tuple(np.array([img.shape[1], img.shape[0]]))
+        matrix = cv2.getRotationMatrix2D((img.shape[1]/2,img.shape[0]/2),rot,1)
+        affine_matrix = np.float32(matrix)
+        return cv2.warpAffine(img, affine_matrix, size, flags=cv2.INTER_LINEAR)
 
     def shift(self, img, move_x = 0.1, move_y = 0.1):
         if random.random() >= 0.8:
