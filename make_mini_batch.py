@@ -75,7 +75,7 @@ class DataSet(object):
         img = img.reshape((img.shape[0], img.shape[1], 1))
         return img
 
-    def rotation(img, rot = 45):
+    def rotation(self, img, rot = 45):
         size = tuple(np.array([img.shape[1], img.shape[0]]))
         matrix = cv2.getRotationMatrix2D((img.shape[1]/2,img.shape[0]/2),rot,1)
         affine_matrix = np.float32(matrix)
