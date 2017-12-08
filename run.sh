@@ -11,6 +11,8 @@ log='10000'
 lr='0.0001'
 rr='5'
 l1_norm='0.1'
+#output_type='classified-softmax'
+output_type='classified-squared-hinge'
 python main.py -mode learning -size $size \
               -augment $augment \
               -checkpoint $checkpoint \
@@ -19,6 +21,7 @@ python main.py -mode learning -size $size \
               -log $log \
               -rr $rr \
               -l1_norm $l1_norm \
+              -output_type $output_type \
               -lr $lr
 
 FLAG=""

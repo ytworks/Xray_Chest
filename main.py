@@ -28,6 +28,7 @@ def main():
     parser.add_argument('-l1_norm')
     parser.add_argument('-log')
     parser.add_argument('-outfile')
+    parser.add_argument('-output_type')
     parser.add_argument('-mode', required = True)
     args = parser.parse_args()
     size = int(args.size) if args.size != None else 256
@@ -41,6 +42,7 @@ def main():
     epoch = int(args.epoch) if args.epoch != None else 2
     batch = int(args.batch) if args.batch != None else 5
     log = int(args.log) if args.log != None else 2
+    output_type = args.output_type if args.output_type != None else 'classified-softmax'
     outfile = args.outfile if args.outfile != None else './Result/result.csv'
     if args.mode in ['learning']:
         init = True
@@ -62,7 +64,7 @@ def main():
     print("label definitions:")
     print(label_def)
 
-    obj = Detecter(output_type = 'classified-softmax',
+    obj = Detecter(output_type = output_type,
                    epoch = epoch, batch = batch, log = log,
                    optimizer_type = 'Adam',
                    learning_rate = lr,
