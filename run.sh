@@ -8,8 +8,9 @@ outfile='./Result/result.csv'
 epoch='40000'
 batch='10'
 log='10000'
-lr='0.001'
+lr='0.0001'
 rr='5'
+l1_norm='0.1'
 python main.py -mode learning -size $size \
               -augment $augment \
               -checkpoint $checkpoint \
@@ -17,6 +18,7 @@ python main.py -mode learning -size $size \
               -batch $batch \
               -log $log \
               -rr $rr \
+              -l1_norm $l1_norm \
               -lr $lr
 
 FLAG=""

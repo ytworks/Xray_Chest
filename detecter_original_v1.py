@@ -42,7 +42,8 @@ class Detecter(Core2.Core):
                  regularization_type = 'L2',
                  checkpoint = './Storages/Core.ckpt',
                  init = True,
-                 size = 256):
+                 size = 256,
+                 l1_norm = 0.1):
         super(Detecter, self).__init__(output_type = output_type,
                                        epoch = epoch,
                                        batch = batch,
@@ -58,6 +59,7 @@ class Detecter(Core2.Core):
                                        init = init
                                        )
         self.SIZE = size
+        self.l1_norm = l1_norm
 
     def construct(self):
         # セッションの定義
@@ -208,7 +210,7 @@ class Detecter(Core2.Core):
                                              regularization_type = self.regularization_type,
                                              output_type = diag_output_type)
         # For Gear Mode (TBD)
-        #+ tf.reduce_mean(tf.abs(self.y51)) * self.GearLevel
+        self.loss_function += tf.reduce_mean(tf.abs(self.y71)) * self.l1_norm
 
     # 入出力ベクトルの配置
     def make_feed_dict(self, prob, batch):

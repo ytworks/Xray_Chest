@@ -25,6 +25,7 @@ def main():
     parser.add_argument('-rr')
     parser.add_argument('-epoch')
     parser.add_argument('-batch')
+    parser.add_argument('-l1_norm')
     parser.add_argument('-log')
     parser.add_argument('-outfile')
     parser.add_argument('-mode', required = True)
@@ -36,6 +37,7 @@ def main():
     dlr = float(args.dlr) if args.dlr != None else 0.0
     rtype = args.rtype if args.rtype != None else 'L2'
     rr = float(args.rr) if args.rr != None else 0.0
+    l1_norm = float(args.l1_norm) if args.l1_norm != None else 0.0
     epoch = int(args.epoch) if args.epoch != None else 2
     batch = int(args.batch) if args.batch != None else 5
     log = int(args.log) if args.log != None else 2
@@ -70,7 +72,8 @@ def main():
                    regularization_type = rtype,
                    checkpoint = checkpoint,
                    init = init,
-                   size = size)
+                   size = size,
+                   l1_norm = l1_norm)
     obj.construct()
     if args.mode != 'prediction':
         logger.debug("Start learning")
