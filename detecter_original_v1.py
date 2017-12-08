@@ -338,7 +338,6 @@ class Detecter(Core2.Core):
         img = cv2.resize(img, (self.SIZE, self.SIZE), interpolation = cv2.INTER_AREA)
         img = np.stack((img, img, img), axis = -1)
         for x, finding in enumerate(label_def):
-            logger.debug('Make ROI: %s'%finding)
             images = np.zeros((roi_base.shape[1], roi_base.shape[2], 3))
             for channel in range(roi_base.shape[2]):
                 c = roi_base[0, :, :, channel]
