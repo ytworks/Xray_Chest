@@ -9,7 +9,7 @@ epoch='40000'
 batch='10'
 log='10000'
 lr='0.001'
-rr='0.5'
+rr='5'
 python main.py -mode learning -size $size \
               -augment $augment \
               -checkpoint $checkpoint \
