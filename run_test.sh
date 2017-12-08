@@ -10,7 +10,7 @@ batch='10'
 log='100'
 lr='0.0001'
 rr='0.0'
-l1_norm='10'
+l1_norm='0.0'
 #output_type='classified-softmax'
 output_type='classified-squared-hinge'
 python main.py -mode learning -size $size \
