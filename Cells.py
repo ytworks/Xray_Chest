@@ -26,7 +26,8 @@ def inception_cell(x,
     BN = False
     Act_Internal = 'Equal'
     x = Layers.batch_normalization(x = x, shape = [InputNode[2]], vname = vname + '_BN_Fisrt')
-    x = AF.select_activation(Act)(x)
+    with tf.variable_scope(vname) as scope:
+        x = AF.select_activation(Act)(x)
     x01 = Layers.convolution2d(x = x,
                                FilterSize = [1, 1, InputNode[2], Channels],
                                Initializer = Initializer,
