@@ -361,7 +361,8 @@ if __name__ == '__main__':
                              img_size = 512,
                              augment = True,
                              zca = True,
-                             raw_img = True)
+                             raw_img = True,
+                             model = 'inception')
     print(len(dataset.test.get_all_data()), len(dataset.test.get_all_data()[2]))
     for i in range(2):
         x = dataset.train.next_batch(4)
