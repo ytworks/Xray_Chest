@@ -23,12 +23,15 @@ class DataSet(object):
                  data, label,
                  size,
                  zca,
-                 augment):
+                 augment,
+                 raw_img):
         self.size = size
         self.augment = augment
         self.zca = zca
         self.files = data
         self.labels = label
+        self.raw_img = raw_img
+        self.channel = 1 if not self.raw_img else 3
 
         # 正常/異常のファイルの分類
         self.normal, self.abnormal = [], []
@@ -72,12 +75,12 @@ class DataSet(object):
             img = cv2.flip(img, 1)
         if random.random() >= 0.8:
             img = self.rotation(img, rot = random.choice([0, 90, 180, 270]))
-        img = img.reshape((img.shape[0], img.shape[1], 1))
+        img = img.reshape((img.shape[0], img.shape[1], self.channel))
         return img
 
     def rotation(self, img, rot = 45):
         size = tuple(np.array([img.shape[1], img.shape[0]]))
-        matrix = cv2.getRotationMatrix2D((img.shape[1]/2,img.shape[0]/2),rot,1)
+        matrix = cv2.getRotationMatrix2D((img.shape[1]/2,img.shape[0]/2),rot,self.channel)
         affine_matrix = np.float32(matrix)
         return cv2.warpAffine(img, affine_matrix, size, flags=cv2.INTER_LINEAR)
 
@@ -92,7 +95,7 @@ class DataSet(object):
                     ]
             affine_matrix = np.float32(matrix)
             img = cv2.warpAffine(img, affine_matrix, size, flags=cv2.INTER_LINEAR)
-            img = img.reshape((img.shape[0], img.shape[1], 1))
+            img = img.reshape((img.shape[0], img.shape[1], self.channel))
             return img
         else:
             return img
@@ -128,10 +131,13 @@ class DataSet(object):
         # 画像サイズの調整
         img = cv2.resize(img,(self.size,self.size), interpolation = cv2.INTER_AREA)
         # ZCA whitening
-        if self.zca:
-            img = PP.PreProcessing(np.reshape(img, (self.size,self.size, 1)))
+        if not self.raw_img:
+            if self.zca:
+                img = PP.PreProcessing(np.reshape(img, (self.size,self.size, self.channel)))
+            else:
+                img = np.reshape(img, (self.size,self.size, self.channel))
         else:
-            img = np.reshape(img, (self.size,self.size, 1))
+            img = np.stack((img, img, img), axis = -1)
         # データオーギュメンテーション
         if self.augment:
             img = self.flip(img)
@@ -292,7 +298,8 @@ def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
                    kfold = 1,
                    img_size = 512,
                    augment = True,
-                   zca = True):
+                   zca = True,
+                   raw_img = False):
     class DataSets(object):
         pass
     data_sets = DataSets()
@@ -315,12 +322,14 @@ def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
                               label = nih_labels,
                               size = img_size,
                               zca = zca,
-                              augment = augment)
+                              augment = augment,
+                              raw_img = raw_img)
     data_sets.test  = DataSet(data = conf_data,
                               label = conf_labels,
                               size = img_size,
                               zca = zca,
-                              augment = augment)
+                              augment = augment,
+                              raw_img = raw_img)
     data_sets.train_summary = nih_count
     return data_sets, label_def
 
@@ -333,7 +342,8 @@ if __name__ == '__main__':
                              kfold = 1,
                              img_size = 512,
                              augment = True,
-                             zca = True)
+                             zca = True,
+                             raw_img = True)
     print(len(dataset.test.get_all_data()), len(dataset.test.get_all_data()[2]))
     for i in range(2):
         x = dataset.train.next_batch(4)
