@@ -8,6 +8,7 @@ import csv
 import numpy as np
 import cv2
 import time
+import tensorflow as tf
 from DICOMReader.DICOMReader import dicom_to_np
 from preprocessing_tool import preprocessing as PP
 from tqdm import tqdm
@@ -23,12 +24,24 @@ class DataSet(object):
                  data, label,
                  size,
                  zca,
-                 augment):
+                 augment,
+                 raw_img,
+                 model):
         self.size = size
         self.augment = augment
         self.zca = zca
         self.files = data
         self.labels = label
+        self.raw_img = raw_img
+        self.channel = 1 if not self.raw_img else 3
+        if model == 'xception':
+            self.pi = tf.keras.applications.xception.preprocess_input
+        elif model == 'resnet':
+            self.pi = tf.keras.applications.resnet50.preprocess_input
+        elif model == 'inception':
+            self.pi = tf.keras.applications.inception_v3.preprocess_input
+        else:
+            self.pi = tf.keras.applications.vgg19.preprocess_input
 
         # 正常/異常のファイルの分類
         self.normal, self.abnormal = [], []
@@ -72,12 +85,12 @@ class DataSet(object):
             img = cv2.flip(img, 1)
         if random.random() >= 0.8:
             img = self.rotation(img, rot = random.choice([0, 90, 180, 270]))
-        img = img.reshape((img.shape[0], img.shape[1], 1))
+        img = img.reshape((img.shape[0], img.shape[1], self.channel))
         return img
 
     def rotation(self, img, rot = 45):
         size = tuple(np.array([img.shape[1], img.shape[0]]))
-        matrix = cv2.getRotationMatrix2D((img.shape[1]/2,img.shape[0]/2),rot,1)
+        matrix = cv2.getRotationMatrix2D((img.shape[1]/2,img.shape[0]/2),rot,self.channel)
         affine_matrix = np.float32(matrix)
         return cv2.warpAffine(img, affine_matrix, size, flags=cv2.INTER_LINEAR)
 
@@ -92,7 +105,7 @@ class DataSet(object):
                     ]
             affine_matrix = np.float32(matrix)
             img = cv2.warpAffine(img, affine_matrix, size, flags=cv2.INTER_LINEAR)
-            img = img.reshape((img.shape[0], img.shape[1], 1))
+            img = img.reshape((img.shape[0], img.shape[1], self.channel))
             return img
         else:
             return img
@@ -116,7 +129,9 @@ class DataSet(object):
         filename = os.path.basename(f)
         # 画像の読み込み
         if ext == ".dcm":
-            img, _ = dicom_to_np(f)
+            img, bits = dicom_to_np(f)
+            if ext == ".dcm":
+                img = 255.0 * img / bits
         elif ext == ".png":
             img = cv2.imread(f, cv2.IMREAD_GRAYSCALE)
         else:
@@ -128,10 +143,15 @@ class DataSet(object):
         # 画像サイズの調整
         img = cv2.resize(img,(self.size,self.size), interpolation = cv2.INTER_AREA)
         # ZCA whitening
-        if self.zca:
-            img = PP.PreProcessing(np.reshape(img, (self.size,self.size, 1)))
+        if not self.raw_img:
+            if self.zca:
+                img = PP.PreProcessing(np.reshape(img, (self.size,self.size, self.channel)))
+            else:
+                img = np.reshape(img, (self.size,self.size, self.channel))
         else:
-            img = np.reshape(img, (self.size,self.size, 1))
+            img = (img.astype(np.int32)).astype(np.float32)
+            img = np.stack((img, img, img), axis = -1)
+            img = self.pi(img)
         # データオーギュメンテーション
         if self.augment:
             img = self.flip(img)
@@ -292,7 +312,9 @@ def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
                    kfold = 1,
                    img_size = 512,
                    augment = True,
-                   zca = True):
+                   zca = True,
+                   raw_img = False,
+                   model = 'xception'):
     class DataSets(object):
         pass
     data_sets = DataSets()
@@ -315,16 +337,21 @@ def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
                               label = nih_labels,
                               size = img_size,
                               zca = zca,
-                              augment = augment)
+                              augment = augment,
+                              raw_img = raw_img,
+                              model = model)
     data_sets.test  = DataSet(data = conf_data,
                               label = conf_labels,
                               size = img_size,
                               zca = zca,
-                              augment = augment)
+                              augment = augment,
+                              raw_img = raw_img,
+                              model = model)
     data_sets.train_summary = nih_count
     return data_sets, label_def
 
 if __name__ == '__main__':
+    # raw_img
     dataset, _ = read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
                              nih_supervised_datapath = "./Data/Open/Data_Entry_2017.csv",
                              nih_boxlist = "./Data/Open/BBox_List_2017.csv",
@@ -333,7 +360,29 @@ if __name__ == '__main__':
                              kfold = 1,
                              img_size = 512,
                              augment = True,
-                             zca = True)
+                             zca = True,
+                             raw_img = True,
+                             model = 'inception')
+    print(len(dataset.test.get_all_data()), len(dataset.test.get_all_data()[2]))
+    for i in range(2):
+        x = dataset.train.next_batch(4)
+        print(x[1], x[2], x[3], x[4])
+        y = dataset.test.next_batch(6)
+        print(y[1], y[2], y[3], y[4])
+    for i in tqdm(range(100)):
+        y = dataset.test.next_batch(20)
+
+    # raw_img
+    dataset, _ = read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
+                             nih_supervised_datapath = "./Data/Open/Data_Entry_2017.csv",
+                             nih_boxlist = "./Data/Open/BBox_List_2017.csv",
+                             benchmark_datapath = ["./Data/CR_DATA/BenchMark/*/*.dcm"],
+                             benchmark_supervised_datapath = "./Data/CR_DATA/BenchMark/CLNDAT_EN.txt",
+                             kfold = 1,
+                             img_size = 512,
+                             augment = True,
+                             zca = True,
+                             raw_img = False)
     print(len(dataset.test.get_all_data()), len(dataset.test.get_all_data()[2]))
     for i in range(2):
         x = dataset.train.next_batch(4)
