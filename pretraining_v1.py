@@ -121,7 +121,7 @@ class Detecter(Core2.Core):
                                   OutputSize = 14,
                                   Initializer = 'Xavier',
                                   BatchNormalization = False,
-                                  Regularization = False,
+                                  Regularization = True,
                                   vname = 'Output_z')
         self.z0 = Layers.concat([self.y72, self.y71], concat_type = 'Vector')
         self.y73 = Outputs.output(x = self.z0,
@@ -129,7 +129,7 @@ class Detecter(Core2.Core):
                                   OutputSize = 2,
                                   Initializer = 'Xavier',
                                   BatchNormalization = False,
-                                  Regularization = False,
+                                  Regularization = True,
                                   vname = 'Output_y')
         self.y = self.y73
         self.z = self.y72
