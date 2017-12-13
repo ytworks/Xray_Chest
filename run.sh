@@ -1,7 +1,7 @@
 #! /usr/bin/bash
 
 source activate tensorflow_p27
-size='256'
+size='299'
 augment='True'
 checkpoint='./Model/run.ckpt'
 outfile='./Result/result.csv'
@@ -9,11 +9,27 @@ epoch='40000'
 batch='10'
 log='10000'
 lr='0.0001'
-rr='2'
-l1_norm='1'
+rr='0'
+l1_norm='0'
 output_type='classified-softmax'
 #output_type='classified-squared-hinge'
-python main.py -mode learning -size $size \
+
+FLAG=""
+while getopts d:m: OPT
+do
+  case $OPT in
+    d) FLAG=$OPTARG;;
+    m) MODEL=$OPTARG;;
+  esac
+done
+
+
+if [[ $MODEL == 'pretrain' ]]; then
+  MAIN='main_pretraining.py'
+else
+  MAIN='main.py'
+fi
+python $MAIN  -mode learning -size $size \
               -augment $augment \
               -checkpoint $checkpoint \
               -epoch $epoch \
@@ -24,13 +40,6 @@ python main.py -mode learning -size $size \
               -output_type $output_type \
               -lr $lr
 
-FLAG=""
-while getopts d: OPT
-do
-  case $OPT in
-    d) FLAG=$OPTARG;;
-  esac
-done
 if [[ $FLAG == "debug" ]]; then
   echo "Not Stop"
 else

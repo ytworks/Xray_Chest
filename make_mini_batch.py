@@ -34,6 +34,8 @@ class DataSet(object):
         self.labels = label
         self.raw_img = raw_img
         self.channel = 1 if not self.raw_img else 3
+        logger.debug("Channel %s" % str(self.channel))
+        logger.debug("Size %s" % str(self.size))
         if model == 'xception':
             self.pi = tf.keras.applications.xception.preprocess_input
         elif model == 'resnet':
