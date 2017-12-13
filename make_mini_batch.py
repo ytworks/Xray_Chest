@@ -154,7 +154,7 @@ class DataSet(object):
             img = (img.astype(np.int32)).astype(np.float32)
             img = np.stack((img, img, img), axis = -1)
             img = cv2.applyColorMap(img.astype(np.uint8), cv2.COLORMAP_JET)
-            img = self.pi(img)
+            img = self.pi(img.astype(np.float32))
         # データオーギュメンテーション
         if self.augment:
             img = self.flip(img)
