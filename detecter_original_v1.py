@@ -185,8 +185,9 @@ class Detecter(Core2.Core):
                                   BatchNormalization = False,
                                   Regularization = True,
                                   vname = 'Output_z')
-        self.y73 = Outputs.output(x = self.y71,
-                                  InputSize = Channels * 16 * Parallels,
+        self.z0 = Layers.concat([self.y72, self.y71], concat_type = 'Vector')
+        self.y73 = Outputs.output(x = self.z0,
+                                  InputSize = Channels * 16 * Parallels + 14,
                                   OutputSize = 2,
                                   Initializer = 'Xavier',
                                   BatchNormalization = False,
