@@ -132,7 +132,7 @@ class DataSet(object):
         # 画像の読み込み
         if ext == ".dcm":
             img, bits = dicom_to_np(f)
-            if ext == ".dcm":
+            if self.raw_img:
                 img = 255.0 * img / bits
         elif ext == ".png":
             img = cv2.imread(f, cv2.IMREAD_GRAYSCALE)
