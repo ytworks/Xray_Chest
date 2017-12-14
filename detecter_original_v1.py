@@ -307,13 +307,15 @@ class Detecter(Core2.Core):
     def get_roi_map_base(self, feed_dict):
         return self.sess.run([self.y51], feed_dict = feed_dict)
 
+    def change_mode(self, value = False):
+        logger.debug("Before mode: %s" % str(self.istraining))
+        self.istraining = value
+        logger.debug("After mode: %s" % str(self.istraining))
 
     # 予測器
     def prediction(self, data, roi = False, label_def = None, save_dir = None,
                    filename = None, path = None):
         # Make feed dict for prediction
-        self.istraining = False
-        logger.debug("Is Train: %s" % str(self.istraining))
         feed_dict = {self.x : data}
         for keep_prob in self.keep_probs:
             feed_dict.setdefault(keep_prob['var'], 1.0)
@@ -324,8 +326,6 @@ class Detecter(Core2.Core):
         else:
             result_y = self.sess.run(tf.nn.softmax(self.y), feed_dict = feed_dict)
             result_z = self.sess.run(tf.sigmoid(self.z), feed_dict = feed_dict)
-        self.istraining = True
-        logger.debug("Is Train: %s" % str(self.istraining))
 
         if not roi:
             return result_y, result_z
