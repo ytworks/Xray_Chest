@@ -176,7 +176,6 @@ class Detecter(Core2.Core):
 
     def learning(self, data, save_at_log = False, validation_batch_num = 1):
         s = time.time()
-        self.p.change_phase(True)
         for i in range(self.epoch):
             batch = data.train.next_batch(self.batch)
             # 途中経過のチェック
@@ -222,6 +221,7 @@ class Detecter(Core2.Core):
             feed_dict = self.make_feed_dict(prob = False, batch = batch)
             if self.DP and i != 0:
                 self.dynamic_learning_rate(feed_dict)
+            self.p.change_phase(True)
             self.train_op.run(feed_dict=feed_dict)
         self.save_checkpoint()
 
