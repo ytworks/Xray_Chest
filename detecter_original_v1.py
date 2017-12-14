@@ -304,7 +304,7 @@ class Detecter(Core2.Core):
 
 
     def get_roi_map_base(self, feed_dict):
-        return self.sess.run([self.y51], feed_dict = feed_dict, is_train = False)
+        return self.sess.run([self.y51], feed_dict = feed_dict)
 
     # 予測器
     def prediction(self, data, roi = False, label_def = None, save_dir = None,
