@@ -1,7 +1,7 @@
 #! /usr/bin/bash
 
 source activate tensorflow_p27
-size='299'
+size='256'
 augment='True'
 checkpoint='./Model/run.ckpt'
 outfile='./Result/result.csv'
@@ -9,8 +9,8 @@ epoch='40000'
 batch='32'
 log='10000'
 lr='0.0001'
-rr='0.1'
-l1_norm='0'
+rr='2'
+l1_norm='1'
 output_type='classified-softmax'
 #output_type='classified-squared-hinge'
 
