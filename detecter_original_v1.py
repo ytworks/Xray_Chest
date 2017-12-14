@@ -219,12 +219,13 @@ class Detecter(Core2.Core):
         self.loss_function += tf.reduce_mean(tf.abs(self.y71)) * self.l1_norm
 
     # 入出力ベクトルの配置
-    def make_feed_dict(self, prob, batch):
+    def make_feed_dict(self, prob, batch, is_train = True):
         feed_dict = {}
         feed_dict.setdefault(self.x, batch[0])
         feed_dict.setdefault(self.y_, batch[1])
         feed_dict.setdefault(self.z_, batch[2])
         feed_dict.setdefault(self.learning_rate, self.learning_rate_value)
+        feed_dict.setdefault(self.istraining, is_train)
         #feed_dict.setdefault(self.GearLevel, self.GearLevelValue)
         i = 0
         for keep_prob in self.keep_probs:
@@ -245,12 +246,10 @@ class Detecter(Core2.Core):
         s = time.time()
         for i in range(self.epoch):
             batch = data.train.next_batch(self.batch)
-
-
             # 途中経過のチェック
             if i%self.log == 0 and i != 0:
                 # Train
-                feed_dict = self.make_feed_dict(prob = True, batch = batch)
+                feed_dict = self.make_feed_dict(prob = True, batch = batch, is_train = False)
                 train_accuracy_y = self.accuracy_y.eval(feed_dict=feed_dict)
                 train_accuracy_z = self.accuracy_z.eval(feed_dict=feed_dict)
                 losses = self.loss_function.eval(feed_dict=feed_dict)
@@ -287,7 +286,7 @@ class Detecter(Core2.Core):
                 s = e
 
             # 学習
-            feed_dict = self.make_feed_dict(prob = False, batch = batch)
+            feed_dict = self.make_feed_dict(prob = False, batch = batch, is_train = True)
             if self.DP and i != 0:
                 self.dynamic_learning_rate(feed_dict)
             self.train_op.run(feed_dict=feed_dict)
@@ -305,18 +304,14 @@ class Detecter(Core2.Core):
 
 
     def get_roi_map_base(self, feed_dict):
-        return self.sess.run([self.y51], feed_dict = feed_dict)
-
-    def change_mode(self, value = False):
-        logger.debug("Before mode: %s" % str(self.istraining))
-        self.istraining = value
-        logger.debug("After mode: %s" % str(self.istraining))
+        return self.sess.run([self.y51], feed_dict = feed_dict, is_train = False)
 
     # 予測器
     def prediction(self, data, roi = False, label_def = None, save_dir = None,
                    filename = None, path = None):
         # Make feed dict for prediction
-        feed_dict = {self.x : data}
+        feed_dict = {self.x : data,
+                     self.istraining: False}
         for keep_prob in self.keep_probs:
             feed_dict.setdefault(keep_prob['var'], 1.0)
 

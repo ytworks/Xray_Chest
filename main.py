@@ -77,7 +77,6 @@ def main():
                    size = size,
                    l1_norm = l1_norm)
     obj.construct()
-    obj.change_mode(True)
     if args.mode != 'prediction':
         logger.debug("Start learning")
         obj.learning(data = dataset,
@@ -88,7 +87,6 @@ def main():
     testdata = dataset.test.get_all_data()
     with open(outfile, "w") as f:
         writer = csv.writer(f)
-        obj.change_mode(False)
         for i, t in tqdm(enumerate(testdata[0])):
             x, y = obj.prediction(data = [t], roi = True, label_def = label_def, save_dir = './Pic',
                                   filename = os.path.splitext(testdata[3][i]),
