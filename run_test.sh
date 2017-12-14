@@ -29,7 +29,7 @@ if [[ $MODEL == 'pretrain' ]]; then
 else
   MAIN='main.py'
 fi
-python $MAIN  -mode prediction -size $size \
+python $MAIN  -mode learning -size $size \
               -augment $augment \
               -checkpoint $checkpoint \
               -epoch $epoch \
