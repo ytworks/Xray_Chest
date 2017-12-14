@@ -115,6 +115,7 @@ class Detecter(Core2.Core):
                                            Initializer = Initializer,
                                            Regularization = Regularization,
                                            vname = 'Res0',
+                                           Training = self.istraining,
                                            STEM = True)
         self.y12 = Layers.pooling(x = self.y11, ksize=[2, 2], strides=[2, 2],
                                   padding='SAME', algorithm = 'Max')
@@ -127,6 +128,7 @@ class Detecter(Core2.Core):
                                            Strides1 = [1, 1, 1, 1],
                                            Initializer = Initializer,
                                            Regularization = Regularization,
+                                           Training = self.istraining,
                                            vname = 'Res1')
         self.y21 = Layers.pooling(x = self.y21, ksize=[2, 2], strides=[2, 2],
                                   padding='SAME', algorithm = 'Max')
@@ -140,6 +142,7 @@ class Detecter(Core2.Core):
                                            Strides1 = [1, 1, 1, 1],
                                            Initializer = Initializer,
                                            Regularization = Regularization,
+                                           Training = self.istraining,
                                            vname = 'Res3')
         self.y31 = Layers.pooling(x = self.y31, ksize=[2, 2], strides=[2, 2],
                                   padding='SAME', algorithm = 'Max')
@@ -152,6 +155,7 @@ class Detecter(Core2.Core):
                                            Strides1 = [1, 1, 1, 1],
                                            Initializer = Initializer,
                                            Regularization = Regularization,
+                                           Training = self.istraining,
                                            vname = 'Res4')
         self.y41 = Layers.pooling(x = self.y41, ksize=[2, 2], strides=[2, 2],
                                   padding='SAME', algorithm = 'Max')
@@ -165,6 +169,7 @@ class Detecter(Core2.Core):
                                            Strides1 = [1, 1, 1, 1],
                                            Initializer = Initializer,
                                            Regularization = Regularization,
+                                           Training = self.istraining,
                                            vname = 'Res5')
         # Dropout Layer
         self.y52 = Layers.dropout(x = self.y51, keep_probs = self.keep_probs, training_prob = prob, vname = 'V5')
@@ -307,6 +312,8 @@ class Detecter(Core2.Core):
     def prediction(self, data, roi = False, label_def = None, save_dir = None,
                    filename = None, path = None):
         # Make feed dict for prediction
+        self.istraining = False
+        logger.debug("Is Train: %s" % str(self.istraining))
         feed_dict = {self.x : data}
         for keep_prob in self.keep_probs:
             feed_dict.setdefault(keep_prob['var'], 1.0)
@@ -317,6 +324,8 @@ class Detecter(Core2.Core):
         else:
             result_y = self.sess.run(tf.nn.softmax(self.y), feed_dict = feed_dict)
             result_z = self.sess.run(tf.sigmoid(self.z), feed_dict = feed_dict)
+        self.istraining = True
+        logger.debug("Is Train: %s" % str(self.istraining))
 
         if not roi:
             return result_y, result_z

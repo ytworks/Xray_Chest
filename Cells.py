@@ -21,11 +21,13 @@ def inception_cell(x,
                    vname = 'Inception',
                    regularization = False,
                    SE = True,
+                   Training = True,
                    Big = False):
     # 1st Layers
     BN = False
     Act_Internal = 'Equal'
-    x = Layers.batch_normalization(x = x, shape = [InputNode[2]], vname = vname + '_BN_Fisrt')
+    x = Layers.batch_normalization(x = x, shape = [InputNode[2]], vname = vname + '_BN_Fisrt',
+                                   Renormalization = True, Training = Training)
     with tf.variable_scope(vname) as scope:
         x = AF.select_activation(Act)(x)
     x01 = Layers.convolution2d(x = x,
@@ -229,6 +231,7 @@ def inception_res_cell(x,
                         vname = 'Res',
                         Big = False,
                         SE = True,
+                        Training = True,
                         STEM = False):
     if Big:
         parallels = 12
@@ -244,6 +247,7 @@ def inception_res_cell(x,
                              vname = vname + '_inception1',
                              regularization = Regularization,
                              Big = Big,
+                             Training = Training,
                              SE = SE)
     else:
         x01 = inception_cell(x = x,
@@ -255,6 +259,7 @@ def inception_res_cell(x,
                              vname = vname + '_inception1',
                              regularization = Regularization,
                              Big = Big,
+                             Training = Training,
                              SE = SE)
     x02 = inception_cell(x = x01,
                          Act = Act,
@@ -265,6 +270,7 @@ def inception_res_cell(x,
                          vname = vname + '_inception2',
                          regularization = Regularization,
                          Big = Big,
+                         Training = Training,
                          SE = SE
                          )
     # ダウンサンプリングの場合
@@ -287,7 +293,9 @@ def inception_res_cell(x,
                                    Padding = 'SAME',
                                    ActivationFunction = 'Equal',
                                    BatchNormalization = True,
+                                   Renormalization = True,
                                    Regularization = Regularization,
+                                   Training = Training,
                                    vname = vname + '_Conv_02')
     else:
         sc = shortcut
