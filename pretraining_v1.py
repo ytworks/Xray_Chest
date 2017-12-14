@@ -75,8 +75,8 @@ class Detecter(Core2.Core):
         self.loss()
         logger.debug("04: TF Loss definition done")
         # 学習
-        non_p_vars = list(set(tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)) - self.p.model_weights_tensors)
-        self.training(var_list = non_p_vars)
+        #non_p_vars = list(set(tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)) - self.p.model_weights_tensors)
+        self.training(var_list = None)
         logger.debug("05: TF Training operation done")
         # 精度の定義
         self.accuracy_y = UT.correct_rate(self.y, self.y_)
@@ -104,7 +104,8 @@ class Detecter(Core2.Core):
         self.keep_probs = []
 
     def network(self):
-        self.p = trans.Transfer(self.x, 'xception', pooling = None, vname = 'Transfer')
+        self.p = trans.Transfer(self.x, 'xception', pooling = None, vname = 'Transfer',
+                                trainable = True)
         self.y51 = self.p.get_output_tensor()
         self.y61 = Layers.pooling(x = self.y51,
                                   ksize=[10, 10],
