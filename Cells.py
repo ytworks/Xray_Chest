@@ -249,6 +249,8 @@ def inception_res_cell(x,
                              Big = Big,
                              Training = Training,
                              SE = SE)
+        with tf.variable_scope(vname + '_Act') as scope:
+            x01 = AF.select_activation(Act)(x01)
     else:
         x01 = inception_cell(x = x,
                              Act = Act,
