@@ -105,11 +105,11 @@ class Detecter(Core2.Core):
 
     def network(self):
         self.p = trans.Transfer(self.x, 'inception', pooling = None, vname = 'Transfer',
-                                trainable = True)
+                                trainable = False)
         self.y51 = self.p.get_output_tensor()
         self.y61 = Layers.pooling(x = self.y51,
-                                  ksize=[10, 10],
-                                  strides=[10, 10],
+                                  ksize=[5, 5],
+                                  strides=[5, 5],
                                   padding='SAME',
                                   algorithm = 'Avg')
 
