@@ -62,7 +62,7 @@ def main():
                              augment = augment,
                              zca = True,
                              raw_img = True,
-                             model = 'xception')
+                             model = 'inception')
     print("label definitions:")
     print(label_def)
 

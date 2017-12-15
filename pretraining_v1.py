@@ -104,7 +104,7 @@ class Detecter(Core2.Core):
         self.keep_probs = []
 
     def network(self):
-        self.p = trans.Transfer(self.x, 'xception', pooling = None, vname = 'Transfer',
+        self.p = trans.Transfer(self.x, 'inception', pooling = None, vname = 'Transfer',
                                 trainable = True)
         self.y51 = self.p.get_output_tensor()
         self.y61 = Layers.pooling(x = self.y51,

@@ -1,7 +1,7 @@
 #! /usr/bin/bash
 
 source activate tensorflow_p27
-size='256'
+size='224'
 augment='False'
 checkpoint='./Model/run.ckpt'
 outfile='./Result/result.csv'
