@@ -2,7 +2,7 @@
 
 source activate tensorflow_p27
 size='256'
-augment='True'
+augment='False'
 checkpoint='./Model/run.ckpt'
 outfile='./Result/result.csv'
 epoch='40000'

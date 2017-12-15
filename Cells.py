@@ -182,10 +182,6 @@ def inception_cell(x,
     if Big:
         y02 = Layers.concat(xs = [y01, x0b, x0bh, x0bh],
                             concat_type = 'Channel')
-        y02 = Layers.batch_normalization(x = y02, shape = [0, 1, 2], vname = vname + '_BN',
-                                       Renormalization = True, Training = Training)
-        with tf.variable_scope(vname) as scope:
-            y02 = AF.select_activation(Act)(y02)
         if SE:
 
             y02 = SE_module(x = y02,
@@ -194,10 +190,6 @@ def inception_cell(x,
                             vname = vname + '_SE')
         return y02
     else:
-        y01 = Layers.batch_normalization(x = y01, shape = [0, 1, 2], vname = vname + '_BN',
-                                       Renormalization = True, Training = Training)
-        with tf.variable_scope(vname) as scope:
-            y01 = AF.select_activation(Act)(y01)
         if SE:
             y01 = SE_module(x = y01,
                             Act = 'Relu',

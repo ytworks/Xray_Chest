@@ -2,15 +2,15 @@
 
 #source activate tensorflow_p27
 size='256'
-augment='True'
+augment='False'
 checkpoint='./Model/run.ckpt'
 outfile='./Result/result.csv'
 epoch='10'
 batch='2'
 log='5'
 lr='0.0001'
-rr='0.0'
-l1_norm='0.0'
+rr='2'
+l1_norm='1'
 output_type='classified-softmax'
 #output_type='classified-squared-hinge'
 

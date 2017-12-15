@@ -32,7 +32,7 @@ def main():
     parser.add_argument('-mode', required = True)
     args = parser.parse_args()
     size = int(args.size) if args.size != None else 256
-    augment = True if args.augment != None else False
+    augment = True if args.augment == 'True' else False
     checkpoint = args.checkpoint if args.checkpoint != None else './Model/Core.ckpt'
     lr = float(args.lr) if args.lr != None else 0.0001
     dlr = float(args.dlr) if args.dlr != None else 0.0
@@ -60,7 +60,7 @@ def main():
                              kfold = 1,
                              img_size = size,
                              augment = augment,
-                             zca = False)
+                             zca = True)
     print("label definitions:")
     print(label_def)
 
