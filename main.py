@@ -60,7 +60,7 @@ def main():
                              kfold = 1,
                              img_size = size,
                              augment = augment,
-                             zca = True)
+                             zca = False)
     print("label definitions:")
     print(label_def)
 
