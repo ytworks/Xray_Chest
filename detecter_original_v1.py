@@ -104,7 +104,7 @@ class Detecter(Core2.Core):
         Initializer = 'He'
         Parallels = 9
         Activation = 'Relu'
-        Regularization = True
+        Regularization = False
         SE = True
         prob = 1.0
         self.x0 = Layers.batch_normalization(x = self.x, shape = [0, 1, 2], vname = 'First_BN',
