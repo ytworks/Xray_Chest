@@ -24,6 +24,7 @@ def inception_cell(x,
                    Training = True,
                    Big = False):
     # 1st Layers
+    BN = True
     x01 = Layers.convolution2d(x = x,
                                FilterSize = [1, 1, InputNode[2], Channels],
                                Initializer = Initializer,
