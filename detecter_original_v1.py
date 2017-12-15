@@ -251,7 +251,7 @@ class Detecter(Core2.Core):
             # 途中経過のチェック
             if i%self.log == 0 and i != 0:
                 # Train
-                feed_dict = self.make_feed_dict(prob = True, batch = batch, is_train = False)
+                feed_dict = self.make_feed_dict(prob = True, batch = batch, is_train = True)
                 train_accuracy_y = self.accuracy_y.eval(feed_dict=feed_dict)
                 train_accuracy_z = self.accuracy_z.eval(feed_dict=feed_dict)
                 losses = self.loss_function.eval(feed_dict=feed_dict)
