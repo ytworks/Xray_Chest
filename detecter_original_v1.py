@@ -106,7 +106,9 @@ class Detecter(Core2.Core):
         Activation = 'Relu'
         Regularization = True
         prob = 1.0
-        self.y11 = inception_res_cell(x = self.x,
+        self.x0 = Layers.batch_normalization(x = self.x, shape = [0, 1, 2], vname = vname + '_BN',
+                                             Renormalization = True, Training = self.istraining)
+        self.y11 = inception_res_cell(x = self.x0,
                                            Act = Activation,
                                            InputNode = [self.SIZE, self.SIZE, self.CH],
                                            Channels = [Channels, Channels],
