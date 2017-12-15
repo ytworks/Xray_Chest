@@ -104,7 +104,7 @@ class Detecter(Core2.Core):
         Initializer = 'He'
         Parallels = 9
         Activation = 'Relu'
-        Regularization = False
+        Regularization = True
         prob = 1.0
         self.y11 = inception_res_cell(x = self.x,
                                            Act = Activation,
