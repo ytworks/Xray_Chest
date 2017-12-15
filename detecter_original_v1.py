@@ -105,6 +105,7 @@ class Detecter(Core2.Core):
         Parallels = 9
         Activation = 'Relu'
         Regularization = False
+        SE = True
         prob = 1.0
         self.x0 = Layers.batch_normalization(x = self.x, shape = [0, 1, 2], vname = 'First_BN',
                                              Renormalization = True, Training = self.istraining)
@@ -118,6 +119,7 @@ class Detecter(Core2.Core):
                                            Regularization = Regularization,
                                            vname = 'Res0',
                                            Training = self.istraining,
+                                           SE = SE,
                                            STEM = False)
         self.y12 = Layers.pooling(x = self.y11, ksize=[2, 2], strides=[2, 2],
                                   padding='SAME', algorithm = 'Max')
@@ -131,6 +133,7 @@ class Detecter(Core2.Core):
                                            Initializer = Initializer,
                                            Regularization = Regularization,
                                            Training = self.istraining,
+                                           SE = SE,
                                            vname = 'Res1')
         self.y21 = Layers.pooling(x = self.y21, ksize=[2, 2], strides=[2, 2],
                                   padding='SAME', algorithm = 'Max')
@@ -145,6 +148,7 @@ class Detecter(Core2.Core):
                                            Initializer = Initializer,
                                            Regularization = Regularization,
                                            Training = self.istraining,
+                                           SE = SE,
                                            vname = 'Res3')
         self.y31 = Layers.pooling(x = self.y31, ksize=[2, 2], strides=[2, 2],
                                   padding='SAME', algorithm = 'Max')
@@ -158,6 +162,7 @@ class Detecter(Core2.Core):
                                            Initializer = Initializer,
                                            Regularization = Regularization,
                                            Training = self.istraining,
+                                           SE = SE,
                                            vname = 'Res4')
         self.y41 = Layers.pooling(x = self.y41, ksize=[2, 2], strides=[2, 2],
                                   padding='SAME', algorithm = 'Max')
@@ -172,6 +177,7 @@ class Detecter(Core2.Core):
                                            Initializer = Initializer,
                                            Regularization = Regularization,
                                            Training = self.istraining,
+                                           SE = SE,
                                            vname = 'Res5')
         # Dropout Layer
         self.y52 = Layers.dropout(x = self.y51, keep_probs = self.keep_probs, training_prob = prob, vname = 'V5')
