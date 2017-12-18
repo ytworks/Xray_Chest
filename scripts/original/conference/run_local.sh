@@ -1,7 +1,8 @@
 #! /usr/bin/bash
-
+cd `dirname $0`
+cd ../../../
 #source activate tensorflow_p27
-size='224'
+size='256'
 augment='False'
 checkpoint='./Model/run.ckpt'
 outfile='./Result/result.csv'
@@ -15,21 +16,14 @@ output_type='classified-softmax'
 #output_type='classified-squared-hinge'
 
 FLAG=""
-while getopts d:m: OPT
+while getopts d: OPT
 do
   case $OPT in
     d) FLAG=$OPTARG;;
-    m) MODEL=$OPTARG;;
   esac
 done
 
-
-if [[ $MODEL == 'pretrain' ]]; then
-  MAIN='main_pretraining.py'
-else
-  MAIN='main.py'
-fi
-python $MAIN  -mode learning -size $size \
+python main.py  -mode learning -size $size \
               -augment $augment \
               -checkpoint $checkpoint \
               -epoch $epoch \
