@@ -29,6 +29,7 @@ def main():
     parser.add_argument('-log')
     parser.add_argument('-outfile')
     parser.add_argument('-output_type')
+    parser.add_argument('-dataset')
     parser.add_argument('-mode', required = True)
     args = parser.parse_args()
     size = int(args.size) if args.size != None else 299
@@ -42,6 +43,7 @@ def main():
     epoch = int(args.epoch) if args.epoch != None else 5
     batch = int(args.batch) if args.batch != None else 5
     log = int(args.log) if args.log != None else 2
+    ds = 'conf' if args.dataset == None else 'nih'
     output_type = args.output_type if args.output_type != None else 'classified-softmax'
     outfile = args.outfile if args.outfile != None else './Result/result.csv'
     if args.mode in ['learning']:

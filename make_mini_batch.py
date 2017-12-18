@@ -336,7 +336,8 @@ def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
                    augment = True,
                    zca = True,
                    raw_img = False,
-                   model = 'xception'):
+                   model = 'xception',
+                   ds = 'conf'):
     class DataSets(object):
         pass
     data_sets = DataSets()
@@ -372,32 +373,34 @@ def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
     conf_labels = make_supevised_data_for_conf(conf_data,
                                                label_def,
                                                benchmark_supervised_datapath)
-    logger.debug("Training Full")
-    data_sets.train = DataSet(data = nih_data,
-                              label = nih_labels,
-                              size = img_size,
-                              zca = zca,
-                              augment = augment,
-                              raw_img = raw_img,
-                              model = model)
-    logger.debug("Test Conf")
-    data_sets.test  = DataSet(data = conf_data,
-                              label = conf_labels,
-                              size = img_size,
-                              zca = zca,
-                              augment = augment,
-                              raw_img = raw_img,
-                              model = model)
-    logger.debug("Training")
-    data_sets.train_nih = DataSet(data = nih_data_train,
+    if ds == 'conf':
+        logger.debug("Training Full")
+        data_sets.train = DataSet(data = nih_data,
+                                  label = nih_labels,
+                                  size = img_size,
+                                  zca = zca,
+                                  augment = augment,
+                                  raw_img = raw_img,
+                                  model = model)
+        logger.debug("Test Conf")
+        data_sets.test  = DataSet(data = conf_data,
+                                  label = conf_labels,
+                                  size = img_size,
+                                  zca = zca,
+                                  augment = augment,
+                                  raw_img = raw_img,
+                                  model = model)
+    else:
+        logger.debug("Training")
+        data_sets.train = DataSet(data = nih_data_train,
                                   label = nih_labels_train,
                                   size = img_size,
                                   zca = zca,
                                   augment = augment,
                                   raw_img = raw_img,
                                   model = model)
-    logger.debug("Test")
-    data_sets.test_nih = DataSet(data = nih_data_test,
+        logger.debug("Test")
+        data_sets.test = DataSet(data = nih_data_test,
                                  label = nih_labels_test,
                                  size = img_size,
                                  zca = zca,
