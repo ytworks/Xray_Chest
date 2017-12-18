@@ -79,7 +79,7 @@ class Detecter(Core2.Core):
         self.training(var_list = None)
         logger.debug("05: TF Training operation done")
         # 精度の定義
-        self.accuracy_y = UT.correct_rate(self.y, self.y_)
+        #self.accuracy_y = UT.correct_rate(self.y, self.y_)
         if self.output_type.find('hinge') >= 0:
             self.accuracy_z = tf.sqrt(tf.reduce_mean(tf.multiply(self.z - self.z_, self.z - self.z_)))
         else:
@@ -99,7 +99,7 @@ class Detecter(Core2.Core):
     def io_def(self):
         self.CH = 3
         self.x = tf.placeholder("float", shape=[None, self.SIZE, self.SIZE, self.CH], name = "Input")
-        self.y_ = tf.placeholder("float", shape=[None, 2], name = "Label_Judgement")
+        #self.y_ = tf.placeholder("float", shape=[None, 2], name = "Label_Judgement")
         self.z_ = tf.placeholder("float", shape=[None, 14], name = "Label_Diagnosis")
         self.keep_probs = []
 
@@ -124,6 +124,7 @@ class Detecter(Core2.Core):
                                   BatchNormalization = False,
                                   Regularization = True,
                                   vname = 'Output_z')
+        '''
         self.z0 = Layers.concat([self.y72, self.y71], concat_type = 'Vector')
         self.y73 = Outputs.output(x = self.z0,
                                   InputSize = 2048 + 14,
@@ -133,22 +134,25 @@ class Detecter(Core2.Core):
                                   Regularization = True,
                                   vname = 'Output_y')
         self.y = self.y73
+        '''
         self.z = self.y72
 
 
     def loss(self):
-        self.loss_function = Loss.loss_func(y = self.y,
-                                            y_ = self.y_,
-                                            regularization = self.regularization,
-                                            regularization_type = self.regularization_type,
-                                            output_type = self.output_type)
         diag_output_type = self.output_type if self.output_type.find('hinge') >= 0 else 'classified-sigmoid'
-
-        self.loss_function += Loss.loss_func(y = self.z,
+        self.loss_function = Loss.loss_func(y = self.z,
                                              y_ = self.z_,
-                                             regularization = 0.0,
+                                             regularization = self.regularization,
                                              regularization_type = self.regularization_type,
                                              output_type = diag_output_type)
+        '''
+        self.loss_function += Loss.loss_func(y = self.y,
+                                            y_ = self.y_,
+                                            regularization = 0.0,
+                                            regularization_type = self.regularization_type,
+                                            output_type = self.output_type)
+        '''
+
         # For Gear Mode (TBD)
         self.loss_function += tf.reduce_mean(tf.abs(self.y71)) * self.l1_norm
 
@@ -156,7 +160,7 @@ class Detecter(Core2.Core):
     def make_feed_dict(self, prob, batch):
         feed_dict = {}
         feed_dict.setdefault(self.x, batch[0])
-        feed_dict.setdefault(self.y_, batch[1])
+        #feed_dict.setdefault(self.y_, batch[1])
         feed_dict.setdefault(self.z_, batch[2])
         feed_dict.setdefault(self.learning_rate, self.learning_rate_value)
         #feed_dict.setdefault(self.GearLevel, self.GearLevelValue)
@@ -183,33 +187,35 @@ class Detecter(Core2.Core):
             if i%self.log == 0 and i != 0:
                 # Train
                 feed_dict = self.make_feed_dict(prob = True, batch = batch)
-                train_accuracy_y = self.accuracy_y.eval(feed_dict=feed_dict)
+                #train_accuracy_y = self.accuracy_y.eval(feed_dict=feed_dict)
                 train_accuracy_z = self.accuracy_z.eval(feed_dict=feed_dict)
                 losses = self.loss_function.eval(feed_dict=feed_dict)
-                train_prediction = self.prediction(data = batch[0], roi = False)
-                test = [batch[1][j][0] for j in range(len(batch[1]))]
-                prob = [train_prediction[0][j][0] for j in range(len(train_prediction[0]))]
-                train_auc = self.get_auc(test = test, prob = prob)
+                #train_prediction = self.prediction(data = batch[0], roi = False)
+                #test = [batch[1][j][0] for j in range(len(batch[1]))]
+                #prob = [train_prediction[0][j][0] for j in range(len(train_prediction[0]))]
+                #train_auc = self.get_auc(test = test, prob = prob)
                 # Test
                 val_accuracy_y, val_accuracy_z, val_losses, test, prob = [], [], [], [], []
                 for num in range(validation_batch_num):
                     validation_batch = data.test.next_batch(self.batch, augment = False)
                     feed_dict_val = self.make_feed_dict(prob = False, batch = validation_batch)
-                    val_accuracy_y.append(self.accuracy_y.eval(feed_dict=feed_dict_val) * float(self.batch))
+                    #val_accuracy_y.append(self.accuracy_y.eval(feed_dict=feed_dict_val) * float(self.batch))
                     val_accuracy_z.append(self.accuracy_z.eval(feed_dict=feed_dict_val) * float(self.batch))
                     val_losses.append(self.loss_function.eval(feed_dict=feed_dict_val) * float(self.batch))
-                    val_prediction = self.prediction(data = validation_batch[0], roi = False)
-                    test.extend([validation_batch[1][j][0] for j in range(len(validation_batch[1]))])
-                    prob.extend([val_prediction[0][j][0] for j in range(len(val_prediction[0]))])
-                val_accuracy_y = np.mean(val_accuracy_y) / float(self.batch)
+                    #val_prediction = self.prediction(data = validation_batch[0], roi = False)
+                    #test.extend([validation_batch[1][j][0] for j in range(len(validation_batch[1]))])
+                    #prob.extend([val_prediction[0][j][0] for j in range(len(val_prediction[0]))])
+                #val_accuracy_y = np.mean(val_accuracy_y) / float(self.batch)
                 val_accuracy_z = np.mean(val_accuracy_z) / float(self.batch)
                 val_losses = np.mean(val_losses) / float(self.batch)
-                val_auc = self.get_auc(test = test, prob = prob)
+                #val_auc = self.get_auc(test = test, prob = prob)
 
                 # Output
                 logger.debug("step %d ================================================================================="% i)
-                logger.debug("Train: (judgement, diagnosis, loss, auc) = (%g, %g, %g, %g)"%(train_accuracy_y,train_accuracy_z,losses,train_auc))
-                logger.debug("Validation: (judgement, diagnosis, loss, auc) = (%g, %g, %g, %g)"%(val_accuracy_y,val_accuracy_z,val_losses,val_auc))
+                #logger.debug("Train: (judgement, diagnosis, loss, auc) = (%g, %g, %g, %g)"%(train_accuracy_y,train_accuracy_z,losses,train_auc))
+                #logger.debug("Validation: (judgement, diagnosis, loss, auc) = (%g, %g, %g, %g)"%(val_accuracy_y,val_accuracy_z,val_losses,val_auc))
+                logger.debug("Train: (diagnosis, loss) = (%g, %g)"%(train_accuracy_z,losses))
+                logger.debug("Validation: (diagnosis, loss) = (%g, %g)"%(val_accuracy_z, val_losses))
 
                 if save_at_log:
                     self.save_checkpoint()
@@ -251,12 +257,12 @@ class Detecter(Core2.Core):
             feed_dict.setdefault(keep_prob['var'], 1.0)
 
         if self.output_type.find('hinge') >= 0:
-            result_y = self.sess.run(2.0 * self.y - 1.0, feed_dict = feed_dict)
+            #result_y = self.sess.run(2.0 * self.y - 1.0, feed_dict = feed_dict)
             result_z = self.sess.run(2.0 * self.z - 1.0, feed_dict = feed_dict)
         else:
-            result_y = self.sess.run(tf.nn.softmax(self.y), feed_dict = feed_dict)
+            #result_y = self.sess.run(tf.nn.softmax(self.y), feed_dict = feed_dict)
             result_z = self.sess.run(tf.sigmoid(self.z), feed_dict = feed_dict)
-
+        result_y = [[1, 0]]
         if not roi:
             return result_y, result_z
         else:
