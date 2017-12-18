@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from make_mini_batch import read_data_sets
-from detecter_original_v1 import Detecter
+from pretraining_v1 import Detecter
 from logging import getLogger, StreamHandler
 from tqdm import tqdm
 import os
@@ -31,15 +31,15 @@ def main():
     parser.add_argument('-output_type')
     parser.add_argument('-mode', required = True)
     args = parser.parse_args()
-    size = int(args.size) if args.size != None else 256
-    augment = True if args.augment == 'True' else False
+    size = int(args.size) if args.size != None else 299
+    augment = True if args.augment != None else False
     checkpoint = args.checkpoint if args.checkpoint != None else './Model/Core.ckpt'
     lr = float(args.lr) if args.lr != None else 0.0001
     dlr = float(args.dlr) if args.dlr != None else 0.0
     rtype = args.rtype if args.rtype != None else 'L2'
     rr = float(args.rr) if args.rr != None else 0.0
     l1_norm = float(args.l1_norm) if args.l1_norm != None else 0.0
-    epoch = int(args.epoch) if args.epoch != None else 2
+    epoch = int(args.epoch) if args.epoch != None else 5
     batch = int(args.batch) if args.batch != None else 5
     log = int(args.log) if args.log != None else 2
     output_type = args.output_type if args.output_type != None else 'classified-softmax'
@@ -51,7 +51,7 @@ def main():
     else:
         init = False
 
-    print("read dataset")
+    print("read dataset", "epoch", epoch, "batch", batch, "log", log)
     dataset, label_def = read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
                              nih_supervised_datapath = "./Data/Open/Data_Entry_2017_v2.csv",
                              nih_boxlist = "./Data/Open/BBox_List_2017.csv",
@@ -60,7 +60,9 @@ def main():
                              kfold = 1,
                              img_size = size,
                              augment = augment,
-                             zca = True)
+                             zca = True,
+                             raw_img = True,
+                             model = 'inception')
     print("label definitions:")
     print(label_def)
 

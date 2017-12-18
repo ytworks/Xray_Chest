@@ -1,15 +1,15 @@
 #! /usr/bin/bash
 
-source activate tensorflow_p27
-size='256'
+#source activate tensorflow_p27
+size='224'
 augment='False'
 checkpoint='./Model/run.ckpt'
 outfile='./Result/result.csv'
-epoch='40000'
-batch='10'
-log='10000'
+epoch='10'
+batch='2'
+log='5'
 lr='0.0001'
-rr='0.01'
+rr='2'
 l1_norm='1'
 output_type='classified-softmax'
 #output_type='classified-squared-hinge'
