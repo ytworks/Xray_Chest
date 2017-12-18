@@ -1,14 +1,14 @@
 #! /usr/bin/bash
 cd `dirname $0`
 cd ../../../
-source activate tensorflow_p27
-size='256'
+#source activate tensorflow_p27
+size='224'
 augment='False'
 checkpoint='./Model/run.ckpt'
 outfile='./Result/result.csv'
-epoch='500'
-batch='10'
-log='100'
+epoch='10'
+batch='2'
+log='5'
 lr='0.0001'
 rr='2'
 l1_norm='1'
@@ -23,7 +23,7 @@ do
   esac
 done
 
-python main.py  -mode learning -size $size \
+python main_pretraining.py  -mode learning -size $size \
               -augment $augment \
               -checkpoint $checkpoint \
               -epoch $epoch \
