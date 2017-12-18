@@ -232,22 +232,39 @@ class DataSet(object):
         return [np.array(imgs), np.array(labels1), np.array(labels0), filenames, raw_data]
 
 
-def get_filepath(datapaths):
+def get_filepath(datapaths, filter_list = None):
     files = []
     for path in datapaths:
         files.extend(glob.glob(path))
     files = sorted(files)
-    return files
+    if filter_list == None:
+        return files
+    else:
+        filter_files = []
+        for filename in files:
+            base_filename = os.path.basename(filename)
+            if filter_list.has_key(base_filename):
+                filter_files.append(filename)
+        return filter_files
 
 
-def make_supevised_data_for_nih(path):
+def make_supevised_data_for_nih(path, filter_list = None):
+    # 有効ファイルの読み込み
+    valid_files = {}
+    if filter_list != None:
+        with open(filter_list, 'r') as f:
+            lines = csv.reader(f)
+            for line in lines:
+                valid_files.setdefault(line[0], True)
+
     findings = {}
     # ファイルの読み込み
     with open(path, 'rU') as f:
         lines = csv.reader(f)
         lines.next()
         for line in lines:
-            findings.setdefault(line[0], {'raw' : line[1]})
+            if filter_list == None or valid_files.has_key(line[0]):
+                findings.setdefault(line[0], {'raw' : line[1]})
     logger.debug('NIH # of Data records: %d'%len(findings))
     # データ数のカウント
     finding_count = {}
@@ -310,6 +327,8 @@ def diagnosis_map(diags, labels):
 def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
                    nih_supervised_datapath = "./Data/Open/Data_Entry_2017.csv",
                    nih_boxlist = "./Data/Open/BBox_List_2017.csv",
+                   nih_train_list = "./Data/Open/train_val_list.txt",
+                   nih_test_list = "./Data/Open/test_list.txt",
                    benchmark_datapath = ["./Data/CR_DATA/BenchMark/*/*.dcm"],
                    benchmark_supervised_datapath = "./Data/CR_DATA/BenchMark/CLNDAT_EN.txt",
                    kfold = 1,
@@ -322,20 +341,38 @@ def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
         pass
     data_sets = DataSets()
 
-    # NIHのデータセットのファイルパスを読み込む
-    nih_data = get_filepath(nih_datapath)
+
 
     # 学会データセットのファイルパスを読み込む
     conf_data = get_filepath(benchmark_datapath)
 
-    # NIHの教師データを読み込む
+    # NIHの教師データを全て読み込む
     nih_labels, nih_count, label_def = make_supevised_data_for_nih(nih_supervised_datapath)
+
+    # NIHのデータセットのファイルパスを読み込む
+    nih_data = get_filepath(nih_datapath)
+
+    # NIHの教師データをトレーニングセットのみ読み込む
+    nih_labels_train, nih_count_train, label_def_train = make_supevised_data_for_nih(nih_supervised_datapath,
+                                                                                     nih_train_list)
+
+    # NIHのデータセットのファイルパスを読み込む
+    nih_data_train = get_filepath(nih_datapath, nih_labels_train)
+
+    # NIHの教師データをテストセットのみ読み込む
+    nih_labels_test, nih_count_test, label_def_test = make_supevised_data_for_nih(nih_supervised_datapath,
+                                                                                  nih_test_list)
+
+    # NIHのデータセットのファイルパスを読み込む
+    nih_data_test = get_filepath(nih_datapath, nih_labels_test)
+
+
 
     # 学会データの教師データを読み込む
     conf_labels = make_supevised_data_for_conf(conf_data,
                                                label_def,
                                                benchmark_supervised_datapath)
-
+    logger.debug("Training Full")
     data_sets.train = DataSet(data = nih_data,
                               label = nih_labels,
                               size = img_size,
@@ -343,6 +380,7 @@ def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
                               augment = augment,
                               raw_img = raw_img,
                               model = model)
+    logger.debug("Test Conf")
     data_sets.test  = DataSet(data = conf_data,
                               label = conf_labels,
                               size = img_size,
@@ -350,6 +388,23 @@ def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
                               augment = augment,
                               raw_img = raw_img,
                               model = model)
+    logger.debug("Training")
+    data_sets.train_nih = DataSet(data = nih_data_train,
+                                  label = nih_labels_train,
+                                  size = img_size,
+                                  zca = zca,
+                                  augment = augment,
+                                  raw_img = raw_img,
+                                  model = model)
+    logger.debug("Test")
+    data_sets.test_nih = DataSet(data = nih_data_test,
+                                 label = nih_labels_test,
+                                 size = img_size,
+                                 zca = zca,
+                                 augment = augment,
+                                 raw_img = raw_img,
+                                 model = model)
+
     data_sets.train_summary = nih_count
     return data_sets, label_def
 
