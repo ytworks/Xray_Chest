@@ -62,7 +62,8 @@ def main():
                              kfold = 1,
                              img_size = size,
                              augment = augment,
-                             zca = True)
+                             zca = True,
+                             ds = ds)
     print("label definitions:")
     print(label_def)
 
@@ -82,7 +83,7 @@ def main():
     if args.mode != 'prediction':
         logger.debug("Start learning")
         obj.learning(data = dataset,
-                     validation_batch_num = int(250 / batch) + 1)
+                     validation_batch_num = int(250 / batch) + 1 if ds == 'conf' else 1)
         logger.debug("Finish learning")
     else:
         logger.debug("Skipped learning")
@@ -90,7 +91,8 @@ def main():
     with open(outfile, "w") as f:
         writer = csv.writer(f)
         for i, t in tqdm(enumerate(testdata[0])):
-            x, y = obj.prediction(data = [t], roi = True, label_def = label_def, save_dir = './Pic',
+            x, y = obj.prediction(data = [t], roi = True if ds == 'conf' else False, 
+                                  label_def = label_def, save_dir = './Pic',
                                   filename = os.path.splitext(testdata[3][i]),
                                   path = testdata[4][i])
             print("File name:", testdata[3][i])
