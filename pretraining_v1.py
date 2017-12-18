@@ -186,6 +186,7 @@ class Detecter(Core2.Core):
             # 途中経過のチェック
             if i%self.log == 0 and i != 0:
                 # Train
+                self.p.change_phase(True)
                 feed_dict = self.make_feed_dict(prob = True, batch = batch)
                 #train_accuracy_y = self.accuracy_y.eval(feed_dict=feed_dict)
                 train_accuracy_z = self.accuracy_z.eval(feed_dict=feed_dict)
@@ -195,6 +196,7 @@ class Detecter(Core2.Core):
                 #prob = [train_prediction[0][j][0] for j in range(len(train_prediction[0]))]
                 #train_auc = self.get_auc(test = test, prob = prob)
                 # Test
+                self.p.change_phase(False)
                 val_accuracy_y, val_accuracy_z, val_losses, test, prob = [], [], [], [], []
                 for num in range(validation_batch_num):
                     validation_batch = data.test.next_batch(self.batch, augment = False)
