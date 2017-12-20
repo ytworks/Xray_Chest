@@ -81,9 +81,11 @@ class Detecter(Core2.Core):
         # 精度の定義
         #self.accuracy_y = UT.correct_rate(self.y, self.y_)
         if self.output_type.find('hinge') >= 0:
-            self.accuracy_z = tf.sqrt(tf.reduce_mean(tf.multiply(self.z - self.z_, self.z - self.z_)))
+            #self.accuracy_z = tf.sqrt(tf.reduce_mean(tf.multiply(self.z - self.z_, self.z - self.z_)))
+            self.accuracy_z = tf.reduce_mean(tf.keras.metrics.cosine_proximity(self.z_, self.z))
         else:
-            self.accuracy_z = tf.sqrt(tf.reduce_mean(tf.multiply(tf.sigmoid(self.z) -self.z_, tf.sigmoid(self.z) -self.z_)))
+            #self.accuracy_z = tf.sqrt(tf.reduce_mean(tf.multiply(tf.sigmoid(self.z) -self.z_, tf.sigmoid(self.z) -self.z_)))
+            self.accuracy_z = tf.reduce_mean(tf.keras.metrics.cosine_proximity(self.z_, tf.sigmoid(self.z)))
         logger.debug("06: TF Accuracy measure definition done")
         # セッションの定義
         self.sess = tf.InteractiveSession()

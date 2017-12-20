@@ -158,11 +158,11 @@ class DataSet(object):
             #img = cv2.applyColorMap(img.astype(np.uint8), cv2.COLORMAP_JET)
             img = self.pi(img.astype(np.float32))
         # データオーギュメンテーション
-        if self.augment:
+        if augment:
             img = self.flip(img)
             #img = self.shift(img = img, move_x = 0.05, move_y = 0.05)
         else:
-            if augment:
+            if self.augment:
                 img = self.flip(img)
                 #img = self.shift(img = img, move_x = 0.05, move_y = 0.05)
 
