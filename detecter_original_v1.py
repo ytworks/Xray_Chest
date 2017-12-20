@@ -323,7 +323,7 @@ class Detecter(Core2.Core):
 
     # 予測器
     def prediction(self, data, roi = False, label_def = None, save_dir = None,
-                   filename = None, path = None):
+                   filenames = None, paths = None):
         # Make feed dict for prediction
         feed_dict = {self.x : data,
                      self.istraining: False}
@@ -336,19 +336,19 @@ class Detecter(Core2.Core):
         else:
             #result_y = self.sess.run(tf.nn.softmax(self.y), feed_dict = feed_dict)
             result_z = self.sess.run(tf.sigmoid(self.z), feed_dict = feed_dict)
-        result_y = [[0, 1]]
-
+        result_y = [[1, 0] for i in range(len(paths))]
         if not roi:
             return result_y, result_z
         else:
             weights = self.get_output_weights(feed_dict = feed_dict)
             roi_base = self.get_roi_map_base(feed_dict = feed_dict)
-            self.make_roi(weights = weights[0],
-                          roi_base = roi_base[0],
-                          save_dir = save_dir,
-                          filename = filename,
-                          label_def = label_def,
-                          path = path)
+            for i in range(len(paths)):
+                self.make_roi(weights = weights[0],
+                              roi_base = roi_base[0][i, :, :, :],
+                              save_dir = save_dir,
+                              filename = filenames[i],
+                              label_def = label_def,
+                              path = paths[i])
 
             return result_y, result_z
 
@@ -359,9 +359,9 @@ class Detecter(Core2.Core):
         img = cv2.resize(img, (self.SIZE, self.SIZE), interpolation = cv2.INTER_AREA)
         img = np.stack((img, img, img), axis = -1)
         for x, finding in enumerate(label_def):
-            images = np.zeros((roi_base.shape[1], roi_base.shape[2], 3))
+            images = np.zeros((roi_base.shape[0], roi_base.shape[1], 3))
             for channel in range(roi_base.shape[2]):
-                c = roi_base[0, :, :, channel]
+                c = roi_base[:, :, channel]
                 image = np.stack((c, c, c), axis = -1)
                 images += image * weights[channel][x]
             images = 255.0 * (images - np.min(images)) / (np.max(images) - np.min(images))

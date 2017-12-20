@@ -3,7 +3,7 @@ cd `dirname $0`
 cd ../../../
 source activate tensorflow_p27
 size='256'
-augment='False'
+augment='True'
 checkpoint='./Model/run.ckpt'
 outfile='./Result/result.csv'
 epoch='40000'
