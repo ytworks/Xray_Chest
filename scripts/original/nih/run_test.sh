@@ -12,8 +12,8 @@ log='100'
 lr='0.001'
 rr='0.0'
 l1_norm='0.0'
-output_type='classified-softmax'
-#output_type='classified-squared-hinge'
+#output_type='classified-softmax'
+output_type='classified-squared-hinge'
 
 FLAG=""
 while getopts d: OPT
