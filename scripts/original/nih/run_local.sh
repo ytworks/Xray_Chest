@@ -12,8 +12,9 @@ log='2'
 lr='0.0001'
 rr='2'
 l1_norm='1'
-output_type='classified-softmax'
+#output_type='classified-softmax'
 #output_type='classified-squared-hinge'
+output_type='classified-cosine_proximity'
 
 FLAG=""
 while getopts d: OPT
