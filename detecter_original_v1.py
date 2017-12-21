@@ -221,7 +221,12 @@ class Detecter(Core2.Core):
                                              y_ = self.z_,
                                              regularization = self.regularization,
                                              regularization_type = self.regularization_type,
-                                             output_type = diag_output_type)
+                                             output_type = self.output_type)
+        self.loss_function += Loss.loss_func(y = self.z,
+                                             y_ = self.z_,
+                                             regularization = 0.0,
+                                             regularization_type = self.regularization_type,
+                                             output_type = 'classified-cosine_proximity')
         '''
         self.loss_function += Loss.loss_func(y = self.y,
                                             y_ = self.y_,
