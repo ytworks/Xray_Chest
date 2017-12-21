@@ -254,6 +254,7 @@ def inception_res_cell(x,
                         SE = True,
                         Training = True,
                         STEM = False):
+    Renorm = False
     if Big:
         parallels = 12
     else:
