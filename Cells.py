@@ -287,7 +287,7 @@ def inception_res_cell(x,
                              SE = SE)
     x02 = inception_cell(x = x01,
                          Act = Act,
-                         InputNode = [InputNode[0] / Strides0[1], InputNode[1] / Strides0[2], Channels[1] * parallels],
+                         InputNode = [InputNode[0] / Strides0[1], InputNode[1] / Strides0[2], Channels[0] * parallels],
                          Channels = Channels[1],
                          Strides0 = Strides1,
                          Initializer = Initializer,
