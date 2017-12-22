@@ -335,7 +335,7 @@ class Detecter(Core2.Core):
                    filenames = None, paths = None):
         # Make feed dict for prediction
         feed_dict = {self.x : data,
-                     self.istraining: True}
+                     self.istraining: False}
         for keep_prob in self.keep_probs:
             feed_dict.setdefault(keep_prob['var'], 1.0)
 
