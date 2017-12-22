@@ -110,7 +110,7 @@ class Detecter(Core2.Core):
         SE = True
         prob = 1.0
         self.x0 = Layers.batch_normalization(x = self.x, shape = [0, 1, 2], vname = 'First_BN',
-                                             Renormalization = True, Training = self.istraining)
+                                             Renormalization = False, Training = self.istraining)
         self.y11 = inception_res_cell(x = self.x0,
                                            Act = Activation,
                                            InputNode = [self.SIZE, self.SIZE, self.CH],
