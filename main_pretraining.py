@@ -64,7 +64,7 @@ def main():
                              augment = augment,
                              zca = True,
                              raw_img = True,
-                             model = 'inception',
+                             model = 'resnet',
                              ds = ds)
     print("label definitions:")
     print(label_def)
