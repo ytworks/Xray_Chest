@@ -109,7 +109,7 @@ class Detecter(Core2.Core):
         Regularization = False
         SE = True
         prob = 1.0
-        self.y11 = inception_res_cell(x = self.x0,
+        self.y11 = inception_res_cell(x = self.x,
                                            Act = Activation,
                                            InputNode = [self.SIZE, self.SIZE, self.CH],
                                            Channels = [Channels, Channels],
