@@ -21,7 +21,7 @@ from LinearMotor import TrainOptimizers as TO
 from LinearMotor import Utilities as UT
 from LinearMotor import Loss
 from LinearMotor import Transfer as trans
-from Cells import inception_res_cell
+from SimpleCells import inception_res_cell
 from logging import getLogger, StreamHandler
 logger = getLogger(__name__)
 sh = StreamHandler()
@@ -82,10 +82,9 @@ class Detecter(Core2.Core):
         #self.accuracy_y = UT.correct_rate(self.y, self.y_)
         if self.output_type.find('hinge') >= 0:
             self.accuracy_z = tf.sqrt(tf.reduce_mean(tf.multiply(self.z - self.z_, self.z - self.z_)))
-            #self.accuracy_z = tf.reduce_mean(tf.keras.metrics.cosine_proximity(self.z_, self.z))
         else:
             self.accuracy_z = tf.sqrt(tf.reduce_mean(tf.multiply(tf.sigmoid(self.z) -self.z_, tf.sigmoid(self.z) -self.z_)))
-            #self.accuracy_z = tf.reduce_mean(tf.keras.metrics.cosine_proximity(self.z_, tf.sigmoid(self.z)))
+
         logger.debug("06: TF Accuracy measure definition done")
         # セッションの定義
         self.sess = tf.InteractiveSession()
@@ -111,6 +110,7 @@ class Detecter(Core2.Core):
         Parallels = 9
         Activation = 'Relu'
         Regularization = False
+        Renormalization = True
         SE = True
         prob = 1.0
         self.p = trans.Transfer(self.x, 'resnet', pooling = None, vname = 'Transfer',
@@ -118,58 +118,132 @@ class Detecter(Core2.Core):
         # activation_1 Tensor("Transfer/activation/Relu:0", shape=(1, 112, 112, 64), dtype=float32)
         #max_pooling2d_1 Tensor("Transfer/max_pooling2d/MaxPool:0", shape=(1, 55, 55, 64), dtype=float32)
         self.resnet_output = self.p.get_output_tensor()
-        self.upsampled = tf.image.resize_images(self.resnet_output, [self.SIZE / 4, self.SIZE / 4])
-
 
         # Original
         self.resnet_top = self.p['activation_1']
+        self.y00 = Layers.pooling(x = self.resnet_top, ksize=[2, 2], strides=[2, 2],
+                                  padding='SAME', algorithm = 'Max')
+        w, h, c = self.y00.shape[1], self.y00.shape[2], self.y00.shape[3]
+        print(w, h,c)
 
-        self.y11 = inception_res_cell(x = self.resnet_top,
+        self.y11 = inception_res_cell(x = self.y00,
                                       Act = Activation,
-                                      InputNode = [self.SIZE / 2, self.SIZE / 2, 64],
-                                      Channels = [Channels, Channels],
+                                      InputNode = [w, h, c],
+                                      Channels0 = [6, 6, 6, 4, 4, 6],
+                                      Channels1 = [11, 11, 11, 10, 10, 11],
                                       Strides0 = [1, 1, 1, 1],
                                       Strides1 = [1, 1, 1, 1],
                                       Initializer = Initializer,
                                       Regularization = Regularization,
-                                      vname = 'Original1',
-                                      Training = self.istraining,
+                                      Renormalization = Renormalization,
+                                      vname = 'Res11',
                                       SE = SE,
-                                      STEM = False)
-        self.y12 = Layers.pooling(x = self.y11, ksize=[2, 2], strides=[2, 2],
-                                  padding='SAME', algorithm = 'Max')
-
-        self.y21 = inception_res_cell(x = self.y12,
+                                      Training = self.istraining)
+        self.y12 = inception_res_cell(x = self.y11,
                                       Act = Activation,
-                                      InputNode = [self.SIZE / 4, self.SIZE / 4, Channels * Parallels],
-                                      Channels = [Channels * 2, Channels * 2],
+                                      InputNode = [w, h, c],
+                                      Channels0 = [6, 6, 6, 4, 4, 6],
+                                      Channels1 = [22, 22, 22, 20, 20, 22],
                                       Strides0 = [1, 1, 1, 1],
                                       Strides1 = [1, 1, 1, 1],
                                       Initializer = Initializer,
                                       Regularization = Regularization,
-                                      vname = 'Original2',
-                                      Training = self.istraining,
+                                      Renormalization = Renormalization,
+                                      vname = 'Res12',
                                       SE = SE,
-                                      STEM = False)
-        self.y22 = Layers.pooling(x = self.y21, ksize=[2, 2], strides=[2, 2],
+                                      Training = self.istraining)
+        self.y13 = Layers.pooling(x = self.y12, ksize=[2, 2], strides=[2, 2],
                                   padding='SAME', algorithm = 'Max')
 
-        self.concated = Layers.concat([self.y22, self.upsampled], concat_type = 'Channel')
 
+        self.y21 = inception_res_cell(x = self.y13,
+                                      Act = Activation,
+                                      InputNode = [w/2, h/2, c*2],
+                                      Channels0 = [11, 11, 11, 10, 10, 11],
+                                      Channels1 = [22, 22, 22, 20, 20, 22],
+                                      Strides0 = [1, 1, 1, 1],
+                                      Strides1 = [1, 1, 1, 1],
+                                      Initializer = Initializer,
+                                      Regularization = Regularization,
+                                      Renormalization = Renormalization,
+                                      vname = 'Res21',
+                                      SE = SE,
+                                      Training = self.istraining)
+        self.y22 = inception_res_cell(x = self.y21,
+                                      Act = Activation,
+                                      InputNode = [w/2, h/2, c*2],
+                                      Channels0 = [11, 11, 11, 10, 10, 11],
+                                      Channels1 = [44, 44, 44, 40, 40, 44],
+                                      Strides0 = [1, 1, 1, 1],
+                                      Strides1 = [1, 1, 1, 1],
+                                      Initializer = Initializer,
+                                      Regularization = Regularization,
+                                      Renormalization = Renormalization,
+                                      vname = 'Res22',
+                                      SE = SE,
+                                      Training = self.istraining)
+        self.y23 = Layers.pooling(x = self.y22, ksize=[2, 2], strides=[2, 2],
+                                  padding='SAME', algorithm = 'Max')
+
+
+        self.y31 = inception_res_cell(x = self.y23,
+                                      Act = Activation,
+                                      InputNode = [w/4, h/4, c*4],
+                                      Channels0 = [22, 22, 22, 20, 20, 22],
+                                      Channels1 = [44, 44, 44, 40, 40, 44],
+                                      Strides0 = [1, 1, 1, 1],
+                                      Strides1 = [1, 1, 1, 1],
+                                      Initializer = Initializer,
+                                      Regularization = Regularization,
+                                      Renormalization = Renormalization,
+                                      vname = 'Res31',
+                                      SE = SE,
+                                      Training = self.istraining)
+        self.y32 = inception_res_cell(x = self.y31,
+                                      Act = Activation,
+                                      InputNode = [w/4, h/4, c*4],
+                                      Channels0 = [22, 22, 22, 20, 20, 22],
+                                      Channels1 = [88, 88, 88, 80, 80, 88],
+                                      Strides0 = [1, 1, 1, 1],
+                                      Strides1 = [1, 1, 1, 1],
+                                      Initializer = Initializer,
+                                      Regularization = Regularization,
+                                      Renormalization = Renormalization,
+                                      vname = 'Res32',
+                                      SE = SE,
+                                      Training = self.istraining)
+        self.y33 = Layers.pooling(x = self.y32, ksize=[2, 2], strides=[2, 2],
+                                  padding='SAME', algorithm = 'Max')
+
+        self.y41 = Layers.concat([self.y33, self.resnet_output], concat_type = 'Channel')
+
+        self.y51 = inception_res_cell(x = self.y41,
+                                      Act = Activation,
+                                      InputNode = [w/8, h/8, c*8 + 2048],
+                                      Channels0 = [88, 88, 88, 80, 80, 88],
+                                      Channels1 = [88 * 5, 88 * 5, 88 * 5, 80 * 5, 80 * 5, 88 * 5],
+                                      Strides0 = [1, 1, 1, 1],
+                                      Strides1 = [1, 1, 1, 1],
+                                      Initializer = Initializer,
+                                      Regularization = Regularization,
+                                      Renormalization = Renormalization,
+                                      vname = 'Res51',
+                                      SE = SE,
+                                      Training = self.istraining)
 
 
         self.y61 = Layers.pooling(x = self.y51,
-                                  ksize=[7, 7],
-                                  strides=[7, 7],
+                                  ksize=[w/4, h/4],
+                                  strides=[w/4, h/4],
                                   padding='SAME',
                                   algorithm = 'Avg')
 
 
         # reshape
-        self.y71 = Layers.reshape_tensor(x = self.y61, shape = [1 * 1 * 2048])
+        self.y71 = Layers.reshape_tensor(x = self.y61, shape = [1 * 1 * 2048 + 512])
         # fnn
         self.y72 = Outputs.output(x = self.y71,
-                                  InputSize = 2048,
+                                  InputSize = 2048 + 512,
                                   OutputSize = 14,
                                   Initializer = 'Xavier',
                                   BatchNormalization = False,
@@ -208,12 +282,13 @@ class Detecter(Core2.Core):
         self.loss_function += tf.reduce_mean(tf.abs(self.y71)) * self.l1_norm
 
     # 入出力ベクトルの配置
-    def make_feed_dict(self, prob, batch):
+    def make_feed_dict(self, prob, batch, is_Train = True):
         feed_dict = {}
         feed_dict.setdefault(self.x, batch[0])
         #feed_dict.setdefault(self.y_, batch[1])
         feed_dict.setdefault(self.z_, batch[2])
         feed_dict.setdefault(self.learning_rate, self.learning_rate_value)
+        feed_dict.setdefault(self.istraining, is_Train)
         #feed_dict.setdefault(self.GearLevel, self.GearLevelValue)
         i = 0
         for keep_prob in self.keep_probs:
@@ -238,7 +313,7 @@ class Detecter(Core2.Core):
             if i%self.log == 0 and i != 0:
                 # Train
                 self.p.change_phase(True)
-                feed_dict = self.make_feed_dict(prob = True, batch = batch)
+                feed_dict = self.make_feed_dict(prob = True, batch = batch, is_Train = True)
                 #train_accuracy_y = self.accuracy_y.eval(feed_dict=feed_dict)
                 train_accuracy_z = self.accuracy_z.eval(feed_dict=feed_dict)
                 losses = self.loss_function.eval(feed_dict=feed_dict)
@@ -251,7 +326,7 @@ class Detecter(Core2.Core):
                 val_accuracy_y, val_accuracy_z, val_losses, test, prob = [], [], [], [], []
                 for num in range(validation_batch_num):
                     validation_batch = data.test.next_batch(self.batch, augment = False)
-                    feed_dict_val = self.make_feed_dict(prob = False, batch = validation_batch)
+                    feed_dict_val = self.make_feed_dict(prob = False, batch = validation_batch, is_Train = False)
                     #val_accuracy_y.append(self.accuracy_y.eval(feed_dict=feed_dict_val) * float(self.batch))
                     val_accuracy_z.append(self.accuracy_z.eval(feed_dict=feed_dict_val) * float(self.batch))
                     val_losses.append(self.loss_function.eval(feed_dict=feed_dict_val) * float(self.batch))
@@ -278,7 +353,7 @@ class Detecter(Core2.Core):
                 s = e
 
             # 学習
-            feed_dict = self.make_feed_dict(prob = False, batch = batch)
+            feed_dict = self.make_feed_dict(prob = False, batch = batch, is_Train = True)
             if self.DP and i != 0:
                 self.dynamic_learning_rate(feed_dict)
             self.p.change_phase(True)
@@ -305,7 +380,8 @@ class Detecter(Core2.Core):
                    filenames = None, paths = None):
         self.p.change_phase(False)
         # Make feed dict for prediction
-        feed_dict = {self.x : data}
+        feed_dict = {self.x : data,
+                     self.istraining : False}
         for keep_prob in self.keep_probs:
             feed_dict.setdefault(keep_prob['var'], 1.0)
 

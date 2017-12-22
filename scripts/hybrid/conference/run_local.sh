@@ -6,16 +6,16 @@ size='224'
 augment='True'
 checkpoint='./Model/run.ckpt'
 outfile='./Result/result.csv'
-epoch='10'
-batch='2'
-log='5'
+epoch='30'
+batch='32'
+log='2'
 lr='0.0001'
-rr='2'
-l1_norm='1'
+rr='0.0'
+l1_norm='0.0'
 output_type='classified-softmax'
 #output_type='classified-squared-hinge'
 
-FLAG=""
+FLAG=''
 while getopts d: OPT
 do
   case $OPT in
@@ -23,16 +23,16 @@ do
   esac
 done
 
-python main_hybrid.py  -mode learning -size $size \
-              -augment $augment \
-              -checkpoint $checkpoint \
-              -epoch $epoch \
-              -batch $batch \
-              -log $log \
-              -rr $rr \
-              -l1_norm $l1_norm \
-              -output_type $output_type \
-              -lr $lr
+python main_hybrid.py -mode learning -size $size \
+                      -augment $augment \
+                      -checkpoint $checkpoint \
+                      -epoch $epoch \
+                      -batch $batch \
+                      -log $log \
+                      -rr $rr \
+                      -l1_norm $l1_norm \
+                      -output_type $output_type \
+                      -lr $lr
 
 if [[ $FLAG == "debug" ]]; then
   echo "Not Stop"
