@@ -61,6 +61,9 @@ class Detecter(Core2.Core):
                                        )
         self.SIZE = size
         self.l1_norm = l1_norm
+        self.rmax = tf.placeholder(tf.float32)
+        self.dmax = tf.placeholder(tf.float32)
+        self.steps = 0
 
     def construct(self):
 
@@ -136,6 +139,8 @@ class Detecter(Core2.Core):
                                       Initializer = Initializer,
                                       Regularization = Regularization,
                                       Renormalization = Renormalization,
+                                      Rmax = self.rmax,
+                                      Dmax = self.dmax,
                                       vname = 'Res11',
                                       SE = SE,
                                       Training = self.istraining)
@@ -149,6 +154,8 @@ class Detecter(Core2.Core):
                                       Initializer = Initializer,
                                       Regularization = Regularization,
                                       Renormalization = Renormalization,
+                                      Rmax = self.rmax,
+                                      Dmax = self.dmax,
                                       vname = 'Res12',
                                       SE = SE,
                                       Training = self.istraining)
@@ -166,6 +173,8 @@ class Detecter(Core2.Core):
                                       Initializer = Initializer,
                                       Regularization = Regularization,
                                       Renormalization = Renormalization,
+                                      Rmax = self.rmax,
+                                      Dmax = self.dmax,
                                       vname = 'Res21',
                                       SE = SE,
                                       Training = self.istraining)
@@ -179,6 +188,8 @@ class Detecter(Core2.Core):
                                       Initializer = Initializer,
                                       Regularization = Regularization,
                                       Renormalization = Renormalization,
+                                      Rmax = self.rmax,
+                                      Dmax = self.dmax,
                                       vname = 'Res22',
                                       SE = SE,
                                       Training = self.istraining)
@@ -196,6 +207,8 @@ class Detecter(Core2.Core):
                                       Initializer = Initializer,
                                       Regularization = Regularization,
                                       Renormalization = Renormalization,
+                                      Rmax = self.rmax,
+                                      Dmax = self.dmax,
                                       vname = 'Res31',
                                       SE = SE,
                                       Training = self.istraining)
@@ -209,6 +222,8 @@ class Detecter(Core2.Core):
                                       Initializer = Initializer,
                                       Regularization = Regularization,
                                       Renormalization = Renormalization,
+                                      Rmax = self.rmax,
+                                      Dmax = self.dmax,
                                       vname = 'Res32',
                                       SE = SE,
                                       Training = self.istraining)
@@ -227,6 +242,8 @@ class Detecter(Core2.Core):
                                       Initializer = Initializer,
                                       Regularization = Regularization,
                                       Renormalization = Renormalization,
+                                      Rmax = self.rmax,
+                                      Dmax = self.dmax,
                                       vname = 'Res51',
                                       SE = SE,
                                       Training = self.istraining)
@@ -283,12 +300,19 @@ class Detecter(Core2.Core):
 
     # 入出力ベクトルの配置
     def make_feed_dict(self, prob, batch, is_Train = True):
+        if self.steps <= 5000:
+            rmax, dmax = 1.0, 0.0
+        else:
+            rmax = min(1.0 + 2.0 * (40000.0 - float(steps)) / 40000.0, 3.0)
+            dmax = min(5.0 * (25000.0 - float(steps)) / 25000.0, 5.0)
         feed_dict = {}
         feed_dict.setdefault(self.x, batch[0])
         #feed_dict.setdefault(self.y_, batch[1])
         feed_dict.setdefault(self.z_, batch[2])
         feed_dict.setdefault(self.learning_rate, self.learning_rate_value)
         feed_dict.setdefault(self.istraining, is_Train)
+        feed_dict.setdefault(self.rmax, rmax)
+        feed_dict.setdefault(self.dmax, dmax)
         #feed_dict.setdefault(self.GearLevel, self.GearLevelValue)
         i = 0
         for keep_prob in self.keep_probs:
@@ -358,6 +382,7 @@ class Detecter(Core2.Core):
                 self.dynamic_learning_rate(feed_dict)
             self.p.change_phase(True)
             self.train_op.run(feed_dict=feed_dict)
+            self.steps += 1
         self.save_checkpoint()
 
 

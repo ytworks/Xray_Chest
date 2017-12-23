@@ -21,6 +21,8 @@ def inception_res_cell(x,
                        Initializer = 'He',
                        Regularization = False,
                        Renormalization = True,
+                       Rmax = None,
+                       Dmax = None,
                        vname = 'Res',
                        SE = True,
                        Training = True):
@@ -34,6 +36,8 @@ def inception_res_cell(x,
                          vname = vname + 'Inception01',
                          regularization = Regularization,
                          renormalization = Renormalization,
+                         rmax = Rmax,
+                         dmax = Dmax,
                          SE = SE,
                          Training = Training)
 
@@ -47,6 +51,8 @@ def inception_res_cell(x,
                          vname = vname + 'Inception02',
                          regularization = Regularization,
                          renormalization = Renormalization,
+                         rmax = Rmax,
+                         dmax = Dmax,
                          SE = SE,
                          Training = Training)
     # チャネルが一致しない場合
@@ -80,6 +86,8 @@ def inception_cell(x,
                    vname = 'Inception',
                    regularization = False,
                    renormalization = True,
+                   rmax = None,
+                   dmax = None,
                    SE = True,
                    Training = True):
     BN = False
@@ -89,8 +97,10 @@ def inception_cell(x,
                                       shape = InputNode[2],
                                       vname = vname + '_BN',
                                       dim = [0, 1, 2],
-                                      Renormalization = Renorm,
-                                      Training = Training)
+                                      Renormalization = renormalization,
+                                      Training = Training,
+                                      rmax = rmax,
+                                      dmax = dmax)
     # Activation Function
     with tf.variable_scope(vname + '_Act') as scope:
         x_act = AF.select_activation(Act)(x_bn)
