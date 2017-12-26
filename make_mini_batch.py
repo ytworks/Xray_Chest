@@ -89,12 +89,12 @@ class DataSet(object):
             img = cv2.flip(img, 1)
         #if random.random() >= 0.8:
         #    img = self.rotation(img, rot = random.choice([0, 90, 180, 270]))
-        img = img.reshape((img.shape[0], img.shape[1], self.channel))
+        img = img.reshape((img.shape[0], img.shape[1], 1))
         return img
 
     def rotation(self, img, rot = 45):
         size = tuple(np.array([img.shape[1], img.shape[0]]))
-        matrix = cv2.getRotationMatrix2D((img.shape[1]/2,img.shape[0]/2),rot,self.channel)
+        matrix = cv2.getRotationMatrix2D((img.shape[1]/2,img.shape[0]/2),rot,1)
         affine_matrix = np.float32(matrix)
         return cv2.warpAffine(img, affine_matrix, size, flags=cv2.INTER_LINEAR)
 
@@ -109,7 +109,7 @@ class DataSet(object):
                     ]
             affine_matrix = np.float32(matrix)
             img = cv2.warpAffine(img, affine_matrix, size, flags=cv2.INTER_LINEAR)
-            img = img.reshape((img.shape[0], img.shape[1], self.channel))
+            img = img.reshape((img.shape[0], img.shape[1], 1))
             return img
         else:
             return img
@@ -144,8 +144,6 @@ class DataSet(object):
         # 教師データの読み込み
         label = self.labels[filename]['label']
 
-        # 画像サイズの調整
-        img = cv2.resize(img,(self.size,self.size), interpolation = cv2.INTER_AREA)
         # データオーギュメンテーション
         if augment:
             img = self.flip(img)
@@ -154,6 +152,10 @@ class DataSet(object):
             if self.augment:
                 img = self.flip(img)
                 img = self.shift(img = img, move_x = 0.05, move_y = 0.05)
+
+        # 画像サイズの調整
+        img = cv2.resize(img,(self.size,self.size), interpolation = cv2.INTER_AREA)
+
         # ZCA whitening
         if not self.raw_img:
             if self.zca:
