@@ -144,6 +144,8 @@ class DataSet(object):
         # 教師データの読み込み
         label = self.labels[filename]['label']
 
+        # 画像サイズの調整
+        img = cv2.resize(img,(self.size,self.size), interpolation = cv2.INTER_AREA)
         # データオーギュメンテーション
         if augment:
             img = self.flip(img)
@@ -152,9 +154,6 @@ class DataSet(object):
             if self.augment:
                 img = self.flip(img)
                 img = self.shift(img = img, move_x = 0.05, move_y = 0.05)
-
-        # 画像サイズの調整
-        img = cv2.resize(img,(self.size,self.size), interpolation = cv2.INTER_AREA)
         # ZCA whitening
         if not self.raw_img:
             if self.zca:
