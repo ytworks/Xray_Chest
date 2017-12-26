@@ -113,7 +113,7 @@ class Detecter(Core2.Core):
         Parallels = 9
         Activation = 'Relu'
         Regularization = False
-        Renormalization = True
+        Renormalization = False
         SE = True
         prob = 1.0
         self.p = trans.Transfer(self.x, 'resnet', pooling = None, vname = 'Transfer',
