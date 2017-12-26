@@ -87,8 +87,8 @@ class DataSet(object):
         #    img = cv2.flip(img, 0)
         if random.random() >= 0.8:
             img = cv2.flip(img, 1)
-        if random.random() >= 0.8:
-            img = self.rotation(img, rot = random.choice([0, 90, 180, 270]))
+        #if random.random() >= 0.8:
+        #    img = self.rotation(img, rot = random.choice([0, 90, 180, 270]))
         img = img.reshape((img.shape[0], img.shape[1], self.channel))
         return img
 
@@ -144,6 +144,15 @@ class DataSet(object):
         # 教師データの読み込み
         label = self.labels[filename]['label']
 
+        # データオーギュメンテーション
+        if augment:
+            img = self.flip(img)
+            img = self.shift(img = img, move_x = 0.05, move_y = 0.05)
+        else:
+            if self.augment:
+                img = self.flip(img)
+                img = self.shift(img = img, move_x = 0.05, move_y = 0.05)
+
         # 画像サイズの調整
         img = cv2.resize(img,(self.size,self.size), interpolation = cv2.INTER_AREA)
         # ZCA whitening
@@ -157,14 +166,7 @@ class DataSet(object):
             img = np.stack((img, img, img), axis = -1)
             #img = cv2.applyColorMap(img.astype(np.uint8), cv2.COLORMAP_JET)
             img = self.pi(img.astype(np.float32))
-        # データオーギュメンテーション
-        if augment:
-            img = self.flip(img)
-            #img = self.shift(img = img, move_x = 0.05, move_y = 0.05)
-        else:
-            if self.augment:
-                img = self.flip(img)
-                #img = self.shift(img = img, move_x = 0.05, move_y = 0.05)
+
 
 
         return img, label[0], label[1], filename, self.labels[filename]['raw']
