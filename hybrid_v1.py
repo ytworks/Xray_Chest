@@ -300,7 +300,7 @@ class Detecter(Core2.Core):
 
     # 入出力ベクトルの配置
     def make_feed_dict(self, prob, batch, is_Train = True):
-        if self.steps <= 1:
+        if self.steps <= 5000:
             rmax, dmax = 1.0, 0.0
         else:
             rmax = min(1.0 + 2.0 * (40000.0 - float(self.steps)) / 40000.0, 3.0)
