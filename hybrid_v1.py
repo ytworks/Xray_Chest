@@ -300,11 +300,11 @@ class Detecter(Core2.Core):
 
     # 入出力ベクトルの配置
     def make_feed_dict(self, prob, batch, is_Train = True):
-        if self.steps <= 5000:
+        if self.steps <= 1:
             rmax, dmax = 1.0, 0.0
         else:
-            rmax = min(1.0 + 2.0 * (40000.0 - float(steps)) / 40000.0, 3.0)
-            dmax = min(5.0 * (25000.0 - float(steps)) / 25000.0, 5.0)
+            rmax = min(1.0 + 2.0 * (40000.0 - float(self.steps)) / 40000.0, 3.0)
+            dmax = min(5.0 * (25000.0 - float(self.steps)) / 25000.0, 5.0)
         feed_dict = {}
         feed_dict.setdefault(self.x, batch[0])
         #feed_dict.setdefault(self.y_, batch[1])
