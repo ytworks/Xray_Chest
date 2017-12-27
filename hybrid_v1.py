@@ -112,7 +112,7 @@ class Detecter(Core2.Core):
         Initializer = 'He'
         Parallels = 9
         Activation = 'Relu'
-        Regularization = False
+        Regularization = True
         Renormalization = False
         SE = True
         prob = 1.0
