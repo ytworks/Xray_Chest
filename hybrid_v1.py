@@ -338,36 +338,37 @@ class Detecter(Core2.Core):
                 # Train
                 self.p.change_phase(True)
                 feed_dict = self.make_feed_dict(prob = True, batch = batch, is_Train = True)
-                #train_accuracy_y = self.accuracy_y.eval(feed_dict=feed_dict)
                 train_accuracy_z = self.accuracy_z.eval(feed_dict=feed_dict)
                 losses = self.loss_function.eval(feed_dict=feed_dict)
-                #train_prediction = self.prediction(data = batch[0], roi = False)
-                #test = [batch[1][j][0] for j in range(len(batch[1]))]
-                #prob = [train_prediction[0][j][0] for j in range(len(train_prediction[0]))]
-                #train_auc = self.get_auc(test = test, prob = prob)
+                train_prediction = self.prediction(data = batch[0], roi = False)
+                aucs_t = ''
+                for d in range(len(train_prediction[1][0])):
+                    test = [batch[2][j][d] for j in range(len(batch[2]))]
+                    prob = [train_prediction[1][j][d] for j in range(len(train_prediction[1]))]
+                    train_auc = self.get_auc(test = test, prob = prob)
+                    aucs_t += "%03.2f / " % train_auc
+
                 # Test
                 self.p.change_phase(False)
                 val_accuracy_y, val_accuracy_z, val_losses, test, prob = [], [], [], [], []
-                for num in range(validation_batch_num):
-                    validation_batch = data.test.next_batch(self.batch, augment = False)
-                    feed_dict_val = self.make_feed_dict(prob = False, batch = validation_batch, is_Train = False)
-                    #val_accuracy_y.append(self.accuracy_y.eval(feed_dict=feed_dict_val) * float(self.batch))
-                    val_accuracy_z.append(self.accuracy_z.eval(feed_dict=feed_dict_val) * float(self.batch))
-                    val_losses.append(self.loss_function.eval(feed_dict=feed_dict_val) * float(self.batch))
-                    #val_prediction = self.prediction(data = validation_batch[0], roi = False)
-                    #test.extend([validation_batch[1][j][0] for j in range(len(validation_batch[1]))])
-                    #prob.extend([val_prediction[0][j][0] for j in range(len(val_prediction[0]))])
-                #val_accuracy_y = np.mean(val_accuracy_y) / float(self.batch)
-                val_accuracy_z = np.mean(val_accuracy_z) / float(self.batch)
-                val_losses = np.mean(val_losses) / float(self.batch)
-                #val_auc = self.get_auc(test = test, prob = prob)
+                validation_batch = data.test.next_batch(self.batch, augment = False)
+                feed_dict_val = self.make_feed_dict(prob = False, batch = validation_batch, is_Train = False)
+                val_accuracy_z = self.accuracy_z.eval(feed_dict=feed_dict_val)
+                val_losses = self.loss_function.eval(feed_dict=feed_dict_val)
+                val_prediction = self.prediction(data = validation_batch[0], roi = False)
+                aucs_v = ''
+                for d in range(len(train_prediction[1][0])):
+                    test = [validation_batch[2][j][d] for j in range(len(validation_batch[2]))]
+                    prob = [val_prediction[1][j][d] for j in range(len(val_prediction[1]))]
+                    val_auc = self.get_auc(test = test, prob = prob)
+                    aucs_v += "%03.2f / " % val_auc
 
                 # Output
                 logger.debug("step %d ================================================================================="% i)
                 #logger.debug("Train: (judgement, diagnosis, loss, auc) = (%g, %g, %g, %g)"%(train_accuracy_y,train_accuracy_z,losses,train_auc))
                 #logger.debug("Validation: (judgement, diagnosis, loss, auc) = (%g, %g, %g, %g)"%(val_accuracy_y,val_accuracy_z,val_losses,val_auc))
-                logger.debug("Train: (diagnosis, loss) = (%g, %g)"%(train_accuracy_z,losses))
-                logger.debug("Validation: (diagnosis, loss) = (%g, %g)"%(val_accuracy_z, val_losses))
+                logger.debug("Train: (diagnosis, loss, aucs) = (%g, %g, %s)"%(train_accuracy_z,losses, aucs_t))
+                logger.debug("Validation: (diagnosis, loss, aucs) = (%g, %g, %s)"%(val_accuracy_z, val_losses, aucs_v))
 
                 if save_at_log:
                     self.save_checkpoint()
@@ -416,7 +417,7 @@ class Detecter(Core2.Core):
         else:
             #result_y = self.sess.run(tf.nn.softmax(self.y), feed_dict = feed_dict)
             result_z = self.sess.run(tf.sigmoid(self.z), feed_dict = feed_dict)
-        result_y = [[1, 0] for i in range(len(paths))]
+        result_y = [[1, 0] for i in range(len(result_z))]
         if not roi:
             return result_y, result_z
         else:
