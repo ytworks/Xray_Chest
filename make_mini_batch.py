@@ -180,16 +180,16 @@ class DataSet(object):
             shuffle_normal = True
         else:
             shuffle_normal = False
-        end_normal = min(self.start_normal + int(batch_size * batch_ratio), len(self._images_normal) - 1)
+        end_normal = min(self.start_normal + int(round((batch_size * batch_ratio))), len(self._images_normal) - 1)
 
         # 異常系の制御
         start_abnormal = self.start_abnormal
-        if self.start_abnormal + int(batch_size * batch_ratio) >= len(self._images_abnormal):
+        if self.start_abnormal + int(batch_size * (1.0 - batch_ratio)) >= len(self._images_abnormal):
             logger.debug('Abnormal Next Epoch')
             shuffle_abnormal = True
         else:
             shuffle_abnormal = False
-        end_abnormal = min(self.start_abnormal + int(batch_size * batch_ratio), len(self._images_abnormal) - 1)
+        end_abnormal = min(self.start_abnormal + int(round((batch_size * batch_ratio))), len(self._images_abnormal) - 1)
 
 
         imgs, labels0, labels1 = [], [], []
