@@ -29,6 +29,7 @@ def main():
     parser.add_argument('-log')
     parser.add_argument('-outfile')
     parser.add_argument('-output_type')
+    parser.add_argument('-dataset')
     parser.add_argument('-mode', required = True)
     args = parser.parse_args()
     size = int(args.size) if args.size != None else 299
@@ -42,6 +43,7 @@ def main():
     epoch = int(args.epoch) if args.epoch != None else 5
     batch = int(args.batch) if args.batch != None else 5
     log = int(args.log) if args.log != None else 2
+    ds = 'conf' if args.dataset == None else 'nih'
     output_type = args.output_type if args.output_type != None else 'classified-softmax'
     outfile = args.outfile if args.outfile != None else './Result/result.csv'
     if args.mode in ['learning']:
@@ -62,7 +64,8 @@ def main():
                              augment = augment,
                              zca = True,
                              raw_img = True,
-                             model = 'inception')
+                             model = 'resnet',
+                             ds = ds)
     print("label definitions:")
     print(label_def)
 
@@ -82,37 +85,47 @@ def main():
     if args.mode != 'prediction':
         logger.debug("Start learning")
         obj.learning(data = dataset,
-                     validation_batch_num = int(250 / batch) + 1)
+                     validation_batch_num = int(250 / batch) + 1 if ds == 'conf' else 1)
         logger.debug("Finish learning")
     else:
         logger.debug("Skipped learning")
     testdata = dataset.test.get_all_data()
     with open(outfile, "w") as f:
         writer = csv.writer(f)
-        for i, t in tqdm(enumerate(testdata[0])):
-            x, y = obj.prediction(data = [t], roi = True, label_def = label_def, save_dir = './Pic',
-                                  filename = os.path.splitext(testdata[3][i]),
-                                  path = testdata[4][i])
-            print("File name:", testdata[3][i])
-            print(x, testdata[1][i])
-            print(y)
-            record = [x[0][0], x[0][1], testdata[1][i][0], testdata[1][i][1],
-                      y[0][0], y[0][1],
-                      y[0][2], y[0][3],
-                      y[0][4], y[0][5],
-                      y[0][6], y[0][7],
-                      y[0][8], y[0][9],
-                      y[0][10], y[0][11],
-                      y[0][12], y[0][13],
-                      testdata[2][i][0], testdata[2][i][1],
-                      testdata[2][i][2], testdata[2][i][3],
-                      testdata[2][i][4], testdata[2][i][5],
-                      testdata[2][i][6], testdata[2][i][7],
-                      testdata[2][i][8], testdata[2][i][9],
-                      testdata[2][i][10], testdata[2][i][11],
-                      testdata[2][i][12], testdata[2][i][13]
-                      ]
-            writer.writerow(record)
+        ts, nums = [], []
+        for i, t in enumerate(testdata[0]):
+            ts.append(t)
+            nums.append(i)
+            if len(ts) == batch:
+                filenames = [os.path.splitext(testdata[3][num]) for num in nums]
+                paths = [testdata[4][num] for num in nums]
+                x, y = obj.prediction(data = ts, roi = True if ds == 'conf' else False,
+                                      label_def = label_def, save_dir = './Pic',
+                                      filenames = filenames,
+                                      paths = paths)
+                for j, num in enumerate(nums):
+                    print(i, j, num)
+                    print("File name:", testdata[3][num])
+                    print(x[j], testdata[1][num])
+                    print(y[j])
+                    record = [x[j][0], x[j][1], testdata[1][num][0], testdata[1][num][1],
+                              y[j][0], y[j][1],
+                              y[j][2], y[j][3],
+                              y[j][4], y[j][5],
+                              y[j][6], y[j][7],
+                              y[j][8], y[j][9],
+                              y[j][10], y[j][11],
+                              y[j][12], y[j][13],
+                              testdata[2][num][0], testdata[2][num][1],
+                              testdata[2][num][2], testdata[2][num][3],
+                              testdata[2][num][4], testdata[2][num][5],
+                              testdata[2][num][6], testdata[2][num][7],
+                              testdata[2][num][8], testdata[2][num][9],
+                              testdata[2][num][10], testdata[2][num][11],
+                              testdata[2][num][12], testdata[2][num][13]
+                              ]
+                    writer.writerow(record)
+                ts, nums = [], []
 
 
 
