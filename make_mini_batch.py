@@ -83,12 +83,12 @@ class DataSet(object):
         self._images_abnormal = self._images_abnormal[perm]
 
     def flip(self,img):
-        #if random.random() >= 0.8:
-        #    img = cv2.flip(img, 0)
-        if random.random() >= 0.8:
+        if random.random() >= 0.95:
+            img = cv2.flip(img, 0)
+        if random.random() >= 0.95:
             img = cv2.flip(img, 1)
-        #if random.random() >= 0.8:
-        #    img = self.rotation(img, rot = random.choice([0, 90, 180, 270]))
+        if random.random() >= 0.9:
+            img = self.rotation(img, rot = random.choice([0, 90, 180, 270]))
         img = img.reshape((img.shape[0], img.shape[1], 1))
         return img
 
@@ -180,16 +180,16 @@ class DataSet(object):
             shuffle_normal = True
         else:
             shuffle_normal = False
-        end_normal = min(self.start_normal + int(batch_size * batch_ratio), len(self._images_normal) - 1)
+        end_normal = min(self.start_normal + int(round((batch_size * batch_ratio))), len(self._images_normal) - 1)
 
         # 異常系の制御
         start_abnormal = self.start_abnormal
-        if self.start_abnormal + int(batch_size * batch_ratio) >= len(self._images_abnormal):
+        if self.start_abnormal + int(batch_size * (1.0 - batch_ratio)) >= len(self._images_abnormal):
             logger.debug('Abnormal Next Epoch')
             shuffle_abnormal = True
         else:
             shuffle_abnormal = False
-        end_abnormal = min(self.start_abnormal + int(batch_size * batch_ratio), len(self._images_abnormal) - 1)
+        end_abnormal = min(self.start_abnormal + int(round((batch_size * batch_ratio))), len(self._images_abnormal) - 1)
 
 
         imgs, labels0, labels1 = [], [], []

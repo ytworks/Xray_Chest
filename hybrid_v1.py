@@ -305,6 +305,11 @@ class Detecter(Core2.Core):
         else:
             rmax = min(1.0 + 2.0 * (40000.0 - float(self.steps)) / 40000.0, 3.0)
             dmax = min(5.0 * (25000.0 - float(self.steps)) / 25000.0, 5.0)
+
+        if self.steps % 1000 == 0 and self.steps != 0:
+            logger.debug("Before Learning Rate: %g" % self.learning_rate_value)
+            self.learning_rate_value = max(0.00001, self.learning_rate_value * 0.5)
+            logger.debug("After Learning Rate: %g" % self.learning_rate_value)
         feed_dict = {}
         feed_dict.setdefault(self.x, batch[0])
         #feed_dict.setdefault(self.y_, batch[1])
@@ -332,7 +337,7 @@ class Detecter(Core2.Core):
     def learning(self, data, save_at_log = False, validation_batch_num = 1):
         s = time.time()
         for i in range(self.epoch):
-            batch = data.train.next_batch(self.batch)
+            batch = data.train.next_batch(self.batch, batch_ratio = 0.2)
             # 途中経過のチェック
             if i%self.log == 0 and i != 0:
                 # Train
