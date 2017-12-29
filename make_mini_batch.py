@@ -95,13 +95,15 @@ class DataSet(object):
         if random.random() >= 0.8:
             img = self.rotation(img, rot = 15.0 * (2.0 * random.random() - 1.0))
             img = img.reshape((img.shape[0], img.shape[1], 1))
+        return img
 
     def flip(self,img):
         if random.random() >= 0.95:
             img = cv2.flip(img, 0)
+            img = img.reshape((img.shape[0], img.shape[1], 1))
         if random.random() >= 0.95:
             img = cv2.flip(img, 1)
-        img = img.reshape((img.shape[0], img.shape[1], 1))
+            img = img.reshape((img.shape[0], img.shape[1], 1))
         return img
 
     def rotation(self, img, rot = 45):
