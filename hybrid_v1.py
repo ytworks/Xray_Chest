@@ -299,14 +299,14 @@ class Detecter(Core2.Core):
         self.loss_function += tf.reduce_mean(tf.abs(self.y71)) * self.l1_norm
 
     # 入出力ベクトルの配置
-    def make_feed_dict(self, prob, batch, is_Train = True):
+    def make_feed_dict(self, prob, batch, is_Train = True, is_update = False):
         if self.steps <= 5000:
             rmax, dmax = 1.0, 0.0
         else:
             rmax = min(1.0 + 2.0 * (40000.0 - float(self.steps)) / 40000.0, 3.0)
             dmax = min(5.0 * (25000.0 - float(self.steps)) / 25000.0, 5.0)
 
-        if self.steps % 1000 == 0 and self.steps != 0:
+        if self.steps % 1000 == 0 and self.steps != 0 and is_update:
             logger.debug("Before Learning Rate: %g" % self.learning_rate_value)
             self.learning_rate_value = max(0.00001, self.learning_rate_value * 0.5)
             logger.debug("After Learning Rate: %g" % self.learning_rate_value)
@@ -383,7 +383,7 @@ class Detecter(Core2.Core):
                 s = e
 
             # 学習
-            feed_dict = self.make_feed_dict(prob = False, batch = batch, is_Train = True)
+            feed_dict = self.make_feed_dict(prob = False, batch = batch, is_Train = True, is_update = True)
             if self.DP and i != 0:
                 self.dynamic_learning_rate(feed_dict)
             self.p.change_phase(True)
