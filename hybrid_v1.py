@@ -64,6 +64,8 @@ class Detecter(Core2.Core):
         self.rmax = tf.placeholder(tf.float32)
         self.dmax = tf.placeholder(tf.float32)
         self.steps = 0
+        self.val_losses = []
+        self.current_loss = 0.0
 
     def construct(self):
 
@@ -112,7 +114,7 @@ class Detecter(Core2.Core):
         Initializer = 'He'
         Parallels = 9
         Activation = 'Relu'
-        Regularization = True
+        Regularization = False
         Renormalization = False
         SE = True
         prob = 1.0
@@ -306,10 +308,11 @@ class Detecter(Core2.Core):
             rmax = min(1.0 + 2.0 * (40000.0 - float(self.steps)) / 40000.0, 3.0)
             dmax = min(5.0 * (25000.0 - float(self.steps)) / 25000.0, 5.0)
 
-        if self.steps % 1000 == 0 and self.steps != 0 and is_update:
+        if self.current_loss > np.mean(self.val_losses) - np.std(self.val_losses) and len(self.val_losses) > 10 and is_update:
             logger.debug("Before Learning Rate: %g" % self.learning_rate_value)
             self.learning_rate_value = max(0.00001, self.learning_rate_value * 0.5)
             logger.debug("After Learning Rate: %g" % self.learning_rate_value)
+            self.val_losses = []
         feed_dict = {}
         feed_dict.setdefault(self.x, batch[0])
         #feed_dict.setdefault(self.y_, batch[1])
@@ -367,6 +370,8 @@ class Detecter(Core2.Core):
                     prob = [val_prediction[1][j][d] for j in range(len(val_prediction[1]))]
                     val_auc = self.get_auc(test = test, prob = prob)
                     aucs_v += "%03.2f / " % val_auc
+                self.val_losses.append(val_losses)
+                self.current_loss = val_losses
 
                 # Output
                 logger.debug("step %d ================================================================================="% i)
