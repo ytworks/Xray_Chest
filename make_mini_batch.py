@@ -83,9 +83,9 @@ class DataSet(object):
         self._images_abnormal = self._images_abnormal[perm]
 
     def flip(self,img):
-        #if random.random() >= 0.8:
-        #    img = cv2.flip(img, 0)
-        if random.random() >= 0.9:
+        if random.random() >= 0.95:
+            img = cv2.flip(img, 0)
+        if random.random() >= 0.95:
             img = cv2.flip(img, 1)
         if random.random() >= 0.9:
             img = self.rotation(img, rot = random.choice([0, 90, 180, 270]))
