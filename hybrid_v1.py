@@ -21,7 +21,7 @@ from LinearMotor import TrainOptimizers as TO
 from LinearMotor import Utilities as UT
 from LinearMotor import Loss
 from LinearMotor import Transfer as trans
-from SimpleCells import inception_res_cell
+from SimpleCells import *
 from logging import getLogger, StreamHandler
 logger = getLogger(__name__)
 sh = StreamHandler()
@@ -110,135 +110,69 @@ class Detecter(Core2.Core):
         self.keep_probs = []
 
     def network(self):
-        Channels = 8
         Initializer = 'He'
-        Parallels = 9
         Activation = 'Relu'
         Regularization = False
         Renormalization = False
         SE = True
+        GrowthRate = 32
         prob = 1.0
-        self.p = trans.Transfer(self.x, 'resnet', pooling = None, vname = 'Transfer',
+        self.x_resnet = tf.image.resize_images(images = self.x,
+                                               size = (224, 224),
+                                               align_corners=False)
+        self.p = trans.Transfer(self.x_resnet, 'resnet', pooling = None, vname = 'Transfer',
                                 trainable = False)
         # activation_1 Tensor("Transfer/activation/Relu:0", shape=(1, 112, 112, 64), dtype=float32)
         #max_pooling2d_1 Tensor("Transfer/max_pooling2d/MaxPool:0", shape=(1, 55, 55, 64), dtype=float32)
         self.resnet_output = self.p.get_output_tensor()
 
-        # Original
+        # Resnet Stem
         self.resnet_top = self.p['activation_1']
         self.y00 = Layers.pooling(x = self.resnet_top, ksize=[2, 2], strides=[2, 2],
                                   padding='SAME', algorithm = 'Max')
-        w, h, c = self.y00.shape[1], self.y00.shape[2], self.y00.shape[3]
-        print(w, h,c)
+        self.resnet_stem = tf.image.resize_images(images = self.y00,
+                                                  size = (self.SIZE / 4, self.SIZE / 4),
+                                                  align_corners=False)
 
-        self.y11 = inception_res_cell(x = self.y00,
-                                      Act = Activation,
-                                      InputNode = [w, h, c],
-                                      Channels0 = [6, 6, 6, 4, 4, 6],
-                                      Channels1 = [11, 11, 11, 10, 10, 11],
-                                      Strides0 = [1, 1, 1, 1],
-                                      Strides1 = [1, 1, 1, 1],
-                                      Initializer = Initializer,
-                                      Regularization = Regularization,
-                                      Renormalization = Renormalization,
-                                      Rmax = self.rmax,
-                                      Dmax = self.dmax,
-                                      vname = 'Res11',
-                                      SE = SE,
-                                      Training = self.istraining)
-        self.y12 = inception_res_cell(x = self.y11,
-                                      Act = Activation,
-                                      InputNode = [w, h, c],
-                                      Channels0 = [6, 6, 6, 4, 4, 6],
-                                      Channels1 = [22, 22, 22, 20, 20, 22],
-                                      Strides0 = [1, 1, 1, 1],
-                                      Strides1 = [1, 1, 1, 1],
-                                      Initializer = Initializer,
-                                      Regularization = Regularization,
-                                      Renormalization = Renormalization,
-                                      Rmax = self.rmax,
-                                      Dmax = self.dmax,
-                                      vname = 'Res12',
-                                      SE = SE,
-                                      Training = self.istraining)
-        self.y13 = Layers.pooling(x = self.y12, ksize=[2, 2], strides=[2, 2],
-                                  padding='SAME', algorithm = 'Max')
+        # dense net
+        ## Stem
+        self.dense_stem = stem_cell(x = self.x,
+                                    InputNode = [self.SIZE, self.SIZE, self.CH],
+                                    Channels = 64,
+                                    Initializer = Initializer,
+                                    vname = 'Stem',
+                                    regularization = Regularization,
+                                    Training = self.istraining)
 
+        ## concat
+        self.stem_concat = Layers.concat([self.dense_stem, self.resnet_stem], concat_type = 'Channel')
 
-        self.y21 = inception_res_cell(x = self.y13,
-                                      Act = Activation,
-                                      InputNode = [w/2, h/2, c*2],
-                                      Channels0 = [11, 11, 11, 10, 10, 11],
-                                      Channels1 = [22, 22, 22, 20, 20, 22],
-                                      Strides0 = [1, 1, 1, 1],
-                                      Strides1 = [1, 1, 1, 1],
-                                      Initializer = Initializer,
-                                      Regularization = Regularization,
-                                      Renormalization = Renormalization,
-                                      Rmax = self.rmax,
-                                      Dmax = self.dmax,
-                                      vname = 'Res21',
-                                      SE = SE,
-                                      Training = self.istraining)
-        self.y22 = inception_res_cell(x = self.y21,
-                                      Act = Activation,
-                                      InputNode = [w/2, h/2, c*2],
-                                      Channels0 = [11, 11, 11, 10, 10, 11],
-                                      Channels1 = [44, 44, 44, 40, 40, 44],
-                                      Strides0 = [1, 1, 1, 1],
-                                      Strides1 = [1, 1, 1, 1],
-                                      Initializer = Initializer,
-                                      Regularization = Regularization,
-                                      Renormalization = Renormalization,
-                                      Rmax = self.rmax,
-                                      Dmax = self.dmax,
-                                      vname = 'Res22',
-                                      SE = SE,
-                                      Training = self.istraining)
-        self.y23 = Layers.pooling(x = self.y22, ksize=[2, 2], strides=[2, 2],
-                                  padding='SAME', algorithm = 'Max')
+        ## Dense
+        self.densenet_output = densenet(x = self.stem_concat,
+                                        Act = Activation,
+                                        GrowthRate = GrowthRate,
+                                        InputNode = [self.SIZE / 4, self.SIZE / 4, 128],
+                                        Strides = [1, 1, 1, 1],
+                                        Renormalization = Regularization,
+                                        Regularization = Renormalization,
+                                        rmax = None,
+                                        dmax = None,
+                                        SE = SE,
+                                        Training = self.istraining,
+                                        vname = 'DenseNet')
+        self.resnet_output_resize = tf.image.resize_images(images = self.resnet_output,
+                                                           size = (self.SIZE / 64, self.SIZE / 64),
+                                                           align_corners=False)
 
+        self.y41 = Layers.concat([self.resnet_output_resize, self.densenet_output], concat_type = 'Channel')
 
-        self.y31 = inception_res_cell(x = self.y23,
-                                      Act = Activation,
-                                      InputNode = [w/4, h/4, c*4],
-                                      Channels0 = [22, 22, 22, 20, 20, 22],
-                                      Channels1 = [44, 44, 44, 40, 40, 44],
-                                      Strides0 = [1, 1, 1, 1],
-                                      Strides1 = [1, 1, 1, 1],
-                                      Initializer = Initializer,
-                                      Regularization = Regularization,
-                                      Renormalization = Renormalization,
-                                      Rmax = self.rmax,
-                                      Dmax = self.dmax,
-                                      vname = 'Res31',
-                                      SE = SE,
-                                      Training = self.istraining)
-        self.y32 = inception_res_cell(x = self.y31,
-                                      Act = Activation,
-                                      InputNode = [w/4, h/4, c*4],
-                                      Channels0 = [22, 22, 22, 20, 20, 22],
-                                      Channels1 = [88, 88, 88, 80, 80, 88],
-                                      Strides0 = [1, 1, 1, 1],
-                                      Strides1 = [1, 1, 1, 1],
-                                      Initializer = Initializer,
-                                      Regularization = Regularization,
-                                      Renormalization = Renormalization,
-                                      Rmax = self.rmax,
-                                      Dmax = self.dmax,
-                                      vname = 'Res32',
-                                      SE = SE,
-                                      Training = self.istraining)
-        self.y33 = Layers.pooling(x = self.y32, ksize=[2, 2], strides=[2, 2],
-                                  padding='SAME', algorithm = 'Max')
-
-        self.y41 = Layers.concat([self.y33, self.resnet_output], concat_type = 'Channel')
-
+        # c = 2776
+        c = (128 + GrowthRate * 16 + 2048) / 6
         self.y51 = inception_res_cell(x = self.y41,
                                       Act = Activation,
-                                      InputNode = [w/8, h/8, c*8 + 2048],
-                                      Channels0 = [88, 88, 88, 80, 80, 88],
-                                      Channels1 = [88 * 5, 88 * 5, 88 * 5, 80 * 5, 80 * 5, 88 * 5],
+                                      InputNode = [self.SIZE / 64, self.SIZE / 64, 128 + GrowthRate * 16 + 2048],
+                                      Channels0 = [c/4, c/4, c/4, c/4, c/4, c/4],
+                                      Channels1 = [c, c, c, c, c, c],
                                       Strides0 = [1, 1, 1, 1],
                                       Strides1 = [1, 1, 1, 1],
                                       Initializer = Initializer,
@@ -249,20 +183,32 @@ class Detecter(Core2.Core):
                                       vname = 'Res51',
                                       SE = SE,
                                       Training = self.istraining)
+        # Batch Normalization
+        self.x_bn = Layers.batch_normalization(x = self.y51,
+                                               shape = 128 + GrowthRate * 16 + 2048,
+                                               vname = 'TOP_BN',
+                                               dim = [0, 1, 2],
+                                               Renormalization = Renormalization,
+                                               Training = self.istraining,
+                                               rmax = None,
+                                               dmax = None)
+        # Activation Function
+        with tf.variable_scope('TOP_Act') as scope:
+            self.x_act = AF.select_activation(Activation)(self.x_bn)
 
 
         self.y61 = Layers.pooling(x = self.y51,
-                                  ksize=[w/4, h/4],
-                                  strides=[w/4, h/4],
+                                  ksize=[self.SIZE / 64, self.SIZE / 64],
+                                  strides=[self.SIZE / 64, self.SIZE / 64],
                                   padding='SAME',
                                   algorithm = 'Avg')
 
 
         # reshape
-        self.y71 = Layers.reshape_tensor(x = self.y61, shape = [1 * 1 * 2048 + 512])
+        self.y71 = Layers.reshape_tensor(x = self.y61, shape = [128 + GrowthRate * 16 + 2048])
         # fnn
         self.y72 = Outputs.output(x = self.y71,
-                                  InputSize = 2048 + 512,
+                                  InputSize = 128 + GrowthRate * 16 + 2048,
                                   OutputSize = 14,
                                   Initializer = 'Xavier',
                                   BatchNormalization = False,
