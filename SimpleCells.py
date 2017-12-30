@@ -111,6 +111,52 @@ def conv_block(x,
                         vname = vname + '_SE02')
     return x02
 
+def transition_cell(x,
+                    Act = 'Relu',
+                    InputNode = [64, 64, 32],
+                    Strides = [1, 1, 1, 1],
+                    Renormalization = False,
+                    Regularization = False,
+                    rmax = None,
+                    dmax = None,
+                    SE = True,
+                    Training = True,
+                    vname = '_ConvBlock'):
+    # Batch Normalization
+    x_bn1 = Layers.batch_normalization(x = x,
+                                       shape = InputNode[2],
+                                       vname = vname + '_BN01',
+                                       dim = [0, 1, 2],
+                                       Renormalization = Renormalization,
+                                       Training = Training,
+                                       rmax = rmax,
+                                       dmax = dmax)
+    # Activation Function
+    with tf.variable_scope(vname + '_Act01') as scope:
+        x_act1 = AF.select_activation(Act)(x_bn1)
+
+    x01 = Layers.convolution2d(x = x_act1,
+                               FilterSize = [1, 1, InputNode[2], InputNode[2]],
+                               Initializer = Initializer,
+                               Strides = [Strides[1], Strides[2]],
+                               Padding = 'SAME',
+                               ActivationFunction = 'Equal',
+                               BatchNormalization = False,
+                               Renormalization = False,
+                               Training = Training,
+                               Regularization = Regularization,
+                               vname = vname + '_Conv_01')
+    if SE:
+        x01 = SE_module(x = x01,
+                        InputNode = [InputNode[0], InputNode[1], InputNode[2] * 4],
+                        Act = 'Relu',
+                        vname = vname + '_SE01')
+    p_max = Layers.pooling(x = x01,
+                           ksize=[2, 2],
+                           strides=[2, 2],
+                           padding='SAME',
+                           algorithm = 'Max')
+    return p_max
 
 
 
