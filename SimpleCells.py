@@ -38,10 +38,106 @@ def stem_cell(x,
     return p_max
 
 
+def dense_cell(x,
+               Act = 'Relu',
+               GrowthRate = 12,
+               InputNode = [64, 64, 32],
+               Strides = [1, 1, 1, 1],
+               Renormalization = False,
+               Regularization = False,
+               rmax = None,
+               dmax = None,
+               SE = True,
+               Training = True,
+               vname = '_Dense'):
+
+    x01 = conv_block(x = x,
+                     Act = Act,
+                     GrowthRate = GrowthRate,
+                     InputNode = [InputNode[0], InputNode[1], InputNode[2]],
+                     Strides = [1, 1, 1, 1],
+                     Renormalization = Renormalization,
+                     Regularization = Regularization,
+                     rmax = rmax,
+                     dmax = dmax,
+                     SE = SE,
+                     Training = Training,
+                     vname = '_ConvBlock01')
+    x02 = Layers.concat(xs = [x, x01], concat_type = 'Channel')
+    if SE:
+        x02 = SE_module(x = x02,
+                        InputNode = [InputNode[0], InputNode[1], InputNode[2] + GrowthRate],
+                        Act = 'Relu',
+                        vname = vname + '_SE01')
+
+    x11 = conv_block(x = x02,
+                     Act = Act,
+                     GrowthRate = GrowthRate,
+                     InputNode = [InputNode[0], InputNode[1], InputNode[2] + GrowthRate],
+                     Strides = [1, 1, 1, 1],
+                     Renormalization = Renormalization,
+                     Regularization = Regularization,
+                     rmax = rmax,
+                     dmax = dmax,
+                     SE = SE,
+                     Training = Training,
+                     vname = '_ConvBlock02')
+    x12 = Layers.concat(xs = [x, x01, x11], concat_type = 'Channel')
+    if SE:
+        x12 = SE_module(x = x12,
+                        InputNode = [InputNode[0], InputNode[1], InputNode[2] + GrowthRate * 2],
+                        Act = 'Relu',
+                        vname = vname + '_SE02')
+
+    x21 = conv_block(x = x12,
+                     Act = Act,
+                     GrowthRate = GrowthRate,
+                     InputNode = [InputNode[0], InputNode[1], InputNode[2]],
+                     Strides = [1, 1, 1, 1],
+                     Renormalization = Renormalization,
+                     Regularization = Regularization,
+                     rmax = rmax,
+                     dmax = dmax,
+                     SE = SE,
+                     Training = Training,
+                     vname = '_ConvBlock03')
+    x22 = Layers.concat(xs = [x, x01, x11, x21], concat_type = 'Channel')
+    if SE:
+        x22 = SE_module(x = x22,
+                        InputNode = [InputNode[0], InputNode[1], InputNode[2] + GrowthRate * 2],
+                        Act = 'Relu',
+                        vname = vname + '_SE03')
+
+    x31 = conv_block(x = x22,
+                     Act = Act,
+                     GrowthRate = GrowthRate,
+                     InputNode = [InputNode[0], InputNode[1], InputNode[2] + GrowthRate * 2],
+                     Strides = [1, 1, 1, 1],
+                     Renormalization = Renormalization,
+                     Regularization = Regularization,
+                     rmax = rmax,
+                     dmax = dmax,
+                     SE = SE,
+                     Training = Training,
+                     vname = '_ConvBlock03')
+    x32 = Layers.concat(xs = [x, x01, x11, x21, x31], concat_type = 'Channel')
+    if SE:
+        x32 = SE_module(x = x_concat,
+                        InputNode = [InputNode[0], InputNode[1], InputNode[2] + GrowthRate * 3],
+                        Act = 'Relu',
+                        vname = vname + '_SE03')
+    return x32
+
+
+
+
+
+
 # Conv Block
 def conv_block(x,
                Act = 'Relu',
                InputNode = [64, 64, 32],
+               GrowthRate = 12,
                Strides = [1, 1, 1, 1],
                Renormalization = False,
                Regularization = False,
@@ -64,7 +160,7 @@ def conv_block(x,
         x_act1 = AF.select_activation(Act)(x_bn1)
 
     x01 = Layers.convolution2d(x = x_act1,
-                               FilterSize = [1, 1, InputNode[2], InputNode[2] * 4],
+                               FilterSize = [1, 1, InputNode[2], GrowthRate * 4],
                                Initializer = Initializer,
                                Strides = [Strides[1], Strides[2]],
                                Padding = 'SAME',
@@ -76,13 +172,13 @@ def conv_block(x,
                                vname = vname + '_Conv_01')
     if SE:
         x01 = SE_module(x = x01,
-                        InputNode = [InputNode[0], InputNode[1], InputNode[2] * 4],
+                        InputNode = [InputNode[0], InputNode[1], GrowthRate * 4],
                         Act = 'Relu',
                         vname = vname + '_SE01')
 
     # Batch Normalization
     x_bn2 = Layers.batch_normalization(x = x01,
-                                      shape = InputNode[2] * 4,
+                                      shape = GrowthRate * 4,
                                       vname = vname + '_BN02',
                                       dim = [0, 1, 2],
                                       Renormalization = Renormalization,
@@ -94,7 +190,7 @@ def conv_block(x,
         x_act2 = AF.select_activation(Act)(x_bn2)
 
     x02 = Layers.convolution2d(x = x_act2,
-                               FilterSize = [3, 3, InputNode[2] * 4, InputNode[2]],
+                               FilterSize = [3, 3, GrowthRate * 4, GrowthRate],
                                Initializer = Initializer,
                                Strides = [Strides[1], Strides[2]],
                                Padding = 'SAME',
@@ -106,7 +202,7 @@ def conv_block(x,
                                vname = vname + '_Conv_02')
     if SE:
         x02 = SE_module(x = x02,
-                        InputNode = [InputNode[0], InputNode[1], InputNode[2]],
+                        InputNode = [InputNode[0], InputNode[1], GrowthRate],
                         Act = 'Relu',
                         vname = vname + '_SE02')
     return x02
@@ -148,7 +244,7 @@ def transition_cell(x,
                                vname = vname + '_Conv_01')
     if SE:
         x01 = SE_module(x = x01,
-                        InputNode = [InputNode[0], InputNode[1], InputNode[2] * 4],
+                        InputNode = [InputNode[0], InputNode[1], InputNode[2]],
                         Act = 'Relu',
                         vname = vname + '_SE01')
     p_max = Layers.pooling(x = x01,
