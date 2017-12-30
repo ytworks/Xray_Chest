@@ -115,7 +115,7 @@ class Detecter(Core2.Core):
         Regularization = False
         Renormalization = False
         SE = True
-        GrowthRate = 32
+        GrowthRate = 16
         prob = 1.0
         self.x_resnet = tf.image.resize_images(images = self.x,
                                                size = (224, 224),
