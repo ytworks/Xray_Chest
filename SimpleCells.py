@@ -10,6 +10,35 @@ from LinearMotor import ActivationFunctions as AF
 from LinearMotor import Layers
 from LinearMotor import Outputs
 
+
+# Stem cell
+def stem_cell(x,
+              InputNode = [512, 512, 3],
+              Channels = 128,
+              Initializer = 'He',
+              vname = 'Stem',
+              regularization = False,
+              Training = True):
+    x01 = Layers.convolution2d(x = x,
+                               FilterSize = [7, 7, InputNode[2], Channel,
+                               Initializer = Initializer,
+                               Strides = [2, 2],
+                               Padding = 'SAME',
+                               ActivationFunction = 'Equal',
+                               BatchNormalization = False,
+                               Renormalization = False,
+                               Training = Training,
+                               Regularization = regularization,
+                               vname = vname + '_Conv_01')
+    p_max = Layers.pooling(x = x01,
+                           ksize=[3, 3],
+                           strides=[2, 2],
+                           padding='SAME',
+                           algorithm = 'Max')
+    return p_max
+
+
+
 # resnet cell
 def inception_res_cell(x,
                        Act = 'Relu',
@@ -147,7 +176,7 @@ def inception_cell(x,
                            ksize=[2, 2],
                            strides=[1, 1],
                            padding='SAME',
-                           algorithm = 'Max')
+                           algorithm = 'Avg')
     x04 = Layers.convolution2d(x = p_avg,
                                FilterSize = [1, 1, InputNode[2], Channels[3]],
                                Initializer = Initializer,
