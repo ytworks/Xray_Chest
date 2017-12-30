@@ -38,6 +38,130 @@ def stem_cell(x,
     return p_max
 
 
+def densenet(x,
+             Act = 'Relu',
+             GrowthRate = 12,
+             InputNode = [64, 64, 32],
+             Strides = [1, 1, 1, 1],
+             Renormalization = False,
+             Regularization = False,
+             rmax = None,
+             dmax = None,
+             SE = True,
+             Training = True,
+             vname = '_DenseNet'):
+
+    x01 = dense_cell(x = x,
+                     Act = Act,
+                     GrowthRate = GrowthRate,
+                     InputNode = [InputNode[0], InputNode[1], InputNode[2]],
+                     Strides = Strides,
+                     Renormalization = Renormalization,
+                     Regularization = Regularization,
+                     rmax = rmax,
+                     dmax = dmax,
+                     SE = SE,
+                     Training = Training,
+                     vname = vname + '_Dense01')
+    x02 = transition_cell(x = x01,
+                          Act = Act,
+                          InputNode = [InputNode[0], InputNode[1], InputNode[2] + GrowthRate * 3],
+                          Strides = Strides,
+                          Renormalization = Renormalization,
+                          Regularization = Regularization,
+                          rmax = rmax,
+                          dmax = dmax,
+                          SE = SE,
+                          Training = Training,
+                          vname = vname +'_Transition01')
+
+    x03 = dense_cell(x = x02,
+                     Act = Act,
+                     GrowthRate = GrowthRate,
+                     InputNode = [InputNode[0] / 2, InputNode[1] / 2, InputNode[2] + GrowthRate * 3],
+                     Strides = Strides,
+                     Renormalization = Renormalization,
+                     Regularization = Regularization,
+                     rmax = rmax,
+                     dmax = dmax,
+                     SE = SE,
+                     Training = Training,
+                     vname = vname + '_Dense02')
+    x04 = transition_cell(x = x03,
+                          Act = Act,
+                          InputNode = [InputNode[0] / 2, InputNode[1] / 2, InputNode[2] + GrowthRate * 6],
+                          Strides = Strides,
+                          Renormalization = Renormalization,
+                          Regularization = Regularization,
+                          rmax = rmax,
+                          dmax = dmax,
+                          SE = SE,
+                          Training = Training,
+                          vname = vname +'_Transition02')
+
+    x05 = dense_cell(x = x04,
+                     Act = Act,
+                     GrowthRate = GrowthRate,
+                     InputNode = [InputNode[0] / 2, InputNode[1] / 2, InputNode[2] + GrowthRate * 6],
+                     Strides = Strides,
+                     Renormalization = Renormalization,
+                     Regularization = Regularization,
+                     rmax = rmax,
+                     dmax = dmax,
+                     SE = SE,
+                     Training = Training,
+                     vname = vname + '_Dense03')
+    x07 = transition_cell(x = x06,
+                          Act = Act,
+                          InputNode = [InputNode[0] / 2, InputNode[1] / 2, InputNode[2] + GrowthRate * 9],
+                          Strides = Strides,
+                          Renormalization = Renormalization,
+                          Regularization = Regularization,
+                          rmax = rmax,
+                          dmax = dmax,
+                          SE = SE,
+                          Training = Training,
+                          vname = vname +'_Transition03')
+
+    x08 = dense_cell(x = x07,
+                     Act = Act,
+                     GrowthRate = GrowthRate,
+                     InputNode = [InputNode[0] / 2, InputNode[1] / 2, InputNode[2] + GrowthRate * 9],
+                     Strides = Strides,
+                     Renormalization = Renormalization,
+                     Regularization = Regularization,
+                     rmax = rmax,
+                     dmax = dmax,
+                     SE = SE,
+                     Training = Training,
+                     vname = vname + '_Dense04')
+    x09 = transition_cell(x = x08,
+                          Act = Act,
+                          InputNode = [InputNode[0] / 2, InputNode[1] / 2, InputNode[2] + GrowthRate * 12],
+                          Strides = Strides,
+                          Renormalization = Renormalization,
+                          Regularization = Regularization,
+                          rmax = rmax,
+                          dmax = dmax,
+                          SE = SE,
+                          Training = Training,
+                          vname = vname +'_Transition04')
+    # Batch Normalization
+    x_bn1 = Layers.batch_normalization(x = x09,
+                                       shape = InputNode[2] + GrowthRate * 12,
+                                       vname = vname + '_BN01',
+                                       dim = [0, 1, 2],
+                                       Renormalization = Renormalization,
+                                       Training = Training,
+                                       rmax = rmax,
+                                       dmax = dmax)
+    # Activation Function
+    with tf.variable_scope(vname + '_Act01') as scope:
+        x_act1 = AF.select_activation(Act)(x_bn1)
+    return x_act1
+
+
+
 def dense_cell(x,
                Act = 'Relu',
                GrowthRate = 12,
@@ -62,7 +186,7 @@ def dense_cell(x,
                      dmax = dmax,
                      SE = SE,
                      Training = Training,
-                     vname = '_ConvBlock01')
+                     vname = vname + '_ConvBlock01')
     x02 = Layers.concat(xs = [x, x01], concat_type = 'Channel')
     if SE:
         x02 = SE_module(x = x02,
@@ -81,7 +205,7 @@ def dense_cell(x,
                      dmax = dmax,
                      SE = SE,
                      Training = Training,
-                     vname = '_ConvBlock02')
+                     vname = vname +'_ConvBlock02')
     x12 = Layers.concat(xs = [x, x01, x11], concat_type = 'Channel')
     if SE:
         x12 = SE_module(x = x12,
@@ -100,7 +224,7 @@ def dense_cell(x,
                      dmax = dmax,
                      SE = SE,
                      Training = Training,
-                     vname = '_ConvBlock03')
+                     vname = vname +'_ConvBlock03')
     x22 = Layers.concat(xs = [x, x01, x11, x21], concat_type = 'Channel')
     if SE:
         x22 = SE_module(x = x22,
@@ -119,7 +243,7 @@ def dense_cell(x,
                      dmax = dmax,
                      SE = SE,
                      Training = Training,
-                     vname = '_ConvBlock03')
+                     vname = vname +'_ConvBlock03')
     x32 = Layers.concat(xs = [x, x01, x11, x21, x31], concat_type = 'Channel')
     if SE:
         x32 = SE_module(x = x_concat,
@@ -217,7 +341,7 @@ def transition_cell(x,
                     dmax = None,
                     SE = True,
                     Training = True,
-                    vname = '_ConvBlock'):
+                    vname = '_Transition'):
     # Batch Normalization
     x_bn1 = Layers.batch_normalization(x = x,
                                        shape = InputNode[2],
