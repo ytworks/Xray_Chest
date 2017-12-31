@@ -479,3 +479,4 @@ if __name__ == '__main__':
         print(y[1], y[2], y[3], y[4])
     for i in tqdm(range(100)):
         y = dataset.test.next_batch(20)
+    print(dataset.test.start_abnormal)
