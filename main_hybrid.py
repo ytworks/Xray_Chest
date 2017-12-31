@@ -89,12 +89,13 @@ def main():
         logger.debug("Finish learning")
     else:
         logger.debug("Skipped learning")
-    testdata = dataset.test.get_all_data()
+    testdata = dataset.test.get_all_files()
     with open(outfile, "w") as f:
         writer = csv.writer(f)
         ts, nums = [], []
         for i, t in enumerate(testdata[0]):
-            ts.append(t)
+            img, _, _, _, _ = dataset.test.img_reader(t, augment = False)
+            ts.append(img)
             nums.append(i)
             if len(ts) == batch:
                 filenames = [os.path.splitext(testdata[3][num]) for num in nums]

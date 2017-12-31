@@ -1,16 +1,16 @@
 #! /usr/bin/bash
 cd `dirname $0`
 cd ../../../
-#source activate tensorflow_p27
+source activate tensorflow_p27
 size='512'
 augment='True'
 checkpoint='./Model/run.ckpt'
 outfile='./Result/result.csv'
-epoch='1'
-batch='16'
-log='1'
+epoch='30000'
+batch='64'
+log='10'
 lr='0.001'
-rr='0.002'
+rr='0.0'
 l1_norm='0.0'
 output_type='classified-softmax'
 #output_type='classified-squared-hinge'
@@ -23,7 +23,7 @@ do
   esac
 done
 
-python main_hybrid.py  -mode learning -size $size \
+python main_hybrid.py  -mode prediction -size $size \
               -augment $augment \
               -checkpoint $checkpoint \
               -epoch $epoch \
