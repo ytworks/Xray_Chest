@@ -115,7 +115,7 @@ class Detecter(Core2.Core):
         Regularization = False
         Renormalization = False
         SE = True
-        GrowthRate = 32
+        GrowthRate = 30
         prob = 1.0
         self.x_resnet = tf.image.resize_images(images = self.x,
                                                size = (224, 224),
@@ -187,12 +187,12 @@ class Detecter(Core2.Core):
         self.y41 = Layers.concat([self.resnet_output_resize, self.densenet_output], concat_type = 'Channel')
 
         # c = 2776
-        c = 437
+        c = 64 + GrowthRate * 16 + 2048
         self.y51 = inception_res_cell(x = self.y41,
                                       Act = Activation,
                                       InputNode = [self.SIZE / 64, self.SIZE / 64, 64 + GrowthRate * 16 + 2048],
-                                      Channels0 = [100, 100, 100, 100, 100, 100],
-                                      Channels1 = [c, c, c, c+1, c+1, c],
+                                      Channels0 = [c/6, c/6, c/6, c/6, c/6, c/6],
+                                      Channels1 = [c, c, c, c, c, c],
                                       Strides0 = [1, 1, 1, 1],
                                       Strides1 = [1, 1, 1, 1],
                                       Initializer = Initializer,
