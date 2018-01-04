@@ -137,7 +137,7 @@ class Detecter(Core2.Core):
         '''
 
         # dense net
-        '''
+
         ## Stem
         self.dense_stem = stem_cell(x = self.x,
                                     InputNode = [self.SIZE, self.SIZE, self.CH],
@@ -146,13 +146,13 @@ class Detecter(Core2.Core):
                                     vname = 'Stem',
                                     regularization = Regularization,
                                     Training = self.istraining)
-
+        '''
         ## concat
         self.stem_concat = Layers.concat([self.dense_stem, self.resnet_stem], concat_type = 'Channel')
         '''
 
         ## Dense
-        self.densenet_output = densenet(x = self.des_stem,
+        self.densenet_output = densenet(x = self.dense_stem,
                                         Act = Activation,
                                         GrowthRate = GrowthRate,
                                         InputNode = [self.SIZE / 4, self.SIZE / 4, 64],
