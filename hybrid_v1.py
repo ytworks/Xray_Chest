@@ -164,7 +164,7 @@ class Detecter(Core2.Core):
                                         SE = SE,
                                         Training = self.istraining,
                                         vname = 'DenseNet')
-        '''
+
         self.dout = Layers.pooling(x = self.densenet_output,
                                    ksize=[self.SIZE / 64, self.SIZE / 64],
                                    strides=[self.SIZE / 64, self.SIZE / 64],
@@ -180,7 +180,6 @@ class Detecter(Core2.Core):
                                    BatchNormalization = False,
                                    Regularization = True,
                                    vname = 'Output_z512')
-        '''
 
         self.resnet_output_resize = tf.image.resize_images(images = self.resnet_output,
                                                            size = (self.SIZE / 64, self.SIZE / 64),
@@ -257,13 +256,11 @@ class Detecter(Core2.Core):
                                              regularization = self.regularization,
                                              regularization_type = self.regularization_type,
                                              output_type = diag_output_type)
-        '''
         self.loss_function += Loss.loss_func(y = self.z512,
                                              y_ = self.z_,
                                              regularization = False,
                                              regularization_type = self.regularization_type,
                                              output_type = diag_output_type)
-        '''
         '''
         self.loss_function += Loss.loss_func(y = self.y,
                                             y_ = self.y_,
