@@ -321,8 +321,9 @@ class Detecter(Core2.Core):
                 # Train
                 self.p.change_phase(True)
                 feed_dict = self.make_feed_dict(prob = True, batch = batch, is_Train = True)
-                train_accuracy_z = self.accuracy_z.eval(feed_dict=feed_dict)
-                losses = self.loss_function.eval(feed_dict=feed_dict)
+                res = self.sess.run([self.accuracy_z, self.loss_function], feed_dict = feed_dict)
+                train_accuracy_z = res[0]
+                losses = res[1]
                 train_prediction = self.prediction(data = batch[0], roi = False)
                 aucs_t = ''
                 for d in range(len(train_prediction[1][0])):
@@ -336,8 +337,9 @@ class Detecter(Core2.Core):
                 val_accuracy_y, val_accuracy_z, val_losses, test, prob = [], [], [], [], []
                 validation_batch = data.test.next_batch(self.batch, augment = False)
                 feed_dict_val = self.make_feed_dict(prob = False, batch = validation_batch, is_Train = False)
-                val_accuracy_z = self.accuracy_z.eval(feed_dict=feed_dict_val)
-                val_losses = self.loss_function.eval(feed_dict=feed_dict_val)
+                res_val = self.sess.run([self.accuracy_z, self.loss_function], feed_dict = feed_dict_val)
+                val_accuracy_z = res_val[0]
+                val_losses = res_val[1]
                 val_prediction = self.prediction(data = validation_batch[0], roi = False)
                 aucs_v = ''
                 for d in range(len(train_prediction[1][0])):
