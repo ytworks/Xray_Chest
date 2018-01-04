@@ -135,6 +135,7 @@ class Detecter(Core2.Core):
                                                   align_corners=False)
 
         # dense net
+        '''
         ## Stem
         self.dense_stem = stem_cell(x = self.x,
                                     InputNode = [self.SIZE, self.SIZE, self.CH],
@@ -146,12 +147,13 @@ class Detecter(Core2.Core):
 
         ## concat
         self.stem_concat = Layers.concat([self.dense_stem, self.resnet_stem], concat_type = 'Channel')
+        '''
 
         ## Dense
         self.densenet_output = densenet(x = self.stem_concat,
                                         Act = Activation,
                                         GrowthRate = GrowthRate,
-                                        InputNode = [self.SIZE / 4, self.SIZE / 4, 128],
+                                        InputNode = [self.SIZE / 4, self.SIZE / 4, 64],
                                         Strides = [1, 1, 1, 1],
                                         Renormalization = Regularization,
                                         Regularization = Renormalization,
@@ -160,6 +162,22 @@ class Detecter(Core2.Core):
                                         SE = SE,
                                         Training = self.istraining,
                                         vname = 'DenseNet')
+        self.dout = Layers.pooling(x = self.densenet_output,
+                                   ksize=[self.SIZE / 64, self.SIZE / 64],
+                                   strides=[self.SIZE / 64, self.SIZE / 64],
+                                   padding='SAME',
+                                   algorithm = 'Avg')
+        # reshape
+        self.dreshape = Layers.reshape_tensor(x = self.dout, shape = [64 + GrowthRate * 16])
+        # fnn
+        self.z512 = Outputs.output(x = self.dreshape,
+                                   InputSize = 64 + GrowthRate * 16,
+                                   OutputSize = 14,
+                                   Initializer = 'Xavier',
+                                   BatchNormalization = False,
+                                   Regularization = True,
+                                   vname = 'Output_z512')
+
         self.resnet_output_resize = tf.image.resize_images(images = self.resnet_output,
                                                            size = (self.SIZE / 64, self.SIZE / 64),
                                                            align_corners=False)
@@ -167,12 +185,12 @@ class Detecter(Core2.Core):
         self.y41 = Layers.concat([self.resnet_output_resize, self.densenet_output], concat_type = 'Channel')
 
         # c = 2776
-        c = (128 + GrowthRate * 16 + 2048) / 6
+        c = 437
         self.y51 = inception_res_cell(x = self.y41,
                                       Act = Activation,
-                                      InputNode = [self.SIZE / 64, self.SIZE / 64, 128 + GrowthRate * 16 + 2048],
-                                      Channels0 = [c/4, c/4, c/4, c/4, c/4, c/4],
-                                      Channels1 = [c, c, c, c, c, c],
+                                      InputNode = [self.SIZE / 64, self.SIZE / 64, 64 + GrowthRate * 16 + 2048],
+                                      Channels0 = [100, 100, 100, 100, 100, 100],
+                                      Channels1 = [c, c, c, c+1, c+1, c],
                                       Strides0 = [1, 1, 1, 1],
                                       Strides1 = [1, 1, 1, 1],
                                       Initializer = Initializer,
@@ -185,7 +203,7 @@ class Detecter(Core2.Core):
                                       Training = self.istraining)
         # Batch Normalization
         self.x_bn = Layers.batch_normalization(x = self.y51,
-                                               shape = 128 + GrowthRate * 16 + 2048,
+                                               shape = 64 + GrowthRate * 16 + 2048,
                                                vname = 'TOP_BN',
                                                dim = [0, 1, 2],
                                                Renormalization = Renormalization,
@@ -205,10 +223,10 @@ class Detecter(Core2.Core):
 
 
         # reshape
-        self.y71 = Layers.reshape_tensor(x = self.y61, shape = [128 + GrowthRate * 16 + 2048])
+        self.y71 = Layers.reshape_tensor(x = self.y61, shape = [64 + GrowthRate * 16 + 2048])
         # fnn
         self.y72 = Outputs.output(x = self.y71,
-                                  InputSize = 128 + GrowthRate * 16 + 2048,
+                                  InputSize = 64 + GrowthRate * 16 + 2048,
                                   OutputSize = 14,
                                   Initializer = 'Xavier',
                                   BatchNormalization = False,
@@ -235,6 +253,11 @@ class Detecter(Core2.Core):
                                              regularization = self.regularization,
                                              regularization_type = self.regularization_type,
                                              output_type = diag_output_type)
+        self.loss_function += Loss.loss_func(y = self.z512,
+                                             y_ = self.z_,
+                                             regularization = False,
+                                             regularization_type = self.regularization_type,
+                                             output_type = diag_output_type)
         '''
         self.loss_function += Loss.loss_func(y = self.y,
                                             y_ = self.y_,
@@ -254,7 +277,7 @@ class Detecter(Core2.Core):
             rmax = min(1.0 + 2.0 * (40000.0 - float(self.steps)) / 40000.0, 3.0)
             dmax = min(5.0 * (25000.0 - float(self.steps)) / 25000.0, 5.0)
 
-        if self.current_loss > np.mean(self.val_losses) - np.std(self.val_losses) and len(self.val_losses) > 50 and is_update:
+        if self.current_loss > np.mean(self.val_losses) - np.std(self.val_losses) and len(self.val_losses) > 30 and is_update:
             logger.debug("Before Learning Rate: %g" % self.learning_rate_value)
             self.learning_rate_value = max(0.00001, self.learning_rate_value * 0.9)
             logger.debug("After Learning Rate: %g" % self.learning_rate_value)

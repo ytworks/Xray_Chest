@@ -248,7 +248,6 @@ class DataSet(object):
                 self.start_abnormal[d] = (self.start_abnormal[d] + 1) % len(self.abnormal[d])
                 abnormal_num += 1
             d = (d + 1) % len(self.abnormal)
-            print(d, len(self.abnormal), len(self.abnormal[d]))
 
         # 正常系シャッフル
         if shuffle_normal:
