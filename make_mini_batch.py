@@ -234,7 +234,7 @@ class DataSet(object):
         # 異常系
         abnormal_num = 0
         d = 0
-        while abnormal_num < int(round((batch_size * batch_ratio))):
+        while abnormal_num < int(round((batch_size * (1.0 - batch_ratio)))):
             if len(self.abnormal[d]) > 0:
                 # ファイルの読み込み
                 img, label0, label1, filename, raw = self.img_reader(self.abnormal[d][self.start_abnormal[d]],
@@ -248,6 +248,7 @@ class DataSet(object):
                 self.start_abnormal[d] = (self.start_abnormal[d] + 1) % len(self.abnormal[d])
                 abnormal_num += 1
             d = (d + 1) % len(self.abnormal)
+            print(d, len(self.abnormal), len(self.abnormal[d]))
 
         # 正常系シャッフル
         if shuffle_normal:
