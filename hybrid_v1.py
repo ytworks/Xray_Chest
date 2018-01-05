@@ -130,11 +130,9 @@ class Detecter(Core2.Core):
         self.resnet_top = self.p['activation_1']
         self.y00 = Layers.pooling(x = self.resnet_top, ksize=[2, 2], strides=[2, 2],
                                   padding='SAME', algorithm = 'Max')
-        '''
         self.resnet_stem = tf.image.resize_images(images = self.y00,
                                                   size = (self.SIZE / 4, self.SIZE / 4),
                                                   align_corners=False)
-        '''
 
         # dense net
 
@@ -146,13 +144,11 @@ class Detecter(Core2.Core):
                                     vname = 'Stem',
                                     regularization = Regularization,
                                     Training = self.istraining)
-        '''
         ## concat
         self.stem_concat = Layers.concat([self.dense_stem, self.resnet_stem], concat_type = 'Channel')
-        '''
 
         ## Dense
-        self.densenet_output = densenet(x = self.dense_stem,
+        self.densenet_output = densenet(x = self.stem_concat,
                                         Act = Activation,
                                         GrowthRate = GrowthRate,
                                         InputNode = [self.SIZE / 4, self.SIZE / 4, 64],
