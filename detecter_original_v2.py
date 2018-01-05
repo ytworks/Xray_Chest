@@ -96,7 +96,6 @@ class Detecter(Core2.Core):
         self.saver = tf.train.Saver()
         self.restore()
         logger.debug("07: TF Model file definition done")
-        self.p.load_weights()
 
 
 
