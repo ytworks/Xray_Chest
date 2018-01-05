@@ -282,7 +282,6 @@ class Detecter(Core2.Core):
             feed_dict = self.make_feed_dict(prob = False, batch = batch, is_Train = True, is_update = True)
             if self.DP and i != 0:
                 self.dynamic_learning_rate(feed_dict)
-            self.p.change_phase(True)
             self.train_op.run(feed_dict=feed_dict)
             self.steps += 1
         self.save_checkpoint()
