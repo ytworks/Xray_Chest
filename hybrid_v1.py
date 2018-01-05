@@ -186,7 +186,7 @@ class Detecter(Core2.Core):
         self.y41 = Layers.concat([self.resnet_output_resize, self.densenet_output], concat_type = 'Channel')
 
         # c = 2776
-        c = (128 + GrowthRate * 16 + 2048)/6
+        c = (64 + GrowthRate * 16 + 2048)/6
         self.y51 = inception_res_cell(x = self.y41,
                                       Act = Activation,
                                       InputNode = [self.SIZE / 64, self.SIZE / 64, 64 + GrowthRate * 16 + 2048],
