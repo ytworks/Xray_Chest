@@ -172,7 +172,7 @@ class Detecter(Core2.Core):
         self.dreshape = Layers.reshape_tensor(x = self.dout, shape = [64 + GrowthRate * 16])
         # fnn
         self.z512 = Outputs.output(x = self.dreshape,
-                                   InputSize = 128 + GrowthRate * 16,
+                                   InputSize = 64 + GrowthRate * 16,
                                    OutputSize = 14,
                                    Initializer = 'Xavier',
                                    BatchNormalization = False,
