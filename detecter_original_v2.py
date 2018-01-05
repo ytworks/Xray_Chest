@@ -80,8 +80,7 @@ class Detecter(Core2.Core):
         self.loss()
         logger.debug("04: TF Loss definition done")
         # 学習
-        non_p_vars = list(set(tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)) - self.p.model_weights_tensors)
-        self.training(var_list = non_p_vars)
+        self.training(var_list = None)
         logger.debug("05: TF Training operation done")
         # 精度の定義
         #self.accuracy_y = UT.correct_rate(self.y, self.y_)
