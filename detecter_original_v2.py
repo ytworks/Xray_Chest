@@ -115,29 +115,9 @@ class Detecter(Core2.Core):
         Regularization = False
         Renormalization = False
         SE = True
-        GrowthRate = 30
+        GrowthRate = 64
         prob = 1.0
-        self.x_resnet = tf.image.resize_images(images = self.x,
-                                               size = (224, 224),
-                                               align_corners=False)
-        self.p = trans.Transfer(self.x_resnet, 'resnet', pooling = None, vname = 'Transfer',
-                                trainable = False)
-        # activation_1 Tensor("Transfer/activation/Relu:0", shape=(1, 112, 112, 64), dtype=float32)
-        #max_pooling2d_1 Tensor("Transfer/max_pooling2d/MaxPool:0", shape=(1, 55, 55, 64), dtype=float32)
-        self.resnet_output = self.p.get_output_tensor()
-
-        # Resnet Stem
-        self.resnet_top = self.p['activation_1']
-        self.y00 = Layers.pooling(x = self.resnet_top, ksize=[2, 2], strides=[2, 2],
-                                  padding='SAME', algorithm = 'Max')
-        '''
-        self.resnet_stem = tf.image.resize_images(images = self.y00,
-                                                  size = (self.SIZE / 4, self.SIZE / 4),
-                                                  align_corners=False)
-        '''
-
         # dense net
-
         ## Stem
         self.dense_stem = stem_cell(x = self.x,
                                     InputNode = [self.SIZE, self.SIZE, self.CH],
@@ -146,10 +126,6 @@ class Detecter(Core2.Core):
                                     vname = 'Stem',
                                     regularization = Regularization,
                                     Training = self.istraining)
-        '''
-        ## concat
-        self.stem_concat = Layers.concat([self.dense_stem, self.resnet_stem], concat_type = 'Channel')
-        '''
 
         ## Dense
         self.densenet_output = densenet(x = self.dense_stem,
@@ -165,58 +141,7 @@ class Detecter(Core2.Core):
                                         Training = self.istraining,
                                         vname = 'DenseNet')
 
-        self.dout = Layers.pooling(x = self.densenet_output,
-                                   ksize=[self.SIZE / 64, self.SIZE / 64],
-                                   strides=[self.SIZE / 64, self.SIZE / 64],
-                                   padding='SAME',
-                                   algorithm = 'Avg')
-        # reshape
-        self.dreshape = Layers.reshape_tensor(x = self.dout, shape = [64 + GrowthRate * 16])
-        # fnn
-        self.z512 = Outputs.output(x = self.dreshape,
-                                   InputSize = 64 + GrowthRate * 16,
-                                   OutputSize = 14,
-                                   Initializer = 'Xavier',
-                                   BatchNormalization = False,
-                                   Regularization = True,
-                                   vname = 'Output_z512')
-
-        self.resnet_output_resize = tf.image.resize_images(images = self.resnet_output,
-                                                           size = (self.SIZE / 64, self.SIZE / 64),
-                                                           align_corners=False)
-
-        self.y41 = Layers.concat([self.resnet_output_resize, self.densenet_output], concat_type = 'Channel')
-
-        # c = 2776
-        c = (64 + GrowthRate * 16 + 2048)/6
-        self.y51 = inception_res_cell(x = self.y41,
-                                      Act = Activation,
-                                      InputNode = [self.SIZE / 64, self.SIZE / 64, 64 + GrowthRate * 16 + 2048],
-                                      Channels0 = [c/4, c/4, c/4, c/4, c/4, c/4],
-                                      Channels1 = [c, c, c, c, c, c],
-                                      Strides0 = [1, 1, 1, 1],
-                                      Strides1 = [1, 1, 1, 1],
-                                      Initializer = Initializer,
-                                      Regularization = Regularization,
-                                      Renormalization = Renormalization,
-                                      Rmax = self.rmax,
-                                      Dmax = self.dmax,
-                                      vname = 'Res51',
-                                      SE = SE,
-                                      Training = self.istraining)
-        # Batch Normalization
-        self.y51 = Layers.batch_normalization(x = self.y51,
-                                               shape = 64 + GrowthRate * 16 + 2048,
-                                               vname = 'TOP_BN',
-                                               dim = [0, 1, 2],
-                                               Renormalization = Renormalization,
-                                               Training = self.istraining,
-                                               rmax = None,
-                                               dmax = None)
-        # Activation Function
-        with tf.variable_scope('TOP_Act') as scope:
-            self.y51 = AF.select_activation(Activation)(self.y51)
-
+        self.y51 = self.densenet_output
 
         self.y61 = Layers.pooling(x = self.y51,
                                   ksize=[self.SIZE / 64, self.SIZE / 64],
@@ -224,12 +149,11 @@ class Detecter(Core2.Core):
                                   padding='SAME',
                                   algorithm = 'Avg')
 
-
         # reshape
-        self.y71 = Layers.reshape_tensor(x = self.y61, shape = [64 + GrowthRate * 16 + 2048])
+        self.y71 = Layers.reshape_tensor(x = self.y61, shape = [64 + GrowthRate * 16])
         # fnn
         self.y72 = Outputs.output(x = self.y71,
-                                  InputSize = 64 + GrowthRate * 16 + 2048,
+                                  InputSize = 64 + GrowthRate * 16,
                                   OutputSize = 14,
                                   Initializer = 'Xavier',
                                   BatchNormalization = False,
@@ -256,11 +180,6 @@ class Detecter(Core2.Core):
                                              regularization = self.regularization,
                                              regularization_type = self.regularization_type,
                                              output_type = diag_output_type)
-        self.loss_function += Loss.loss_func(y = self.z512,
-                                             y_ = self.z_,
-                                             regularization = False,
-                                             regularization_type = self.regularization_type,
-                                             output_type = diag_output_type)
         '''
         self.loss_function += Loss.loss_func(y = self.y,
                                             y_ = self.y_,
@@ -279,8 +198,8 @@ class Detecter(Core2.Core):
         else:
             rmax = min(1.0 + 2.0 * (40000.0 - float(self.steps)) / 40000.0, 3.0)
             dmax = min(5.0 * (25000.0 - float(self.steps)) / 25000.0, 5.0)
-
-        if self.current_loss > np.mean(self.val_losses) - np.std(self.val_losses) and len(self.val_losses) > 10 and is_update:
+        if self.steps %1000 == 0 and is_update:
+        #if self.current_loss > np.mean(self.val_losses) - np.std(self.val_losses) and len(self.val_losses) > 10 and is_update:
             logger.debug("Before Learning Rate: %g" % self.learning_rate_value)
             self.learning_rate_value = max(0.00001, self.learning_rate_value * 0.5)
             logger.debug("After Learning Rate: %g" % self.learning_rate_value)
