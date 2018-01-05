@@ -233,7 +233,7 @@ class DataSet(object):
 
         # 異常系
         abnormal_num = 0
-        d = 0
+        d = np.random.randint(14)
         while abnormal_num < int(round((batch_size * (1.0 - batch_ratio)))):
             if len(self.abnormal[d]) > 0:
                 # ファイルの読み込み
