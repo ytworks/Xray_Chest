@@ -114,12 +114,13 @@ class Detecter(Core2.Core):
         Renormalization = False
         SE = True
         GrowthRate = 32
+        StemChannels = 32
         prob = 1.0
         # dense net
         ## Stem
         self.dense_stem = stem_cell(x = self.x,
                                     InputNode = [self.SIZE, self.SIZE, self.CH],
-                                    Channels = 64,
+                                    Channels = StemChannels,
                                     Initializer = Initializer,
                                     vname = 'Stem',
                                     regularization = Regularization,
@@ -148,10 +149,10 @@ class Detecter(Core2.Core):
                                   algorithm = 'Avg')
 
         # reshape
-        self.y71 = Layers.reshape_tensor(x = self.y61, shape = [64 + GrowthRate * 16])
+        self.y71 = Layers.reshape_tensor(x = self.y61, shape = [StemChannels + GrowthRate * 16])
         # fnn
         self.y72 = Outputs.output(x = self.y71,
-                                  InputSize = 64 + GrowthRate * 16,
+                                  InputSize = StemChannels + GrowthRate * 16,
                                   OutputSize = 14,
                                   Initializer = 'Xavier',
                                   BatchNormalization = False,
