@@ -115,7 +115,7 @@ class Detecter(Core2.Core):
         Regularization = False
         Renormalization = False
         SE = False
-        GrowthRate = 32
+        GrowthRate = 60
         prob = 1.0
         self.x_resnet = tf.image.resize_images(images = self.x,
                                                size = (224, 224),
@@ -137,6 +137,7 @@ class Detecter(Core2.Core):
         # dense net
 
         ## Stem
+        '''
         self.dense_stem = stem_cell(x = self.x,
                                     InputNode = [self.SIZE, self.SIZE, self.CH],
                                     Channels = 64,
@@ -146,12 +147,13 @@ class Detecter(Core2.Core):
                                     Training = self.istraining)
         ## concat
         self.stem_concat = Layers.concat([self.dense_stem, self.resnet_stem], concat_type = 'Channel')
+        '''
 
         ## Dense
-        self.densenet_output = densenet(x = self.stem_concat,
+        self.densenet_output = densenet(x = self.resnet_stem,
                                         Act = Activation,
                                         GrowthRate = GrowthRate,
-                                        InputNode = [self.SIZE / 4, self.SIZE / 4, 128],
+                                        InputNode = [self.SIZE / 4, self.SIZE / 4, 64],
                                         Strides = [1, 1, 1, 1],
                                         Renormalization = Regularization,
                                         Regularization = Renormalization,
@@ -167,7 +169,7 @@ class Detecter(Core2.Core):
                                    padding='SAME',
                                    algorithm = 'Avg')
         # reshape
-        self.dreshape = Layers.reshape_tensor(x = self.dout, shape = [128 + GrowthRate * 16])
+        self.dreshape = Layers.reshape_tensor(x = self.dout, shape = [64 + GrowthRate * 16])
         # fnn
         self.z512 = Outputs.output(x = self.dreshape,
                                    InputSize = 128 + GrowthRate * 16,
@@ -187,7 +189,7 @@ class Detecter(Core2.Core):
         c = (128 + GrowthRate * 16 + 2048)/6
         self.y51 = inception_res_cell(x = self.y41,
                                       Act = Activation,
-                                      InputNode = [self.SIZE / 64, self.SIZE / 64, 128 + GrowthRate * 16 + 2048],
+                                      InputNode = [self.SIZE / 64, self.SIZE / 64, 64 + GrowthRate * 16 + 2048],
                                       Channels0 = [c/4, c/4, c/4, c/4, c/4, c/4],
                                       Channels1 = [c, c, c, c, c, c],
                                       Strides0 = [1, 1, 1, 1],
@@ -202,7 +204,7 @@ class Detecter(Core2.Core):
                                       Training = self.istraining)
         # Batch Normalization
         self.y51 = Layers.batch_normalization(x = self.y51,
-                                               shape = 128 + GrowthRate * 16 + 2048,
+                                               shape = 64 + GrowthRate * 16 + 2048,
                                                vname = 'TOP_BN',
                                                dim = [0, 1, 2],
                                                Renormalization = Renormalization,
@@ -222,10 +224,10 @@ class Detecter(Core2.Core):
 
 
         # reshape
-        self.y71 = Layers.reshape_tensor(x = self.y61, shape = [128 + GrowthRate * 16 + 2048])
+        self.y71 = Layers.reshape_tensor(x = self.y61, shape = [64 + GrowthRate * 16 + 2048])
         # fnn
         self.y72 = Outputs.output(x = self.y71,
-                                  InputSize = 128 + GrowthRate * 16 + 2048,
+                                  InputSize = 64 + GrowthRate * 16 + 2048,
                                   OutputSize = 14,
                                   Initializer = 'Xavier',
                                   BatchNormalization = False,
