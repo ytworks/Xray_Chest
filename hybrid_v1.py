@@ -282,7 +282,7 @@ class Detecter(Core2.Core):
 
         if self.current_loss > np.mean(self.val_losses) - np.std(self.val_losses) and len(self.val_losses) > 10 and is_update:
             logger.debug("Before Learning Rate: %g" % self.learning_rate_value)
-            self.learning_rate_value = max(0.00001, self.learning_rate_value * 0.5)
+            self.learning_rate_value = max(0.000001, self.learning_rate_value * 0.5)
             logger.debug("After Learning Rate: %g" % self.learning_rate_value)
             self.val_losses = []
         feed_dict = {}
