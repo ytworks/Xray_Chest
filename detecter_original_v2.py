@@ -130,7 +130,7 @@ class Detecter(Core2.Core):
         self.densenet_output = densenet(x = self.dense_stem,
                                         Act = Activation,
                                         GrowthRate = GrowthRate,
-                                        InputNode = [self.SIZE / 4, self.SIZE / 4, 64],
+                                        InputNode = [self.SIZE / 4, self.SIZE / 4, StemChannels],
                                         Strides = [1, 1, 1, 1],
                                         Renormalization = Regularization,
                                         Regularization = Renormalization,
