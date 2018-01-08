@@ -112,7 +112,7 @@ class Detecter(Core2.Core):
         Initializer = 'He'
         Parallels = 9
         # NGやPreleを試してみる
-        Activation = 'Relu'
+        Activation = 'NG'
         Regularization = True
         Renormalization = False
         SE = True
