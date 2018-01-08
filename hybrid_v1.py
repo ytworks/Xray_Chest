@@ -260,7 +260,7 @@ class Detecter(Core2.Core):
                                           dmax = self.dmax)
         # Activation Function
         with tf.variable_scope('TOP_Act') as scope:
-            self.y51 = AF.select_activation(Act)(self.y51)
+            self.y51 = AF.select_activation(Activation)(self.y51)
 
         self.y61 = Layers.pooling(x = self.y51,
                                   ksize=[w/4, h/4],
