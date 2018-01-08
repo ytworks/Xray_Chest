@@ -249,7 +249,19 @@ class Detecter(Core2.Core):
                                       vname = 'Res51',
                                       SE = SE,
                                       Training = self.istraining)
-        # Todo: BN + Actを入れる
+        # Batch Normalization
+        self.y51 = Layers.batch_normalization(x = self.y51,
+                                          shape = c*8 + 2048,
+                                          vname = 'TOP_BN',
+                                          dim = [0, 1, 2],
+                                          Renormalization = Renormalization,
+                                          Training = self.istraining,
+                                          rmax = self.rmax,
+                                          dmax = self.dmax)
+        # Activation Function
+        with tf.variable_scope('TOP_Act') as scope:
+            self.y51 = AF.select_activation(Act)(self.y51)
+
         self.y61 = Layers.pooling(x = self.y51,
                                   ksize=[w/4, h/4],
                                   strides=[w/4, h/4],
