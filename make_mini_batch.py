@@ -48,48 +48,70 @@ class DataSet(object):
             self.pi = tf.keras.applications.vgg19.preprocess_input
 
         # 正常/異常のファイルの分類
-        self.normal, self.abnormal = [], []
+        self.normal = []
+        self.abnormal = [[], [], [], [], [],
+                         [], [], [], [], [],
+                         [], [], [], []]
         for filename in self.files:
             base_filename = os.path.basename(filename)
             if self.labels[base_filename]['label'][1][0] == 1:
                 self.normal.append(filename)
             else:
-                self.abnormal.append(filename)
+                for d in range(len(self.labels[base_filename]['label'][0])):
+                    if self.labels[base_filename]['label'][0][d] == 1:
+                        self.abnormal[d].append(filename)
 
 
         # ファイル配列のIDのリストを作成
-        self.start_normal, self.start_abnormal = 0, 0
-        imgs_normal, imgs_abnormal= [], []
+        self.start_normal = 0
+        self.start_abnormal = [0, 0, 0, 0, 0,
+                               0, 0, 0, 0, 0,
+                               0, 0, 0, 0]
+        imgs_normal = []
+        imgs_abnormal= [[], [], [], [], [],
+                        [], [], [], [], [],
+                        [], [], [], []]
         logger.debug("File num: %g"%len(self.files))
         logger.debug("Normal File num: %g"%len(self.normal))
-        logger.debug("Abnormal File num: %g"%len(self.abnormal))
+        for d in range(len(self.abnormal)):
+            logger.debug("Abnormal File num -  %g :  %g"%(d, len(self.abnormal[d])))
         for i in range(len(self.normal)):
             imgs_normal.append(i)
-        for i in range(len(self.abnormal)):
-            imgs_abnormal.append(i)
+        for d in range(len(self.abnormal)):
+            for i in range(len(self.abnormal[d])):
+                imgs_abnormal[d].append(i)
         self._images_normal = np.array(imgs_normal)
-        self._images_abnormal = np.array(imgs_abnormal)
         self.order_shuffle_normal()
-        self.order_shuffle_abnormal()
+
 
     def order_shuffle_normal(self):
         perm = np.arange(len(self._images_normal))
         np.random.shuffle(perm)
         self._images_normal = self._images_normal[perm]
 
-    def order_shuffle_abnormal(self):
-        perm = np.arange(len(self._images_abnormal))
-        np.random.shuffle(perm)
-        self._images_abnormal = self._images_abnormal[perm]
+
+    def augmentation(self, img):
+        # flip
+        img = self.flip(img = img)
+        # rotation
+        #if random.random() >= 0.9:
+        #    img = self.rotation(img, rot = random.choice([0, 90, 180, 270]))
+        #    img = img.reshape((img.shape[0], img.shape[1], 1))
+        # Shift
+        img = self.shift(img = img, move_x = 0.05, move_y = 0.05)
+        # small rotation
+        if random.random() >= 0.8:
+            img = self.rotation(img, rot = 15.0 * (2.0 * random.random() - 1.0))
+            img = img.reshape((img.shape[0], img.shape[1], 1))
+        return img
 
     def flip(self,img):
-        if random.random() >= 0.95:
-            img = cv2.flip(img, 0)
-        if random.random() >= 0.95:
-            img = cv2.flip(img, 1)
         if random.random() >= 0.9:
-            img = self.rotation(img, rot = random.choice([0, 90, 180, 270]))
-        img = img.reshape((img.shape[0], img.shape[1], 1))
+            img = cv2.flip(img, 0)
+            img = img.reshape((img.shape[0], img.shape[1], 1))
+        if random.random() >= 0.9:
+            img = cv2.flip(img, 1)
+            img = img.reshape((img.shape[0], img.shape[1], 1))
         return img
 
     def rotation(self, img, rot = 45):
@@ -128,6 +150,20 @@ class DataSet(object):
             raw_data.append(raw)
         return [np.array(imgs), np.array(labels1), np.array(labels0), filenames, raw_data]
 
+    def get_all_files(self):
+        imgs, labels0, labels1 = [], [], []
+        filenames, raw_data = [], []
+        for i in tqdm(range(len(self.files))):
+            # ファイルの読み込み
+            img, label0, label1, filename, raw = self.img_reader(self.files[i], augment = False)
+            # 出力配列の作成
+            imgs.append(self.files[i])
+            labels0.append(label0)
+            labels1.append(label1)
+            filenames.append(filename)
+            raw_data.append(raw)
+        return [np.array(imgs), np.array(labels1), np.array(labels0), filenames, raw_data]
+
     def img_reader(self, f, augment = True):
         root, ext = os.path.splitext(f)
         filename = os.path.basename(f)
@@ -146,12 +182,10 @@ class DataSet(object):
 
         # データオーギュメンテーション
         if augment:
-            img = self.flip(img)
-            img = self.shift(img = img, move_x = 0.05, move_y = 0.05)
+            img = self.augmentation(img = img)
         else:
             if self.augment:
-                img = self.flip(img)
-                img = self.shift(img = img, move_x = 0.05, move_y = 0.05)
+                img = self.augmentation(img = img)
 
         # 画像サイズの調整
         img = cv2.resize(img,(self.size,self.size), interpolation = cv2.INTER_AREA)
@@ -182,15 +216,6 @@ class DataSet(object):
             shuffle_normal = False
         end_normal = min(self.start_normal + int(round((batch_size * batch_ratio))), len(self._images_normal) - 1)
 
-        # 異常系の制御
-        start_abnormal = self.start_abnormal
-        if self.start_abnormal + int(batch_size * (1.0 - batch_ratio)) >= len(self._images_abnormal):
-            logger.debug('Abnormal Next Epoch')
-            shuffle_abnormal = True
-        else:
-            shuffle_abnormal = False
-        end_abnormal = min(self.start_abnormal + int(round((batch_size * batch_ratio))), len(self._images_abnormal) - 1)
-
 
         imgs, labels0, labels1 = [], [], []
         filenames, raw_data = [], []
@@ -207,16 +232,22 @@ class DataSet(object):
             raw_data.append(raw)
 
         # 異常系
-        for i in range(start_abnormal, end_abnormal):
-            # ファイルの読み込み
-            img, label0, label1, filename, raw = self.img_reader(self.abnormal[self._images_abnormal[i]],
-                                                                 augment = augment)
-            # 出力配列の作成
-            imgs.append(img)
-            labels0.append(label0)
-            labels1.append(label1)
-            filenames.append(filename)
-            raw_data.append(raw)
+        abnormal_num = 0
+        d = np.random.randint(14)
+        while abnormal_num < int(round((batch_size * (1.0 - batch_ratio)))):
+            if len(self.abnormal[d]) > 0:
+                # ファイルの読み込み
+                img, label0, label1, filename, raw = self.img_reader(self.abnormal[d][self.start_abnormal[d]],
+                                                                     augment = augment)
+                # 出力配列の作成
+                imgs.append(img)
+                labels0.append(label0)
+                labels1.append(label1)
+                filenames.append(filename)
+                raw_data.append(raw)
+                self.start_abnormal[d] = (self.start_abnormal[d] + 1) % len(self.abnormal[d])
+                abnormal_num += 1
+            d = (d + 1) % len(self.abnormal)
 
         # 正常系シャッフル
         if shuffle_normal:
@@ -224,15 +255,6 @@ class DataSet(object):
             self.start_normal = 0
         else:
             self.start_normal = end_normal
-
-        # 異常系シャッフル
-        if shuffle_abnormal:
-            self.order_shuffle_abnormal()
-            self.start_abnormal = 0
-        else:
-            self.start_abnormal = end_abnormal
-
-
 
         return [np.array(imgs), np.array(labels1), np.array(labels0), filenames, raw_data]
 
@@ -451,9 +473,10 @@ if __name__ == '__main__':
                              raw_img = False)
     print(len(dataset.test.get_all_data()), len(dataset.test.get_all_data()[2]))
     for i in range(2):
-        x = dataset.train.next_batch(4)
+        x = dataset.train.next_batch(32)
         print(x[1], x[2], x[3], x[4])
-        y = dataset.test.next_batch(6)
+        y = dataset.test.next_batch(32)
         print(y[1], y[2], y[3], y[4])
     for i in tqdm(range(100)):
         y = dataset.test.next_batch(20)
+    print(dataset.test.start_abnormal)
