@@ -111,6 +111,7 @@ class Detecter(Core2.Core):
         Channels = 8
         Initializer = 'He'
         Parallels = 9
+        # NGやPreleを試してみる
         Activation = 'Relu'
         Regularization = True
         Renormalization = False
@@ -127,7 +128,7 @@ class Detecter(Core2.Core):
         self.y00 = Layers.pooling(x = self.resnet_top, ksize=[2, 2], strides=[2, 2],
                                   padding='SAME', algorithm = 'Max')
         w, h, c = self.y00.shape[1], self.y00.shape[2], self.y00.shape[3]
-        print(w, h,c)
+        # Todo: Channelをどこまで増やすか？
 
         self.y11 = inception_res_cell(x = self.y00,
                                       Act = Activation,
@@ -229,6 +230,7 @@ class Detecter(Core2.Core):
                                       Training = self.istraining)
         self.y33 = Layers.pooling(x = self.y32, ksize=[2, 2], strides=[2, 2],
                                   padding='SAME', algorithm = 'Max')
+        # Todo: ガイドアウトプットを入れる
 
         self.y41 = Layers.concat([self.y33, self.resnet_output], concat_type = 'Channel')
 
@@ -247,8 +249,7 @@ class Detecter(Core2.Core):
                                       vname = 'Res51',
                                       SE = SE,
                                       Training = self.istraining)
-
-
+        # Todo: BN + Actを入れる
         self.y61 = Layers.pooling(x = self.y51,
                                   ksize=[w/4, h/4],
                                   strides=[w/4, h/4],
