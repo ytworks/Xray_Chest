@@ -333,14 +333,14 @@ class Detecter(Core2.Core):
         self.loss_function += tf.reduce_mean(tf.abs(self.y71)) * self.l1_norm
 
     # 入出力ベクトルの配置
-    def make_feed_dict(self, prob, batch, is_Train = True):
+    def make_feed_dict(self, prob, batch, is_Train = True, is_Update = True):
         if self.steps <= 5000:
             rmax, dmax = 1.0, 0.0
         else:
             rmax = min(1.0 + 2.0 * (40000.0 - float(self.steps)) / 40000.0, 3.0)
             dmax = min(5.0 * (25000.0 - float(self.steps)) / 25000.0, 5.0)
 
-        if self.steps % 1000 == 0 and self.steps != 0:
+        if self.steps % 1000 == 0 and self.steps != 0 and is_Update:
             logger.debug("Before Learning Rate: %g" % self.learning_rate_value)
             self.learning_rate_value = max(0.00001, self.learning_rate_value * 0.5)
             logger.debug("After Learning Rate: %g" % self.learning_rate_value)
@@ -376,7 +376,7 @@ class Detecter(Core2.Core):
             if i%self.log == 0 and i != 0:
                 # Train
                 self.p.change_phase(True)
-                feed_dict = self.make_feed_dict(prob = True, batch = batch, is_Train = True)
+                feed_dict = self.make_feed_dict(prob = True, batch = batch, is_Train = True, is_Update = False)
                 res = self.sess.run([self.accuracy_z, self.loss_function, self.loss_function1, self.loss_function2], feed_dict = feed_dict)
                 train_accuracy_z = res[0]
                 losses = res[1]
@@ -394,7 +394,7 @@ class Detecter(Core2.Core):
                 self.p.change_phase(False)
                 val_accuracy_y, val_accuracy_z, val_losses, test, prob = [], [], [], [], []
                 validation_batch = data.test.next_batch(self.batch, augment = False)
-                feed_dict_val = self.make_feed_dict(prob = False, batch = validation_batch, is_Train = False)
+                feed_dict_val = self.make_feed_dict(prob = False, batch = validation_batch, is_Train = False, is_Update = False)
                 res = self.sess.run([self.accuracy_z, self.loss_function, self.loss_function1, self.loss_function2], feed_dict = feed_dict_val)
                 val_accuracy_z = res[0]
                 val_losses = res[1]
