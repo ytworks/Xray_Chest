@@ -395,7 +395,7 @@ class Detecter(Core2.Core):
                 val_accuracy_y, val_accuracy_z, val_losses, test, prob = [], [], [], [], []
                 validation_batch = data.test.next_batch(self.batch, augment = False)
                 feed_dict_val = self.make_feed_dict(prob = False, batch = validation_batch, is_Train = False)
-                res = self.sess.run([self.accuracy_z, self.loss_function, self.loss_function1, self.loss_function2], feed_dict = feed_dict)
+                res = self.sess.run([self.accuracy_z, self.loss_function, self.loss_function1, self.loss_function2], feed_dict = feed_dict_val)
                 val_accuracy_z = res[0]
                 val_losses = res[1]
                 val_losses1 = res[2]
