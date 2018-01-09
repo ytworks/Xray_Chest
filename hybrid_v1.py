@@ -237,7 +237,7 @@ class Detecter(Core2.Core):
                                    padding='SAME',
                                    algorithm = 'Avg')
         # reshape
-        self.greshape = Layers.reshape_tensor(x = self.dout, shape = [c*8])
+        self.greshape = Layers.reshape_tensor(x = self.gout, shape = [c*8])
         # fnn
         self.z512 = Outputs.output(x = self.greshape,
                                    InputSize = c*8,
