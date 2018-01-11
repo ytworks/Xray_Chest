@@ -124,7 +124,7 @@ class Detecter(Core2.Core):
                                                   vname = 'STEM_TOP_BN01',
                                                   dim = [0, 1, 2],
                                                   Renormalization = Renormalization,
-                                                  Training = Training,
+                                                  Training = self.istraining,
                                                   rmax = None,
                                                   dmax = None)
         self.dense_stem = stem_cell(x = self.stem_bn,
