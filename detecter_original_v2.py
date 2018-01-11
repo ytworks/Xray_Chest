@@ -113,7 +113,7 @@ class Detecter(Core2.Core):
         Regularization = False
         Renormalization = False
         SE = True
-        GrowthRate = 32
+        GrowthRate = 40
         StemChannels = 64
         prob = 1.0
         # dense net
