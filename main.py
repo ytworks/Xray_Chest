@@ -63,6 +63,7 @@ def main():
                              img_size = size,
                              augment = augment,
                              raw_img = True,
+                              model = 'resnet',
                              zca = True,
                              ds = ds)
     print("label definitions:")
