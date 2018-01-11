@@ -201,7 +201,7 @@ class DataSet(object):
             shuffle_abnormal = True
         else:
             shuffle_abnormal = False
-        end_abnormal = min(self.start_abnormal + int(round((batch_size * batch_ratio))), len(self._images_abnormal) - 1)
+        end_abnormal = min(self.start_abnormal + int(round((batch_size * (1.0 - batch_ratio)))), len(self._images_abnormal) - 1)
 
 
         imgs, labels0, labels1 = [], [], []
