@@ -298,8 +298,8 @@ def conv_block(x,
     with tf.variable_scope(vname + '_Act01') as scope:
         x_act1 = AF.select_activation(Act)(x_bn1)
 
-    x0a = Layers.convolution2d(x = x_act1,
-                               FilterSize = [1, 1, InputNode[2], GrowthRate * 2],
+    x01 = Layers.convolution2d(x = x_act1,
+                               FilterSize = [1, 1, InputNode[2], GrowthRate * 4],
                                Initializer = Initializer,
                                Strides = [Strides[1], Strides[2]],
                                Padding = 'SAME',
@@ -309,6 +309,7 @@ def conv_block(x,
                                Training = Training,
                                Regularization = Regularization,
                                vname = vname + '_Conv_01a')
+    '''
     p_avg = Layers.pooling(x = x_act1,
                            ksize=[2, 2],
                            strides=[1, 1],
@@ -342,6 +343,7 @@ def conv_block(x,
                                Regularization = Regularization,
                                vname = vname + '_Conv_01c')
     x01 = Layers.concat(xs = [x0a, x0b, x0c], concat_type = 'Channel')
+    '''
     if SE:
         x01 = SE_module(x = x01,
                         InputNode = [InputNode[0], InputNode[1], GrowthRate * 4],
@@ -361,8 +363,8 @@ def conv_block(x,
     with tf.variable_scope(vname + '_Act02') as scope:
         x_act2 = AF.select_activation(Act)(x_bn2)
 
-    x1a = Layers.convolution2d(x = x_act2,
-                               FilterSize = [3, 3, GrowthRate * 4, GrowthRate/2],
+    x02 = Layers.convolution2d(x = x_act2,
+                               FilterSize = [3, 3, GrowthRate * 4, GrowthRate],
                                Initializer = Initializer,
                                Strides = [Strides[1], Strides[2]],
                                Padding = 'SAME',
@@ -372,6 +374,7 @@ def conv_block(x,
                                Training = Training,
                                Regularization = Regularization,
                                vname = vname + '_Conv_02a')
+    '''
     x1b = Layers.convolution2d(x = x_act2,
                                FilterSize = [3, 1, GrowthRate * 4, GrowthRate/4],
                                Initializer = Initializer,
@@ -395,6 +398,7 @@ def conv_block(x,
                                Regularization = Regularization,
                                vname = vname + '_Conv_02c')
     x02 = Layers.concat(xs = [x1a, x1b, x1c], concat_type = 'Channel')
+    '''
     if SE:
         x02 = SE_module(x = x02,
                         InputNode = [InputNode[0], InputNode[1], GrowthRate],
