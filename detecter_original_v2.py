@@ -118,7 +118,16 @@ class Detecter(Core2.Core):
         prob = 1.0
         # dense net
         ## Stem
-        self.dense_stem = stem_cell(x = self.x,
+        # Batch Normalization
+        self.stem_bn = Layers.batch_normalization(x = self.x,
+                                                  shape = self.CH,
+                                                  vname = 'STEM_TOP_BN01',
+                                                  dim = [0, 1, 2],
+                                                  Renormalization = Renormalization,
+                                                  Training = Training,
+                                                  rmax = None,
+                                                  dmax = None)
+        self.dense_stem = stem_cell(x = self.stem_bn,
                                     InputNode = [self.SIZE, self.SIZE, self.CH],
                                     Channels = StemChannels,
                                     Initializer = Initializer,
