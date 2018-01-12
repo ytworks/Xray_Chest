@@ -109,11 +109,11 @@ class Detecter(Core2.Core):
 
     def network(self):
         Initializer = 'He'
-        Activation = 'Relu'
+        Activation = 'NG'
         Regularization = False
         Renormalization = False
-        SE = True
-        GrowthRate = 32
+        SE = False
+        GrowthRate = 24
         StemChannels = 64
         prob = 1.0
         # dense net
@@ -206,7 +206,7 @@ class Detecter(Core2.Core):
         else:
             rmax = min(1.0 + 2.0 * (40000.0 - float(self.steps)) / 40000.0, 3.0)
             dmax = min(5.0 * (25000.0 - float(self.steps)) / 25000.0, 5.0)
-        if self.steps %1000 == 0 and self.steps != 0 and is_update:
+        if self.steps %2000 == 0 and self.steps != 0 and is_update:
         #if self.current_loss > np.mean(self.val_losses) - np.std(self.val_losses) and len(self.val_losses) > 10 and is_update:
             logger.debug("Before Learning Rate: %g" % self.learning_rate_value)
             self.learning_rate_value = max(0.00001, self.learning_rate_value * 0.5)
