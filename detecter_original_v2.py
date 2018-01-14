@@ -60,12 +60,16 @@ class Detecter(Core2.Core):
                                        init = init
                                        )
         self.SIZE = size
-        self.l1_norm = l1_norm
+        self.l1_norm = tf.placeholder(tf.float32)
+        self.regularization = tf.placeholder(tf.float32)
         self.rmax = tf.placeholder(tf.float32)
         self.dmax = tf.placeholder(tf.float32)
         self.steps = 0
         self.val_losses = []
         self.current_loss = 0.0
+        self.l1_norm_value = 0.0
+        self.regularization_value = 0.0
+
 
     def construct(self):
 
@@ -206,12 +210,16 @@ class Detecter(Core2.Core):
         else:
             rmax = min(1.0 + 2.0 * (40000.0 - float(self.steps)) / 40000.0, 3.0)
             dmax = min(5.0 * (25000.0 - float(self.steps)) / 25000.0, 5.0)
-        if self.steps %2000 == 0 and self.steps != 0 and is_update:
+        if self.steps % 2000 == 0 and self.steps != 0 and is_update:
         #if self.current_loss > np.mean(self.val_losses) - np.std(self.val_losses) and len(self.val_losses) > 10 and is_update:
             logger.debug("Before Learning Rate: %g" % self.learning_rate_value)
             self.learning_rate_value = max(0.00001, self.learning_rate_value * 0.5)
             logger.debug("After Learning Rate: %g" % self.learning_rate_value)
-            self.val_losses = []
+            #self.val_losses = []
+        if self.steps % 1000 == 0 and self.steps != 0 and is_update:
+            self.l1_norm_value = min(0.1, self.l1_norm_value * 5.0) if not self.l1_norm_value == 0.0 else 0.0001
+            self.regularization_value = min(0.1, self.regularization_value * 5.0) if not self.regularization_value == 0.0 else 0.0001
+            logger.debug("(Regularization, L1 Norm): %g %g" % (self.regularization_value, self.l1_norm_value))
         feed_dict = {}
         feed_dict.setdefault(self.x, batch[0])
         #feed_dict.setdefault(self.y_, batch[1])
@@ -220,6 +228,8 @@ class Detecter(Core2.Core):
         feed_dict.setdefault(self.istraining, is_Train)
         feed_dict.setdefault(self.rmax, rmax)
         feed_dict.setdefault(self.dmax, dmax)
+        feed_dict.setdefault(self.regularization, self.regularization_value)
+        feed_dict.setdefault(self.l1_norm, self.l1_norm_value)
         #feed_dict.setdefault(self.GearLevel, self.GearLevelValue)
         i = 0
         for keep_prob in self.keep_probs:
