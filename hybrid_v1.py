@@ -111,7 +111,8 @@ class Detecter(Core2.Core):
         Channels = 8
         Initializer = 'He'
         Parallels = 9
-        Activation = 'Relu'
+        # NGやPreleを試してみる
+        Activation = 'NG'
         Regularization = True
         Renormalization = False
         SE = True
@@ -127,7 +128,7 @@ class Detecter(Core2.Core):
         self.y00 = Layers.pooling(x = self.resnet_top, ksize=[2, 2], strides=[2, 2],
                                   padding='SAME', algorithm = 'Max')
         w, h, c = self.y00.shape[1], self.y00.shape[2], self.y00.shape[3]
-        print(w, h,c)
+        # Todo: Channelをどこまで増やすか？
 
         self.y11 = inception_res_cell(x = self.y00,
                                       Act = Activation,
@@ -229,6 +230,22 @@ class Detecter(Core2.Core):
                                       Training = self.istraining)
         self.y33 = Layers.pooling(x = self.y32, ksize=[2, 2], strides=[2, 2],
                                   padding='SAME', algorithm = 'Max')
+        # Todo: ガイドアウトプットを入れる
+        self.gout = Layers.pooling(x = self.y33,
+                                   ksize=[w/4, h/4],
+                                   strides=[w/4, h/4],
+                                   padding='SAME',
+                                   algorithm = 'Avg')
+        # reshape
+        self.greshape = Layers.reshape_tensor(x = self.gout, shape = [c*8])
+        # fnn
+        self.z512 = Outputs.output(x = self.greshape,
+                                   InputSize = c*8,
+                                   OutputSize = 14,
+                                   Initializer = 'Xavier',
+                                   BatchNormalization = False,
+                                   Regularization = True,
+                                   vname = 'Output_z512')
 
         self.y41 = Layers.concat([self.y33, self.resnet_output], concat_type = 'Channel')
 
@@ -247,7 +264,18 @@ class Detecter(Core2.Core):
                                       vname = 'Res51',
                                       SE = SE,
                                       Training = self.istraining)
-
+        # Batch Normalization
+        self.y51 = Layers.batch_normalization(x = self.y51,
+                                          shape = c*8 + 2048,
+                                          vname = 'TOP_BN',
+                                          dim = [0, 1, 2],
+                                          Renormalization = Renormalization,
+                                          Training = self.istraining,
+                                          rmax = self.rmax,
+                                          dmax = self.dmax)
+        # Activation Function
+        with tf.variable_scope('TOP_Act') as scope:
+            self.y51 = AF.select_activation(Activation)(self.y51)
 
         self.y61 = Layers.pooling(x = self.y51,
                                   ksize=[w/4, h/4],
@@ -282,11 +310,17 @@ class Detecter(Core2.Core):
 
     def loss(self):
         diag_output_type = self.output_type if self.output_type.find('hinge') >= 0 else 'classified-sigmoid'
-        self.loss_function = Loss.loss_func(y = self.z,
+        self.loss_function1 = Loss.loss_func(y = self.z,
                                              y_ = self.z_,
                                              regularization = self.regularization,
                                              regularization_type = self.regularization_type,
                                              output_type = diag_output_type)
+        self.loss_function2 = Loss.loss_func(y = self.z512,
+                                             y_ = self.z_,
+                                             regularization = False,
+                                             regularization_type = self.regularization_type,
+                                             output_type = diag_output_type)
+        self.loss_function = self.loss_function1 + self.loss_function2
         '''
         self.loss_function += Loss.loss_func(y = self.y,
                                             y_ = self.y_,
@@ -299,14 +333,14 @@ class Detecter(Core2.Core):
         self.loss_function += tf.reduce_mean(tf.abs(self.y71)) * self.l1_norm
 
     # 入出力ベクトルの配置
-    def make_feed_dict(self, prob, batch, is_Train = True):
+    def make_feed_dict(self, prob, batch, is_Train = True, is_Update = True):
         if self.steps <= 5000:
             rmax, dmax = 1.0, 0.0
         else:
             rmax = min(1.0 + 2.0 * (40000.0 - float(self.steps)) / 40000.0, 3.0)
             dmax = min(5.0 * (25000.0 - float(self.steps)) / 25000.0, 5.0)
 
-        if self.steps % 1000 == 0 and self.steps != 0:
+        if self.steps % 1000 == 0 and self.steps != 0 and is_Update:
             logger.debug("Before Learning Rate: %g" % self.learning_rate_value)
             self.learning_rate_value = max(0.00001, self.learning_rate_value * 0.5)
             logger.debug("After Learning Rate: %g" % self.learning_rate_value)
@@ -342,9 +376,12 @@ class Detecter(Core2.Core):
             if i%self.log == 0 and i != 0:
                 # Train
                 self.p.change_phase(True)
-                feed_dict = self.make_feed_dict(prob = True, batch = batch, is_Train = True)
-                train_accuracy_z = self.accuracy_z.eval(feed_dict=feed_dict)
-                losses = self.loss_function.eval(feed_dict=feed_dict)
+                feed_dict = self.make_feed_dict(prob = True, batch = batch, is_Train = True, is_Update = False)
+                res = self.sess.run([self.accuracy_z, self.loss_function, self.loss_function1, self.loss_function2], feed_dict = feed_dict)
+                train_accuracy_z = res[0]
+                losses = res[1]
+                losses1 = res[2]
+                losses2 = res[3]
                 train_prediction = self.prediction(data = batch[0], roi = False)
                 aucs_t = ''
                 for d in range(len(train_prediction[1][0])):
@@ -357,9 +394,12 @@ class Detecter(Core2.Core):
                 self.p.change_phase(False)
                 val_accuracy_y, val_accuracy_z, val_losses, test, prob = [], [], [], [], []
                 validation_batch = data.test.next_batch(self.batch, augment = False)
-                feed_dict_val = self.make_feed_dict(prob = False, batch = validation_batch, is_Train = False)
-                val_accuracy_z = self.accuracy_z.eval(feed_dict=feed_dict_val)
-                val_losses = self.loss_function.eval(feed_dict=feed_dict_val)
+                feed_dict_val = self.make_feed_dict(prob = False, batch = validation_batch, is_Train = False, is_Update = False)
+                res = self.sess.run([self.accuracy_z, self.loss_function, self.loss_function1, self.loss_function2], feed_dict = feed_dict_val)
+                val_accuracy_z = res[0]
+                val_losses = res[1]
+                val_losses1 = res[2]
+                val_losses2 = res[3]
                 val_prediction = self.prediction(data = validation_batch[0], roi = False)
                 aucs_v = ''
                 for d in range(len(train_prediction[1][0])):
@@ -372,8 +412,8 @@ class Detecter(Core2.Core):
                 logger.debug("step %d ================================================================================="% i)
                 #logger.debug("Train: (judgement, diagnosis, loss, auc) = (%g, %g, %g, %g)"%(train_accuracy_y,train_accuracy_z,losses,train_auc))
                 #logger.debug("Validation: (judgement, diagnosis, loss, auc) = (%g, %g, %g, %g)"%(val_accuracy_y,val_accuracy_z,val_losses,val_auc))
-                logger.debug("Train: (diagnosis, loss, aucs) = (%g, %g, %s)"%(train_accuracy_z,losses, aucs_t))
-                logger.debug("Validation: (diagnosis, loss, aucs) = (%g, %g, %s)"%(val_accuracy_z, val_losses, aucs_v))
+                logger.debug("Train: (diagnosis, loss, loss1, loss2, aucs) = (%g, %g, %g, %g, %s)"%(train_accuracy_z,losses, losses1, losses2, aucs_t))
+                logger.debug("Validation: (diagnosis, loss, loss1, loss2, aucs) = (%g, %g, %g, %g, %s)"%(val_accuracy_z, val_losses, val_losses1, val_losses2, aucs_v))
 
                 if save_at_log:
                     self.save_checkpoint()

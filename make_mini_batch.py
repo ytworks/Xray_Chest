@@ -82,14 +82,28 @@ class DataSet(object):
         np.random.shuffle(perm)
         self._images_abnormal = self._images_abnormal[perm]
 
+    def augmentation(self, img):
+        # flip
+        #img = self.flip(img = img)
+        # rotation
+        #if random.random() >= 0.9:
+        #    img = self.rotation(img, rot = random.choice([0, 90, 180, 270]))
+        #    img = img.reshape((img.shape[0], img.shape[1], 1))
+        # Shift
+        img = self.shift(img = img, move_x = 0.05, move_y = 0.05)
+        # small rotation
+        if random.random() >= 0.8:
+            img = self.rotation(img, rot = 15.0 * (2.0 * random.random() - 1.0))
+            img = img.reshape((img.shape[0], img.shape[1], 1))
+        return img
+
     def flip(self,img):
-        if random.random() >= 0.95:
-            img = cv2.flip(img, 0)
-        if random.random() >= 0.95:
-            img = cv2.flip(img, 1)
         if random.random() >= 0.9:
-            img = self.rotation(img, rot = random.choice([0, 90, 180, 270]))
-        img = img.reshape((img.shape[0], img.shape[1], 1))
+            img = cv2.flip(img, 0)
+            img = img.reshape((img.shape[0], img.shape[1], 1))
+        if random.random() >= 0.9:
+            img = cv2.flip(img, 1)
+            img = img.reshape((img.shape[0], img.shape[1], 1))
         return img
 
     def rotation(self, img, rot = 45):
@@ -146,12 +160,10 @@ class DataSet(object):
 
         # データオーギュメンテーション
         if augment:
-            img = self.flip(img)
-            img = self.shift(img = img, move_x = 0.05, move_y = 0.05)
+            img = self.augmentation(img)
         else:
             if self.augment:
-                img = self.flip(img)
-                img = self.shift(img = img, move_x = 0.05, move_y = 0.05)
+                img = self.augmentation(img)
 
         # 画像サイズの調整
         img = cv2.resize(img,(self.size,self.size), interpolation = cv2.INTER_AREA)
@@ -189,7 +201,7 @@ class DataSet(object):
             shuffle_abnormal = True
         else:
             shuffle_abnormal = False
-        end_abnormal = min(self.start_abnormal + int(round((batch_size * batch_ratio))), len(self._images_abnormal) - 1)
+        end_abnormal = min(self.start_abnormal + int(round((batch_size * (1.0 - batch_ratio)))), len(self._images_abnormal) - 1)
 
 
         imgs, labels0, labels1 = [], [], []

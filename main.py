@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from make_mini_batch import read_data_sets
-from detecter_original_v1 import Detecter
+from detecter_original_v2 import Detecter
 from logging import getLogger, StreamHandler
 from tqdm import tqdm
 import os
@@ -62,6 +62,8 @@ def main():
                              kfold = 1,
                              img_size = size,
                              augment = augment,
+                             raw_img = True,
+                              model = 'resnet',
                              zca = True,
                              ds = ds)
     print("label definitions:")
