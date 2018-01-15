@@ -23,7 +23,7 @@ do
   esac
 done
 
-python main.py  -mode learning -size $size \
+python main.py  -mode update -size $size \
               -augment $augment \
               -checkpoint $checkpoint \
               -epoch $epoch \
