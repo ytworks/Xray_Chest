@@ -42,9 +42,9 @@ for row in f:
         prob_diag[i].append(float(row[i + 4]))
 for i, n in enumerate(diags):
     try:
-        print(n)
+        print n,
         write_fig(test_diag[i], prob_diag[i], n + ".png")
     except:
-        print(n, "error")
+        print n, "error"
 
 #write_fig(test, prob, "judgement.png")
