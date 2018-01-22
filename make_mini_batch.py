@@ -26,7 +26,8 @@ class DataSet(object):
                  zca,
                  augment,
                  raw_img,
-                 model):
+                 model,
+                 is_train):
         self.size = size
         self.augment = augment
         self.zca = zca
@@ -34,6 +35,7 @@ class DataSet(object):
         self.labels = label
         self.raw_img = raw_img
         self.channel = 1 if not self.raw_img else 3
+        self.is_train = is_train
         logger.debug("Channel %s" % str(self.channel))
         logger.debug("Size %s" % str(self.size))
         logger.debug("ZCA Whitening %s" % str(self.zca))
@@ -83,25 +85,45 @@ class DataSet(object):
         self._images_abnormal = self._images_abnormal[perm]
 
     def augmentation(self, img):
+        # zoom
+        img = self.zoom(img)
         # flip
-        #img = self.flip(img = img)
+        img = self.flip(img = img)
         # rotation
-        #if random.random() >= 0.9:
-        #    img = self.rotation(img, rot = random.choice([0, 90, 180, 270]))
-        #    img = img.reshape((img.shape[0], img.shape[1], 1))
+        if np.random.rand() >= 0.9:
+            img = self.rotation(img, rot = random.choice([0, 90, 180, 270]))
+            img = img.reshape((img.shape[0], img.shape[1], 1))
+        '''
         # Shift
         img = self.shift(img = img, move_x = 0.05, move_y = 0.05)
         # small rotation
-        if random.random() >= 0.8:
+        if np.random.rand() >= 0.8:
             img = self.rotation(img, rot = 15.0 * (2.0 * random.random() - 1.0))
             img = img.reshape((img.shape[0], img.shape[1], 1))
+        '''
         return img
 
+    def zoom(self, img):
+        if np.random.rand() >= 0.5:
+            return img
+        else:
+            w, h = img.shape[0], img.shape[1]
+            w_crop, h_crop = int(w * 0.1), int(h * 0.1)
+            crop_size = min(w, h) - np.random.randint(1, min(w_crop, h_crop))
+            start_w = np.random.randint(w - crop_size)
+            start_h = np.random.randint(h - crop_size)
+            end_w = start_w + crop_size
+            end_h = start_h + crop_size
+            img = img[start_w:end_w, start_h:end_h]
+            return img
+
+
+
     def flip(self,img):
-        if random.random() >= 0.9:
+        if np.random.rand() >= 0.9:
             img = cv2.flip(img, 0)
             img = img.reshape((img.shape[0], img.shape[1], 1))
-        if random.random() >= 0.9:
+        if np.random.rand() >= 0.9:
             img = cv2.flip(img, 1)
             img = img.reshape((img.shape[0], img.shape[1], 1))
         return img
@@ -113,7 +135,7 @@ class DataSet(object):
         return cv2.warpAffine(img, affine_matrix, size, flags=cv2.INTER_LINEAR)
 
     def shift(self, img, move_x = 0.1, move_y = 0.1):
-        if random.random() >= 0.8:
+        if np.random.rand() >= 0.8:
             size = tuple(np.array([img.shape[0], img.shape[1]]))
             mx = int(img.shape[0] * move_x * random.random())
             my = int(img.shape[1] * move_y * random.random())
@@ -162,7 +184,7 @@ class DataSet(object):
         if augment:
             img = self.augmentation(img)
         else:
-            if self.augment:
+            if self.augment and self.is_train:
                 img = self.augmentation(img)
 
         # 画像サイズの調整
@@ -398,7 +420,8 @@ def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
                                   zca = zca,
                                   augment = augment,
                                   raw_img = raw_img,
-                                  model = model)
+                                  model = model,
+                                  is_train = True)
         logger.debug("Test Conf")
         data_sets.test  = DataSet(data = conf_data,
                                   label = conf_labels,
@@ -406,7 +429,8 @@ def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
                                   zca = zca,
                                   augment = augment,
                                   raw_img = raw_img,
-                                  model = model)
+                                  model = model,
+                                  is_train = False)
     else:
         logger.debug("Training")
         data_sets.train = DataSet(data = nih_data_train,
@@ -415,7 +439,8 @@ def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
                                   zca = zca,
                                   augment = augment,
                                   raw_img = raw_img,
-                                  model = model)
+                                  model = model,
+                                  is_train = True)
         logger.debug("Test")
         data_sets.test = DataSet(data = nih_data_test,
                                  label = nih_labels_test,
@@ -423,7 +448,8 @@ def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
                                  zca = zca,
                                  augment = augment,
                                  raw_img = raw_img,
-                                 model = model)
+                                 model = model,
+                                 is_train = False)
 
     data_sets.train_summary = nih_count
     return data_sets, label_def
