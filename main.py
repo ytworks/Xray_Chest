@@ -94,6 +94,7 @@ def main():
         writer = csv.writer(f)
         ts, nums = [], []
         for i, t in enumerate(testdata[0]):
+            print(dataset.test.img_reader(t, augment = False))
             ts.append(dataset.test.img_reader(t, augment = False))
             nums.append(i)
             if len(ts) == batch:
