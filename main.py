@@ -94,8 +94,7 @@ def main():
         writer = csv.writer(f)
         ts, nums = [], []
         for i, t in enumerate(testdata[0]):
-            print(dataset.test.img_reader(t, augment = False))
-            ts.append(dataset.test.img_reader(t, augment = False))
+            ts.append(dataset.test.img_reader(t, augment = False)[0])
             nums.append(i)
             if len(ts) == batch:
                 filenames = [os.path.splitext(testdata[3][num]) for num in nums]
