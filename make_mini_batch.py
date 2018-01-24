@@ -93,14 +93,12 @@ class DataSet(object):
         if np.random.rand() >= 0.9:
             img = self.rotation(img, rot = random.choice([0, 90, 180, 270]))
             img = img.reshape((img.shape[0], img.shape[1], 1))
-        '''
         # Shift
         img = self.shift(img = img, move_x = 0.05, move_y = 0.05)
         # small rotation
         if np.random.rand() >= 0.8:
             img = self.rotation(img, rot = 15.0 * (2.0 * random.random() - 1.0))
             img = img.reshape((img.shape[0], img.shape[1], 1))
-        '''
         return img
 
     def zoom(self, img):
