@@ -203,7 +203,7 @@ class Detecter(Core2.Core):
         # For Gear Mode (TBD)
         self.loss_function += tf.reduce_mean(tf.abs(self.y71)) * self.l1_norm
 
-    def training(self, var_list = None, gradient_cliiping = True, clipping_norm = 1.0):
+    def training(self, var_list = None, gradient_cliiping = True, clipping_norm = 0.1):
         self.train_op, self.optimizer = TO.select_algo(loss_function = self.loss_function,
                                                         algo = self.optimizer_type,
                                                         learning_rate = self.learning_rate,
@@ -343,6 +343,7 @@ class Detecter(Core2.Core):
                      self.istraining : False,
                      self.rmax : rmax,
                      self.dmax : dmax}
+
         for keep_prob in self.keep_probs:
             feed_dict.setdefault(keep_prob['var'], 1.0)
 
