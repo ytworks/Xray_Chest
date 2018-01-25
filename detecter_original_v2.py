@@ -115,7 +115,7 @@ class Detecter(Core2.Core):
         Initializer = 'He'
         Activation = 'NG'
         Regularization = False
-        Renormalization = False
+        Renormalization = True
         SE = False
         GrowthRate = 24
         StemChannels = 64
@@ -202,6 +202,17 @@ class Detecter(Core2.Core):
 
         # For Gear Mode (TBD)
         self.loss_function += tf.reduce_mean(tf.abs(self.y71)) * self.l1_norm
+
+    def training(self, var_list = None, gradient_cliiping = True, clipping_norm = 1.0):
+        self.train_op, self.optimizer = opt.select_algo(loss_function = self.loss_function,
+                                                        algo = self.optimizer_type,
+                                                        learning_rate = self.learning_rate,
+                                                        b1 = self.beta1, b2 = self.beta2,
+                                                        var_list = var_list,
+                                                        gradient_cliiping = gradient_cliiping,
+                                                        clipping_norm = clipping_norm)
+        self.grad_op = self.optimizer.compute_gradients(self.loss_function)
+
 
     # 入出力ベクトルの配置
     def make_feed_dict(self, prob, batch, is_Train = True, is_update = False):
