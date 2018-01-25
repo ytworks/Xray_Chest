@@ -204,7 +204,7 @@ class Detecter(Core2.Core):
         self.loss_function += tf.reduce_mean(tf.abs(self.y71)) * self.l1_norm
 
     def training(self, var_list = None, gradient_cliiping = True, clipping_norm = 1.0):
-        self.train_op, self.optimizer = opt.select_algo(loss_function = self.loss_function,
+        self.train_op, self.optimizer = TO.select_algo(loss_function = self.loss_function,
                                                         algo = self.optimizer_type,
                                                         learning_rate = self.learning_rate,
                                                         b1 = self.beta1, b2 = self.beta2,
