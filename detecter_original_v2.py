@@ -334,8 +334,15 @@ class Detecter(Core2.Core):
     def prediction(self, data, roi = False, label_def = None, save_dir = None,
                    filenames = None, paths = None):
         # Make feed dict for prediction
+        if self.steps <= 5000:
+            rmax, dmax = 1.0, 0.0
+        else:
+            rmax = min(1.0 + 2.0 * (40000.0 - float(self.steps)) / 40000.0, 3.0)
+            dmax = min(5.0 * (25000.0 - float(self.steps)) / 25000.0, 5.0)
         feed_dict = {self.x : data,
-                     self.istraining : False}
+                     self.istraining : False,
+                     self.rmax : rmax,
+                     self.dmax : dmax}
         for keep_prob in self.keep_probs:
             feed_dict.setdefault(keep_prob['var'], 1.0)
 
