@@ -113,7 +113,7 @@ class Detecter(Core2.Core):
 
     def network(self):
         Initializer = 'He'
-        Activation = 'NG'
+        Activation = 'Relu'
         Regularization = False
         Renormalization = True
         SE = False
