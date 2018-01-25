@@ -129,8 +129,8 @@ class Detecter(Core2.Core):
                                                   dim = [0, 1, 2],
                                                   Renormalization = Renormalization,
                                                   Training = self.istraining,
-                                                  rmax = None,
-                                                  dmax = None)
+                                                  rmax = self.rmax,
+                                                  dmax = self.dmax)
         self.dense_stem = stem_cell(x = self.stem_bn,
                                     InputNode = [self.SIZE, self.SIZE, self.CH],
                                     Channels = StemChannels,
@@ -147,8 +147,8 @@ class Detecter(Core2.Core):
                                         Strides = [1, 1, 1, 1],
                                         Renormalization = Regularization,
                                         Regularization = Renormalization,
-                                        rmax = None,
-                                        dmax = None,
+                                        rmax = self.rmax,
+                                        dmax = self.dmax,
                                         SE = SE,
                                         Training = self.istraining,
                                         vname = 'DenseNet')
