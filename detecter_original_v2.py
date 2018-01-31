@@ -219,8 +219,8 @@ class Detecter(Core2.Core):
         if self.steps <= 5000:
             rmax, dmax = 1.0, 0.0
         else:
-            rmax = min(1.0 + 2.0 * (40000.0 - float(self.steps)) / 40000.0, 3.0)
-            dmax = min(5.0 * (25000.0 - float(self.steps)) / 25000.0, 5.0)
+            rmax = min(1.0 + 2.0 * float(self.steps - 5000.0) / 35000.0, 3.0)
+            dmax = min(5.0 * float(self.steps -5000.0) / 20000.0, 5.0)
         if self.steps % 1000 == 0 and self.steps != 0 and is_update:
         #if self.current_loss > np.mean(self.val_losses) - np.std(self.val_losses) and len(self.val_losses) > 10 and is_update:
             logger.debug("Before Learning Rate: %g" % self.learning_rate_value)
