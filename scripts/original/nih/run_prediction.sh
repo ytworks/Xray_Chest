@@ -1,20 +1,19 @@
 #! /usr/bin/bash
 cd `dirname $0`
 cd ../../../
-#source activate tensorflow_p27
+source activate tensorflow_p27
 size='512'
 augment='True'
 checkpoint='./Model/run.ckpt'
 outfile='./Result/result.csv'
-epoch='3'
-batch='20'
-log='2'
+epoch='40000'
+batch='16'
+log='400'
 lr='0.001'
 rr='0.0'
 l1_norm='0.0'
 output_type='classified-softmax'
 #output_type='classified-squared-hinge'
-#output_type='classified-cosine_proximity'
 
 FLAG=""
 while getopts d: OPT
@@ -24,7 +23,7 @@ do
   esac
 done
 
-python main.py  -mode learning -size $size \
+python main.py  -mode prediction -size $size \
               -augment $augment \
               -checkpoint $checkpoint \
               -epoch $epoch \

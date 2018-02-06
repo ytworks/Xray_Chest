@@ -113,9 +113,9 @@ class Detecter(Core2.Core):
 
     def network(self):
         Initializer = 'He'
-        Activation = 'NG'
+        Activation = 'Relu'
         Regularization = False
-        Renormalization = False
+        Renormalization = True
         SE = False
         GrowthRate = 24
         StemChannels = 64
@@ -129,8 +129,8 @@ class Detecter(Core2.Core):
                                                   dim = [0, 1, 2],
                                                   Renormalization = Renormalization,
                                                   Training = self.istraining,
-                                                  rmax = None,
-                                                  dmax = None)
+                                                  rmax = self.rmax,
+                                                  dmax = self.dmax)
         self.dense_stem = stem_cell(x = self.stem_bn,
                                     InputNode = [self.SIZE, self.SIZE, self.CH],
                                     Channels = StemChannels,
@@ -145,10 +145,10 @@ class Detecter(Core2.Core):
                                         GrowthRate = GrowthRate,
                                         InputNode = [self.SIZE / 4, self.SIZE / 4, StemChannels],
                                         Strides = [1, 1, 1, 1],
-                                        Renormalization = Regularization,
-                                        Regularization = Renormalization,
-                                        rmax = None,
-                                        dmax = None,
+                                        Renormalization = Renormalization,
+                                        Regularization = Regularization,
+                                        rmax = self.rmax,
+                                        dmax = self.dmax,
                                         SE = SE,
                                         Training = self.istraining,
                                         vname = 'DenseNet')
@@ -203,20 +203,31 @@ class Detecter(Core2.Core):
         # For Gear Mode (TBD)
         self.loss_function += tf.reduce_mean(tf.abs(self.y71)) * self.l1_norm
 
+    def training(self, var_list = None, gradient_cliiping = True, clipping_norm = 0.1):
+        self.train_op, self.optimizer = TO.select_algo(loss_function = self.loss_function,
+                                                        algo = self.optimizer_type,
+                                                        learning_rate = self.learning_rate,
+                                                        b1 = self.beta1, b2 = self.beta2,
+                                                        var_list = var_list,
+                                                        gradient_cliiping = gradient_cliiping,
+                                                        clipping_norm = clipping_norm)
+        self.grad_op = self.optimizer.compute_gradients(self.loss_function)
+
+
     # 入出力ベクトルの配置
     def make_feed_dict(self, prob, batch, is_Train = True, is_update = False):
         if self.steps <= 5000:
             rmax, dmax = 1.0, 0.0
         else:
-            rmax = min(1.0 + 2.0 * (40000.0 - float(self.steps)) / 40000.0, 3.0)
-            dmax = min(5.0 * (25000.0 - float(self.steps)) / 25000.0, 5.0)
-        if self.steps % 2000 == 0 and self.steps != 0 and is_update:
+            rmax = min(1.0 + 2.0 * float(self.steps - 5000.0) / 35000.0, 3.0)
+            dmax = min(5.0 * float(self.steps -5000.0) / 20000.0, 5.0)
+        if self.steps % 1000 == 0 and self.steps != 0 and is_update:
         #if self.current_loss > np.mean(self.val_losses) - np.std(self.val_losses) and len(self.val_losses) > 10 and is_update:
             logger.debug("Before Learning Rate: %g" % self.learning_rate_value)
-            self.learning_rate_value = max(0.000001, self.learning_rate_value * 0.5)
+            self.learning_rate_value = max(0.000001, self.learning_rate_value * 0.9)
             logger.debug("After Learning Rate: %g" % self.learning_rate_value)
             #self.val_losses = []
-        if self.steps % 1000 == 0 and self.steps != 0 and is_update:
+        if self.steps % 4000 == 0 and self.steps != 0 and is_update:
             self.l1_norm_value = min(0.1, self.l1_norm_value * 5.0) if not self.l1_norm_value == 0.0 else 0.00001
             #self.regularization_value = min(0.1, self.regularization_value * 5.0) if not self.regularization_value == 0.0 else 0.0001
             logger.debug("(Regularization, L1 Norm): %g %g" % (self.regularization_value, self.l1_norm_value))
@@ -323,8 +334,16 @@ class Detecter(Core2.Core):
     def prediction(self, data, roi = False, label_def = None, save_dir = None,
                    filenames = None, paths = None):
         # Make feed dict for prediction
+        if self.steps <= 5000:
+            rmax, dmax = 1.0, 0.0
+        else:
+            rmax = min(1.0 + 2.0 * float(self.steps - 5000.0) / 35000.0, 3.0)
+            dmax = min(5.0 * float(self.steps -5000.0) / 20000.0, 5.0)
         feed_dict = {self.x : data,
-                     self.istraining : False}
+                     self.istraining : False,
+                     self.rmax : rmax,
+                     self.dmax : dmax}
+
         for keep_prob in self.keep_probs:
             feed_dict.setdefault(keep_prob['var'], 1.0)
 

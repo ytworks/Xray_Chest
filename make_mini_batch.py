@@ -93,14 +93,12 @@ class DataSet(object):
         if np.random.rand() >= 0.9:
             img = self.rotation(img, rot = random.choice([0, 90, 180, 270]))
             img = img.reshape((img.shape[0], img.shape[1], 1))
-        '''
         # Shift
         img = self.shift(img = img, move_x = 0.05, move_y = 0.05)
         # small rotation
         if np.random.rand() >= 0.8:
             img = self.rotation(img, rot = 15.0 * (2.0 * random.random() - 1.0))
             img = img.reshape((img.shape[0], img.shape[1], 1))
-        '''
         return img
 
     def zoom(self, img):
@@ -163,6 +161,21 @@ class DataSet(object):
             filenames.append(filename)
             raw_data.append(raw)
         return [np.array(imgs), np.array(labels1), np.array(labels0), filenames, raw_data]
+
+    def get_all_files(self):
+        imgs, labels0, labels1 = [], [], []
+        filenames, raw_data = [], []
+        for i in tqdm(range(len(self.files))):
+            # ファイルの読み込み
+            img, label0, label1, filename, raw = self.img_reader(self.files[i], augment = False)
+            # 出力配列の作成
+            imgs.append(self.files[i])
+            labels0.append(label0)
+            labels1.append(label1)
+            filenames.append(filename)
+            raw_data.append(raw)
+        return [imgs, np.array(labels1), np.array(labels0), filenames, raw_data]
+
 
     def img_reader(self, f, augment = True):
         root, ext = os.path.splitext(f)
