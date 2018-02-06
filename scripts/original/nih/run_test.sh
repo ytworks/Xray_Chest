@@ -1,7 +1,7 @@
 #! /usr/bin/bash
 cd `dirname $0`
 cd ../../../
-source activate tensorflow_p27
+source activate python2
 size='512'
 augment='True'
 checkpoint='./Model/run.ckpt'
