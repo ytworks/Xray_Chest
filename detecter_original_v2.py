@@ -361,7 +361,6 @@ class Detecter(Core2.Core):
         else:
             weights = self.get_output_weights(feed_dict = feed_dict)
             roi_base = self.get_roi_map_base(feed_dict = feed_dict)
-            print('num:', len(filenames), len(findings))
             for i in range(len(filenames)):
                 self.make_roi(weights = weights[0],
                               roi_base = roi_base[0][i, :, :, :],
@@ -384,12 +383,16 @@ class Detecter(Core2.Core):
             images = np.zeros((roi_base.shape[0], roi_base.shape[1], 3))
             for channel in range(roi_base.shape[2]):
                 c = roi_base[:, :, channel]
-                image = np.stack((c, c, c), axis = -1)
+                c0 = np.zeros((roi_base.shape[0], roi_base.shape[1]))
+                image = np.stack((c0, c0, c), axis = -1)
                 images += image * weights[channel][x]
-            images = 255.0 * (images - np.min(images)) / (np.max(images) - np.min(images))
-            images = cv2.applyColorMap(images.astype(np.uint8), cv2.COLORMAP_JET)
-            images = cv2.resize(images, (self.SIZE, self.SIZE))
-            roi_img = cv2.addWeighted(img, 0.7, images, 0.3, 1.0)
+            #images = 255.0 * (images - np.min(images)) / (np.max(images) - np.min(images))
+            images = 255.0 * (images) / np.max(images)
+            #images = cv2.applyColorMap(images.astype(np.uint8), cv2.COLORMAP_JET)
+            images = cv2.resize(images.astype(np.uint8), (self.SIZE, self.SIZE))
+            roi_img = cv2.addWeighted(img, 0.7, images, 0.3, 0)
             basename = os.path.basename(filename)
             ftitle, _ = os.path.splitext(basename)
-            cv2.imwrite(save_dir + '/' + str(ftitle) + '_' + str(finding) + '_' + findings + '.png', roi_img)
+            if findings.find(finding) >= 0:
+                print(images)
+                cv2.imwrite(save_dir + '/' + str(ftitle) + '_' + str(finding) + '_' + findings + '.png', roi_img)
