@@ -62,8 +62,10 @@ class Detecter(Core2.Core):
         self.SIZE = size
         self.l1_norm = tf.placeholder(tf.float32)
         self.regularization = tf.placeholder(tf.float32)
-        self.rmax = tf.placeholder(tf.float32)
-        self.dmax = tf.placeholder(tf.float32)
+        self.rmax = tf.placeholder(tf.float32, shape=())
+        self.dmax = tf.placeholder(tf.float32, shape=())
+        #self.rmax = tf.placeholder_with_default(1.0, shape=())
+        #self.dmax = tf.placeholder_with_default(0.0, shape=())
         self.steps = 0
         self.val_losses = []
         self.current_loss = 0.0
