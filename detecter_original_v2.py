@@ -384,11 +384,12 @@ class Detecter(Core2.Core):
             for channel in range(roi_base.shape[2]):
                 c = roi_base[:, :, channel]
                 c0 = np.zeros((roi_base.shape[0], roi_base.shape[1]))
-                image = np.stack((c0, c0, c), axis = -1)
+                image = np.stack((c, c, c), axis = -1)
                 images += image * weights[channel][x]
-            #images = 255.0 * (images - np.min(images)) / (np.max(images) - np.min(images))
-            images = 255.0 * (images) / np.max(images)
-            #images = cv2.applyColorMap(images.astype(np.uint8), cv2.COLORMAP_JET)
+            images = np.maximum(images - np.mean(images), 0)
+            images = 255.0 * (images - np.min(images)) / (np.max(images) - np.min(images))
+            #images = 255.0 * (images) / np.max(images)
+            images = cv2.applyColorMap(images.astype(np.uint8), cv2.COLORMAP_JET)
             images = cv2.resize(images.astype(np.uint8), (self.SIZE, self.SIZE))
             roi_img = cv2.addWeighted(img, 0.7, images, 0.3, 0)
             basename = os.path.basename(filename)
