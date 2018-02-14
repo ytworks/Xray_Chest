@@ -391,7 +391,7 @@ class Detecter(Core2.Core):
             #images = 255.0 * (images) / np.max(images)
             images = cv2.applyColorMap(images.astype(np.uint8), cv2.COLORMAP_JET)
             images = cv2.resize(images.astype(np.uint8), (self.SIZE, self.SIZE))
-            roi_img = cv2.addWeighted(img, 0.7, images, 0.3, 0)
+            roi_img = cv2.addWeighted(img, 0.8, images, 0.2, 0)
             basename = os.path.basename(filename)
             ftitle, _ = os.path.splitext(basename)
             if findings.find(finding) >= 0:
