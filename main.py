@@ -30,6 +30,7 @@ def main():
     parser.add_argument('-outfile')
     parser.add_argument('-output_type')
     parser.add_argument('-dataset')
+    parser.add_argument('-roi')
     parser.add_argument('-mode', required = True)
     args = parser.parse_args()
     size = int(args.size) if args.size != None else 256
@@ -44,6 +45,7 @@ def main():
     batch = int(args.batch) if args.batch != None else 5
     log = int(args.log) if args.log != None else 2
     ds = 'conf' if args.dataset == None else 'nih'
+    roi = False if args.roi == None else True
     output_type = args.output_type if args.output_type != None else 'classified-softmax'
     outfile = args.outfile if args.outfile != None else './Result/result.csv'
     if args.mode in ['learning']:
@@ -92,17 +94,17 @@ def main():
     testdata = dataset.test.get_all_files()
     with open(outfile, "w") as f:
         writer = csv.writer(f)
-        ts, nums = [], []
+        ts, nums, filenames = [], [], []
         for i, t in enumerate(testdata[0]):
             ts.append(dataset.test.img_reader(t, augment = False)[0])
+            filenames.append(t)
             nums.append(i)
             if len(ts) == batch:
-                filenames = [os.path.splitext(testdata[3][num]) for num in nums]
-                paths = [testdata[4][num] for num in nums]
-                x, y = obj.prediction(data = ts, roi = True if ds == 'conf' else False,
+                findings = [testdata[4][num] for num in nums]
+                x, y = obj.prediction(data = ts, roi = roi,
                                       label_def = label_def, save_dir = './Pic',
                                       filenames = filenames,
-                                      paths = paths)
+                                      findings = findings)
                 for j, num in enumerate(nums):
                     print(i, j, num)
                     print("File name:", testdata[3][num])
@@ -125,7 +127,7 @@ def main():
                               testdata[2][num][12], testdata[2][num][13]
                               ]
                     writer.writerow(record)
-                ts, nums = [], []
+                ts, nums, filenames = [], [], []
 
 
 

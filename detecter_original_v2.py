@@ -62,8 +62,10 @@ class Detecter(Core2.Core):
         self.SIZE = size
         self.l1_norm = tf.placeholder(tf.float32)
         self.regularization = tf.placeholder(tf.float32)
-        self.rmax = tf.placeholder(tf.float32)
-        self.dmax = tf.placeholder(tf.float32)
+        self.rmax = tf.placeholder(tf.float32, shape=())
+        self.dmax = tf.placeholder(tf.float32, shape=())
+        #self.rmax = tf.placeholder_with_default(1.0, shape=())
+        #self.dmax = tf.placeholder_with_default(0.0, shape=())
         self.steps = 0
         self.val_losses = []
         self.current_loss = 0.0
@@ -332,7 +334,7 @@ class Detecter(Core2.Core):
 
     # 予測器
     def prediction(self, data, roi = False, label_def = None, save_dir = None,
-                   filenames = None, paths = None):
+                   filenames = None, findings = None):
         # Make feed dict for prediction
         if self.steps <= 5000:
             rmax, dmax = 1.0, 0.0
@@ -359,30 +361,39 @@ class Detecter(Core2.Core):
         else:
             weights = self.get_output_weights(feed_dict = feed_dict)
             roi_base = self.get_roi_map_base(feed_dict = feed_dict)
-            for i in range(len(paths)):
+            for i in range(len(filenames)):
                 self.make_roi(weights = weights[0],
                               roi_base = roi_base[0][i, :, :, :],
                               save_dir = save_dir,
                               filename = filenames[i],
                               label_def = label_def,
-                              path = paths[i])
+                              findings = findings[i])
 
             return result_y, result_z
 
-    def make_roi(self, weights, roi_base, save_dir, filename, label_def, path):
-        img, bits = dicom_to_np(path)
-        img = img / bits * 255
-        img = img.astype(np.uint8)
+    def make_roi(self, weights, roi_base, save_dir, filename, label_def, findings):
+        img = cv2.imread(filename, cv2.IMREAD_GRAYSCALE)
+        #img, bits = dicom_to_np(path)
+        #img = img / bits * 255
+        #img = img.astype(np.uint8)
         img = cv2.resize(img, (self.SIZE, self.SIZE), interpolation = cv2.INTER_AREA)
         img = np.stack((img, img, img), axis = -1)
+        print(filename, findings, roi_base.shape, weights.shape)
         for x, finding in enumerate(label_def):
             images = np.zeros((roi_base.shape[0], roi_base.shape[1], 3))
             for channel in range(roi_base.shape[2]):
                 c = roi_base[:, :, channel]
+                c0 = np.zeros((roi_base.shape[0], roi_base.shape[1]))
                 image = np.stack((c, c, c), axis = -1)
                 images += image * weights[channel][x]
+            images = np.maximum(images - np.mean(images), 0)
             images = 255.0 * (images - np.min(images)) / (np.max(images) - np.min(images))
+            #images = 255.0 * (images) / np.max(images)
             images = cv2.applyColorMap(images.astype(np.uint8), cv2.COLORMAP_JET)
-            images = cv2.resize(images, (self.SIZE, self.SIZE))
-            roi_img = cv2.addWeighted(img, 0.7, images, 0.3, 1.0)
-            cv2.imwrite(save_dir + '/' + str(filename[0]) + '_' + str(finding) + '.png', roi_img)
+            images = cv2.resize(images.astype(np.uint8), (self.SIZE, self.SIZE))
+            roi_img = cv2.addWeighted(img, 0.8, images, 0.2, 0)
+            basename = os.path.basename(filename)
+            ftitle, _ = os.path.splitext(basename)
+            if findings.find(finding) >= 0:
+                print(images)
+                cv2.imwrite(save_dir + '/' + str(ftitle) + '_' + str(finding) + '_' + findings + '.png', roi_img)

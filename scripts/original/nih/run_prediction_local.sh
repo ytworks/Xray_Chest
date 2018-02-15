@@ -1,7 +1,6 @@
 #! /usr/bin/bash
 cd `dirname $0`
 cd ../../../
-source activate tensorflow_p27
 size='512'
 augment='True'
 checkpoint='./Model/run.ckpt'
@@ -12,8 +11,8 @@ log='400'
 lr='0.001'
 rr='0.0'
 l1_norm='0.0'
-roi='True'
 output_type='classified-softmax'
+roi='True'
 #output_type='classified-squared-hinge'
 
 FLAG=""
