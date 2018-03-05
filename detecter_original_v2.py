@@ -267,7 +267,8 @@ class Detecter(Core2.Core):
     def learning(self, data, save_at_log = False, validation_batch_num = 1):
         s = time.time()
         for i in range(self.epoch):
-            batch = data.train.next_batch(self.batch, batch_ratio = 0.2)
+            # change ratio 20180305 for increase channel
+            batch = data.train.next_batch(self.batch, batch_ratio = 0.3)
             # 途中経過のチェック
             if i%self.log == 0 and i != 0:
                 # Train
@@ -285,7 +286,8 @@ class Detecter(Core2.Core):
 
                 # Test
                 val_accuracy_y, val_accuracy_z, val_losses, test, prob = [], [], [], [], []
-                validation_batch = data.test.next_batch(self.batch, augment = False, batch_ratio = 0.2)
+                # change ratio 20180305 for increase channel
+                validation_batch = data.test.next_batch(self.batch, augment = False, batch_ratio = 0.3)
                 feed_dict_val = self.make_feed_dict(prob = False, batch = validation_batch, is_Train = False)
                 res_val = self.sess.run([self.accuracy_z, self.loss_function], feed_dict = feed_dict_val)
                 val_accuracy_z = res_val[0]
