@@ -12,6 +12,7 @@ log='400'
 lr='0.001'
 rr='0.0'
 l1_norm='0.0'
+roi='True'
 output_type='classified-softmax'
 #output_type='classified-squared-hinge'
 
@@ -33,6 +34,7 @@ python main.py  -mode prediction -size $size \
               -l1_norm $l1_norm \
               -output_type $output_type \
               -lr $lr \
+              -roi $roi \
               -dataset nih
 
 if [[ $FLAG == "debug" ]]; then

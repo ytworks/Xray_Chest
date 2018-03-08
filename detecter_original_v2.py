@@ -62,8 +62,10 @@ class Detecter(Core2.Core):
         self.SIZE = size
         self.l1_norm = tf.placeholder(tf.float32)
         self.regularization = tf.placeholder(tf.float32)
-        self.rmax = tf.placeholder(tf.float32)
-        self.dmax = tf.placeholder(tf.float32)
+        self.rmax = tf.placeholder(tf.float32, shape=())
+        self.dmax = tf.placeholder(tf.float32, shape=())
+        #self.rmax = tf.placeholder_with_default(1.0, shape=())
+        #self.dmax = tf.placeholder_with_default(0.0, shape=())
         self.steps = 0
         self.val_losses = []
         self.current_loss = 0.0
@@ -113,10 +115,10 @@ class Detecter(Core2.Core):
 
     def network(self):
         Initializer = 'He'
-        Activation = 'Relu'
+        Activation = 'Gelu'
         Regularization = False
         Renormalization = True
-        SE = False
+        SE = True
         GrowthRate = 24
         StemChannels = 64
         prob = 1.0
@@ -153,7 +155,12 @@ class Detecter(Core2.Core):
                                         Training = self.istraining,
                                         vname = 'DenseNet')
 
-        self.y51 = self.densenet_output
+        self.y50 = self.densenet_output
+        self.y51 = SE_module(x = self.y50,
+                             InputNode = [self.SIZE / 64, self.SIZE / 64, StemChannels + GrowthRate * 16],
+                             Act = Activation,
+                             Rate = 0.5,
+                             vname = 'TOP_SE')
 
         self.y61 = Layers.pooling(x = self.y51,
                                   ksize=[self.SIZE / 64, self.SIZE / 64],
@@ -221,7 +228,7 @@ class Detecter(Core2.Core):
         else:
             rmax = min(1.0 + 2.0 * float(self.steps - 5000.0) / 35000.0, 3.0)
             dmax = min(5.0 * float(self.steps -5000.0) / 20000.0, 5.0)
-        if self.steps % 1000 == 0 and self.steps != 0 and is_update:
+        if self.steps % 3000 == 0 and self.steps != 0 and is_update:
         #if self.current_loss > np.mean(self.val_losses) - np.std(self.val_losses) and len(self.val_losses) > 10 and is_update:
             logger.debug("Before Learning Rate: %g" % self.learning_rate_value)
             self.learning_rate_value = max(0.000001, self.learning_rate_value * 0.9)
@@ -257,10 +264,10 @@ class Detecter(Core2.Core):
         roc_auc = auc(fpr, tpr)
         return roc_auc
 
-    def learning(self, data, save_at_log = False, validation_batch_num = 1):
+    def learning(self, data, save_at_log = False, validation_batch_num = 1, batch_ratio = 0.2):
         s = time.time()
         for i in range(self.epoch):
-            batch = data.train.next_batch(self.batch, batch_ratio = 0.2)
+            batch = data.train.next_batch(self.batch, batch_ratio = batch_ratio)
             # 途中経過のチェック
             if i%self.log == 0 and i != 0:
                 # Train
@@ -278,7 +285,7 @@ class Detecter(Core2.Core):
 
                 # Test
                 val_accuracy_y, val_accuracy_z, val_losses, test, prob = [], [], [], [], []
-                validation_batch = data.test.next_batch(self.batch, augment = False, batch_ratio = 0.2)
+                validation_batch = data.test.next_batch(self.batch, augment = False, batch_ratio = batch_ratio)
                 feed_dict_val = self.make_feed_dict(prob = False, batch = validation_batch, is_Train = False)
                 res_val = self.sess.run([self.accuracy_z, self.loss_function], feed_dict = feed_dict_val)
                 val_accuracy_z = res_val[0]
@@ -332,7 +339,7 @@ class Detecter(Core2.Core):
 
     # 予測器
     def prediction(self, data, roi = False, label_def = None, save_dir = None,
-                   filenames = None, paths = None):
+                   filenames = None, findings = None):
         # Make feed dict for prediction
         if self.steps <= 5000:
             rmax, dmax = 1.0, 0.0
@@ -359,30 +366,39 @@ class Detecter(Core2.Core):
         else:
             weights = self.get_output_weights(feed_dict = feed_dict)
             roi_base = self.get_roi_map_base(feed_dict = feed_dict)
-            for i in range(len(paths)):
+            for i in range(len(filenames)):
                 self.make_roi(weights = weights[0],
                               roi_base = roi_base[0][i, :, :, :],
                               save_dir = save_dir,
                               filename = filenames[i],
                               label_def = label_def,
-                              path = paths[i])
+                              findings = findings[i])
 
             return result_y, result_z
 
-    def make_roi(self, weights, roi_base, save_dir, filename, label_def, path):
-        img, bits = dicom_to_np(path)
-        img = img / bits * 255
-        img = img.astype(np.uint8)
+    def make_roi(self, weights, roi_base, save_dir, filename, label_def, findings):
+        img = cv2.imread(filename, cv2.IMREAD_GRAYSCALE)
+        #img, bits = dicom_to_np(path)
+        #img = img / bits * 255
+        #img = img.astype(np.uint8)
         img = cv2.resize(img, (self.SIZE, self.SIZE), interpolation = cv2.INTER_AREA)
         img = np.stack((img, img, img), axis = -1)
+        print(filename, findings, roi_base.shape, weights.shape)
         for x, finding in enumerate(label_def):
             images = np.zeros((roi_base.shape[0], roi_base.shape[1], 3))
             for channel in range(roi_base.shape[2]):
                 c = roi_base[:, :, channel]
+                c0 = np.zeros((roi_base.shape[0], roi_base.shape[1]))
                 image = np.stack((c, c, c), axis = -1)
                 images += image * weights[channel][x]
+            images = np.maximum(images - np.mean(images), 0)
             images = 255.0 * (images - np.min(images)) / (np.max(images) - np.min(images))
+            #images = 255.0 * (images) / np.max(images)
             images = cv2.applyColorMap(images.astype(np.uint8), cv2.COLORMAP_JET)
-            images = cv2.resize(images, (self.SIZE, self.SIZE))
-            roi_img = cv2.addWeighted(img, 0.7, images, 0.3, 1.0)
-            cv2.imwrite(save_dir + '/' + str(filename[0]) + '_' + str(finding) + '.png', roi_img)
+            images = cv2.resize(images.astype(np.uint8), (self.SIZE, self.SIZE))
+            roi_img = cv2.addWeighted(img, 0.8, images, 0.2, 0)
+            basename = os.path.basename(filename)
+            ftitle, _ = os.path.splitext(basename)
+            if findings.find(finding) >= 0:
+                print(images)
+                cv2.imwrite(save_dir + '/' + str(ftitle) + '_' + str(finding) + '_' + findings + '.png', roi_img)

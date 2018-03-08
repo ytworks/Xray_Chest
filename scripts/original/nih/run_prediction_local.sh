@@ -1,18 +1,18 @@
 #! /usr/bin/bash
 cd `dirname $0`
 cd ../../../
-source activate tensorflow_p27
 size='512'
 augment='True'
 checkpoint='./Model/run.ckpt'
 outfile='./Result/result.csv'
-epoch='10000'
-batch='12'
-log='10'
+epoch='40000'
+batch='16'
+log='400'
 lr='0.001'
 rr='0.0'
 l1_norm='0.0'
 output_type='classified-softmax'
+roi='True'
 #output_type='classified-squared-hinge'
 
 FLAG=""
@@ -23,7 +23,7 @@ do
   esac
 done
 
-python main.py  -mode learning -size $size \
+python main.py  -mode prediction -size $size \
               -augment $augment \
               -checkpoint $checkpoint \
               -epoch $epoch \
@@ -33,6 +33,7 @@ python main.py  -mode learning -size $size \
               -l1_norm $l1_norm \
               -output_type $output_type \
               -lr $lr \
+              -roi $roi \
               -dataset nih
 
 if [[ $FLAG == "debug" ]]; then

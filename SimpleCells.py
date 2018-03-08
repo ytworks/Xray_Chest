@@ -202,7 +202,7 @@ def dense_cell(x,
     if SE:
         x02 = SE_module(x = x02,
                         InputNode = [InputNode[0], InputNode[1], InputNode[2] + GrowthRate],
-                        Act = 'Relu',
+                        Act = Act,
                         vname = vname + '_SE01')
 
     x11 = conv_block(x = x02,
@@ -222,7 +222,7 @@ def dense_cell(x,
     if SE:
         x12 = SE_module(x = x12,
                         InputNode = [InputNode[0], InputNode[1], InputNode[2] + GrowthRate * 2],
-                        Act = 'Relu',
+                        Act = Act,
                         vname = vname + '_SE02')
 
     x21 = conv_block(x = x12,
@@ -242,7 +242,7 @@ def dense_cell(x,
     if SE:
         x22 = SE_module(x = x22,
                         InputNode = [InputNode[0], InputNode[1], InputNode[2] + GrowthRate * 3],
-                        Act = 'Relu',
+                        Act = Act,
                         vname = vname + '_SE03')
 
     x31 = conv_block(x = x22,
@@ -262,7 +262,7 @@ def dense_cell(x,
     if SE:
         x32 = SE_module(x = x32,
                         InputNode = [InputNode[0], InputNode[1], InputNode[2] + GrowthRate * 4],
-                        Act = 'Relu',
+                        Act = Act,
                         vname = vname + '_SE04')
     return x32
 
@@ -345,7 +345,7 @@ def conv_block(x,
     if SE:
         x01 = SE_module(x = x01,
                         InputNode = [InputNode[0], InputNode[1], GrowthRate * 4],
-                        Act = 'Relu',
+                        Act = Act,
                         vname = vname + '_SE01')
 
     # Batch Normalization
@@ -398,7 +398,7 @@ def conv_block(x,
     if SE:
         x02 = SE_module(x = x02,
                         InputNode = [InputNode[0], InputNode[1], GrowthRate],
-                        Act = 'Relu',
+                        Act = Act,
                         vname = vname + '_SE02')
     return x02
 
@@ -441,7 +441,7 @@ def transition_cell(x,
     if SE:
         x01 = SE_module(x = x01,
                         InputNode = [InputNode[0], InputNode[1], InputNode[2]],
-                        Act = 'Relu',
+                        Act = Act,
                         vname = vname + '_SE01')
     p_max = Layers.pooling(x = x01,
                            ksize=[2, 2],
@@ -663,7 +663,7 @@ def SE_module(x,
     x2 = Layers.fnn(x = x1,
                     InputSize = InputNode[2],
                     OutputSize = int(InputNode[2] * Rate),
-                    Initializer = 'He' if Act == 'Relu' else 'Xavier',
+                    Initializer = 'He' if Act in ['Relu', 'Gelu'] else 'Xavier',
                     ActivationFunction = Act,
                     MaxoutSize = 3,
                     BatchNormalization = False,
