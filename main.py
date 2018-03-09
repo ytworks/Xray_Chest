@@ -108,7 +108,7 @@ def main():
                 for j, num in enumerate(nums):
                     print(i, j, num)
                     print("File name:", testdata[3][num])
-                    print(x[j], testdata[1][num])
+                    print(testdata[2][num])
                     print(y[j])
                     record = [x[j][0], x[j][1], testdata[1][num][0], testdata[1][num][1],
                               y[j][0], y[j][1],
