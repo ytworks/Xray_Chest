@@ -215,8 +215,6 @@ class DataSet(object):
             #img = cv2.applyColorMap(img.astype(np.uint8), cv2.COLORMAP_JET)
             img = self.pi(img.astype(np.float32))
 
-
-
         return img, label[0], label[1], filename, self.labels[filename]['raw']
 
     def next_batch(self, batch_size, augment = True, debug = True, batch_ratio = 0.5):
@@ -389,7 +387,7 @@ def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
                    zca = True,
                    raw_img = False,
                    model = 'xception',
-                   ds = 'conf'):
+                   ds = 'normal'):
     class DataSets(object):
         pass
     data_sets = DataSets()
@@ -463,6 +461,15 @@ def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
                                  raw_img = raw_img,
                                  model = model,
                                  is_train = False)
+        logger.debug("Test Conf")
+        data_sets.conf  = DataSet(data = conf_data,
+                                  label = conf_labels,
+                                  size = img_size,
+                                  zca = zca,
+                                  augment = augment,
+                                  raw_img = raw_img,
+                                  model = model,
+                                  is_train = False)
 
     data_sets.train_summary = nih_count
     return data_sets, label_def
@@ -486,6 +493,8 @@ if __name__ == '__main__':
         print(x[1], x[2], x[3], x[4])
         y = dataset.test.next_batch(6)
         print(y[1], y[2], y[3], y[4])
+        z = dataset.conf.next_batch(6)
+        print(z[1], z[2], z[3], z[4])
     for i in tqdm(range(100)):
         y = dataset.test.next_batch(20)
 
@@ -506,5 +515,7 @@ if __name__ == '__main__':
         print(x[1], x[2], x[3], x[4])
         y = dataset.test.next_batch(6)
         print(y[1], y[2], y[3], y[4])
+        z = dataset.conf.next_batch(6)
+        print(z[1], z[2], z[3], z[4])
     for i in tqdm(range(100)):
         y = dataset.test.next_batch(20)
