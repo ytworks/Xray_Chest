@@ -97,44 +97,7 @@ def main():
     testdata = dataset.test.get_all_files()
     get_results(outfile.replace('result', 'nih_result'), testdata, batch, obj, roi, label_def,
                 img_reader = dataset.test.img_reader)
-    '''
-    with open(outfile, "w") as f:
-        writer = csv.writer(f)
-        ts, nums, filenames = [], [], []
-        for i, t in enumerate(testdata[0]):
-            ts.append(dataset.test.img_reader(t, augment = False)[0])
-            filenames.append(t)
-            nums.append(i)
-            if len(ts) == batch:
-                findings = [testdata[4][num] for num in nums]
-                x, y = obj.prediction(data = ts, roi = roi,
-                                      label_def = label_def, save_dir = './Pic',
-                                      filenames = filenames,
-                                      findings = findings)
-                for j, num in enumerate(nums):
-                    print(i, j, num)
-                    print("File name:", testdata[3][num])
-                    print(testdata[2][num])
-                    print(y[j])
-                    record = [x[j][0], x[j][1], testdata[1][num][0], testdata[1][num][1],
-                              y[j][0], y[j][1],
-                              y[j][2], y[j][3],
-                              y[j][4], y[j][5],
-                              y[j][6], y[j][7],
-                              y[j][8], y[j][9],
-                              y[j][10], y[j][11],
-                              y[j][12], y[j][13],
-                              testdata[2][num][0], testdata[2][num][1],
-                              testdata[2][num][2], testdata[2][num][3],
-                              testdata[2][num][4], testdata[2][num][5],
-                              testdata[2][num][6], testdata[2][num][7],
-                              testdata[2][num][8], testdata[2][num][9],
-                              testdata[2][num][10], testdata[2][num][11],
-                              testdata[2][num][12], testdata[2][num][13]
-                              ]
-                    writer.writerow(record)
-                ts, nums, filenames = [], [], []
-    '''
+
 
 def get_results(outfile, testdata, batch, obj, roi, label_def,
                 img_reader):
