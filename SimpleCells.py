@@ -39,6 +39,7 @@ def stem_cell(x,
 
 
 def densenet(x,
+             root,
              Act = 'Relu',
              GrowthRate = 12,
              InputNode = [64, 64, 32],
@@ -52,10 +53,16 @@ def densenet(x,
              Training = True,
              vname = '_DenseNet'):
 
-    x01 = dense_cell(x = x,
+    root0 = tf.image.resize_images(images = root,
+                                   size = [InputNode[0], InputNode[1]],
+                                   method=tf.image.ResizeMethod.BICUBIC,
+                                   align_corners=False)
+    x_plus_root = Layers.concat(xs = [x, root0], concat_type = 'Channel')
+
+    x01 = dense_cell(x = x_plus_root,
                      Act = Act,
                      GrowthRate = GrowthRate,
-                     InputNode = [InputNode[0], InputNode[1], InputNode[2]],
+                     InputNode = [InputNode[0], InputNode[1], InputNode[2] + 3],
                      Initializer = Initializer,
                      Strides = Strides,
                      Renormalization = Renormalization,
@@ -67,7 +74,7 @@ def densenet(x,
                      vname = vname + '_Dense01')
     x02 = transition_cell(x = x01,
                           Act = Act,
-                          InputNode = [InputNode[0], InputNode[1], InputNode[2] + GrowthRate * 4],
+                          InputNode = [InputNode[0], InputNode[1], InputNode[2] + 3 + GrowthRate * 4],
                           Initializer = Initializer,
                           Strides = Strides,
                           Renormalization = Renormalization,
@@ -78,10 +85,16 @@ def densenet(x,
                           Training = Training,
                           vname = vname +'_Transition01')
 
-    x03 = dense_cell(x = x02,
+    root1 = tf.image.resize_images(images = root,
+                                   size = [InputNode[0]/2, InputNode[1]/2],
+                                   method=tf.image.ResizeMethod.BICUBIC,
+                                   align_corners=False)
+    x02_plus_root = Layers.concat(xs = [x02, root1], concat_type = 'Channel')
+
+    x03 = dense_cell(x = x02_plus_root,
                      Act = Act,
                      GrowthRate = GrowthRate,
-                     InputNode = [InputNode[0] / 2, InputNode[1] / 2, InputNode[2] + GrowthRate * 4],
+                     InputNode = [InputNode[0] / 2, InputNode[1] / 2, InputNode[2] + 6 + GrowthRate * 4],
                      Initializer = Initializer,
                      Strides = Strides,
                      Renormalization = Renormalization,
@@ -93,7 +106,7 @@ def densenet(x,
                      vname = vname + '_Dense02')
     x04 = transition_cell(x = x03,
                           Act = Act,
-                          InputNode = [InputNode[0] / 2, InputNode[1] / 2, InputNode[2] + GrowthRate * 8],
+                          InputNode = [InputNode[0] / 2, InputNode[1] / 2, InputNode[2] + 6 + GrowthRate * 8],
                           Initializer = Initializer,
                           Strides = Strides,
                           Renormalization = Renormalization,
@@ -104,10 +117,17 @@ def densenet(x,
                           Training = Training,
                           vname = vname +'_Transition02')
 
-    x05 = dense_cell(x = x04,
+    root2 = tf.image.resize_images(images = root,
+                                   size = [InputNode[0]/4, InputNode[1]/4],
+                                   method=tf.image.ResizeMethod.BICUBIC,
+                                   align_corners=False)
+    x04_plus_root = Layers.concat(xs = [x04, root2], concat_type = 'Channel')
+
+
+    x05 = dense_cell(x = x04_plus_root,
                      Act = Act,
                      GrowthRate = GrowthRate,
-                     InputNode = [InputNode[0] / 2, InputNode[1] / 2, InputNode[2] + GrowthRate * 8],
+                     InputNode = [InputNode[0] / 4, InputNode[1] / 4, InputNode[2] + 9 + GrowthRate * 8],
                      Initializer = Initializer,
                      Strides = Strides,
                      Renormalization = Renormalization,
@@ -119,7 +139,7 @@ def densenet(x,
                      vname = vname + '_Dense03')
     x06 = transition_cell(x = x05,
                           Act = Act,
-                          InputNode = [InputNode[0] / 2, InputNode[1] / 2, InputNode[2] + GrowthRate * 12],
+                          InputNode = [InputNode[0] / 4, InputNode[1] / 4, InputNode[2] + 9 + GrowthRate * 12],
                           Initializer = Initializer,
                           Strides = Strides,
                           Renormalization = Renormalization,
@@ -130,10 +150,16 @@ def densenet(x,
                           Training = Training,
                           vname = vname +'_Transition03')
 
-    x07 = dense_cell(x = x06,
+    root3 = tf.image.resize_images(images = root,
+                                   size = [InputNode[0]/8, InputNode[1]/8],
+                                   method=tf.image.ResizeMethod.BICUBIC,
+                                   align_corners=False)
+    x06_plus_root = Layers.concat(xs = [x06, root3], concat_type = 'Channel')
+
+    x07 = dense_cell(x = x06_plus_root,
                      Act = Act,
                      GrowthRate = GrowthRate,
-                     InputNode = [InputNode[0] / 2, InputNode[1] / 2, InputNode[2] + GrowthRate * 12],
+                     InputNode = [InputNode[0] / 8, InputNode[1] / 8, InputNode[2] + 12 + GrowthRate * 12],
                      Initializer = Initializer,
                      Strides = Strides,
                      Renormalization = Renormalization,
@@ -145,7 +171,7 @@ def densenet(x,
                      vname = vname + '_Dense04')
     x08 = transition_cell(x = x07,
                           Act = Act,
-                          InputNode = [InputNode[0] / 2, InputNode[1] / 2, InputNode[2] + GrowthRate * 16],
+                          InputNode = [InputNode[0] / 8, InputNode[1] / 8, InputNode[2] + 12 + GrowthRate * 16],
                           Initializer = Initializer,
                           Strides = Strides,
                           Renormalization = Renormalization,
@@ -157,7 +183,7 @@ def densenet(x,
                           vname = vname +'_Transition04')
     # Batch Normalization
     x_bn1 = Layers.batch_normalization(x = x08,
-                                       shape = InputNode[2] + GrowthRate * 16,
+                                       shape = InputNode[2] + 12 + GrowthRate * 16,
                                        vname = vname + '_BN01',
                                        dim = [0, 1, 2],
                                        Renormalization = Renormalization,
