@@ -118,7 +118,7 @@ class Detecter(Core2.Core):
         Activation = 'Gelu'
         Regularization = False
         Renormalization = True
-        SE = True
+        SE = False
         GrowthRate = 24
         StemChannels = 64
         prob = 1.0
