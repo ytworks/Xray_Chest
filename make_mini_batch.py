@@ -185,6 +185,7 @@ class DataSet(object):
             img, bits = dicom_to_np(f)
             if self.raw_img or self.zca == False:
                 img = 255.0 * img / bits
+                img = img.astype(np.uint8)
         elif ext == ".png":
             img = cv2.imread(f, cv2.IMREAD_GRAYSCALE)
         else:

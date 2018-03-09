@@ -339,7 +339,7 @@ class Detecter(Core2.Core):
 
     # 予測器
     def prediction(self, data, roi = False, label_def = None, save_dir = None,
-                   filenames = None, findings = None):
+                   filenames = None, findings = None, roi_force = False):
         # Make feed dict for prediction
         if self.steps <= 5000:
             rmax, dmax = 1.0, 0.0
@@ -372,15 +372,19 @@ class Detecter(Core2.Core):
                               save_dir = save_dir,
                               filename = filenames[i],
                               label_def = label_def,
-                              findings = findings[i])
+                              findings = findings[i],
+                              roi_force = roi_force)
 
             return result_y, result_z
 
-    def make_roi(self, weights, roi_base, save_dir, filename, label_def, findings):
-        img = cv2.imread(filename, cv2.IMREAD_GRAYSCALE)
-        #img, bits = dicom_to_np(path)
-        #img = img / bits * 255
-        #img = img.astype(np.uint8)
+    def make_roi(self, weights, roi_base, save_dir, filename, label_def, findings,
+                 roi_force):
+        if filename.find('.png') >= 0:
+            img = cv2.imread(filename, cv2.IMREAD_GRAYSCALE)
+        else:
+            img, bits = dicom_to_np(filename)
+            img = img / bits * 255
+            img = img.astype(np.uint8)
         img = cv2.resize(img, (self.SIZE, self.SIZE), interpolation = cv2.INTER_AREA)
         img = np.stack((img, img, img), axis = -1)
         for x, finding in enumerate(label_def):
@@ -398,6 +402,15 @@ class Detecter(Core2.Core):
             roi_img = cv2.addWeighted(img, 0.8, images, 0.2, 0)
             basename = os.path.basename(filename)
             ftitle, _ = os.path.splitext(basename)
-            if findings.find(finding) >= 0:
-                print(images)
-                cv2.imwrite(save_dir + '/' + str(ftitle) + '_' + str(finding) + '_' + findings + '.png', roi_img)
+            if roi_force:
+                if filename.find('.png') >= 0:
+                    cv2.imwrite(save_dir + '/' + str(ftitle) + '_' + str(finding) + '_' + findings + '.png', roi_img)
+                else:
+                    cv2.imwrite(save_dir + '/' + str(ftitle) + '_' + str(finding) + '.png', roi_img)
+            else:
+                if findings.find(finding) >= 0 or filename.find('.dcm') >= 0:
+                    if filename.find('.png') >= 0:
+                        cv2.imwrite(save_dir + '/' + str(ftitle) + '_' + str(finding) + '_' + findings + '.png', roi_img)
+                    else:
+                        if finding in ['Nodule', 'Mass', 'Pneumonia']:
+                            cv2.imwrite(save_dir + '/' + str(ftitle) + '_' + str(finding) + '.png', roi_img)
