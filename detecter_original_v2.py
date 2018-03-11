@@ -120,7 +120,7 @@ class Detecter(Core2.Core):
         Renormalization = True
         SE = False
         GrowthRate = 24
-        StemChannels = 64
+        StemChannels = 72
         prob = 1.0
         # dense net
         ## Stem
@@ -179,17 +179,6 @@ class Detecter(Core2.Core):
                                   BatchNormalization = False,
                                   Regularization = True,
                                   vname = 'Output_z')
-        '''
-        self.z0 = Layers.concat([self.y72, self.y71], concat_type = 'Vector')
-        self.y73 = Outputs.output(x = self.z0,
-                                  InputSize = 2048 + 14,
-                                  OutputSize = 2,
-                                  Initializer = 'Xavier',
-                                  BatchNormalization = False,
-                                  Regularization = True,
-                                  vname = 'Output_y')
-        self.y = self.y73
-        '''
         self.z = self.y72
 
 
@@ -200,14 +189,6 @@ class Detecter(Core2.Core):
                                              regularization = self.regularization,
                                              regularization_type = self.regularization_type,
                                              output_type = diag_output_type)
-        '''
-        self.loss_function += Loss.loss_func(y = self.y,
-                                            y_ = self.y_,
-                                            regularization = 0.0,
-                                            regularization_type = self.regularization_type,
-                                            output_type = self.output_type)
-        '''
-
         # For Gear Mode (TBD)
         self.loss_function += tf.reduce_mean(tf.abs(self.y71)) * self.l1_norm
 
@@ -236,7 +217,7 @@ class Detecter(Core2.Core):
             logger.debug("After Learning Rate: %g" % self.learning_rate_value)
             #self.val_losses = []
         if self.steps % 4000 == 0 and self.steps != 0 and is_update:
-            self.l1_norm_value = min(1, self.l1_norm_value * 5.0) if not self.l1_norm_value == 0.0 else 0.00001
+            self.l1_norm_value = min(10, self.l1_norm_value * 5.0) if not self.l1_norm_value == 0.0 else 0.00001
             #self.regularization_value = min(0.1, self.regularization_value * 5.0) if not self.regularization_value == 0.0 else 0.0001
             logger.debug("(Regularization, L1 Norm): %g %g" % (self.regularization_value, self.l1_norm_value))
         feed_dict = {}
