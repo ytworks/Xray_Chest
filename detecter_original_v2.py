@@ -110,7 +110,7 @@ class Detecter(Core2.Core):
         self.CH = 3
         self.x = tf.placeholder("float", shape=[None, self.SIZE, self.SIZE, self.CH], name = "Input")
         #self.y_ = tf.placeholder("float", shape=[None, 2], name = "Label_Judgement")
-        self.z_ = tf.placeholder("float", shape=[None, 14], name = "Label_Diagnosis")
+        self.z_ = tf.placeholder("float", shape=[None, 15], name = "Label_Diagnosis")
         self.keep_probs = []
 
     def network(self):
@@ -174,7 +174,7 @@ class Detecter(Core2.Core):
         # fnn
         self.y72 = Outputs.output(x = self.y71,
                                   InputSize = StemChannels + 12 + GrowthRate * 16,
-                                  OutputSize = 14,
+                                  OutputSize = 15,
                                   Initializer = 'Xavier',
                                   BatchNormalization = False,
                                   Regularization = True,

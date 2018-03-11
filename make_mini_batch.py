@@ -324,7 +324,8 @@ def make_supevised_data_for_nih(path, filter_list = None):
             finding_count.setdefault(f, 0)
             finding_count[f] += 1
     # バイナライズ
-    binary_def = [l for l in sorted(finding_count.keys()) if not l in 'No Finding']
+    #binary_def = [l for l in sorted(finding_count.keys()) if not l in 'No Finding']
+    binary_def = [l for l in sorted(finding_count.keys())]
     for file_name, finding in findings.items():
         label0 = np.zeros(len(binary_def))
         label1 = np.zeros(2)
@@ -346,12 +347,14 @@ def make_supevised_data_for_conf(path, labels, datapath):
             img2diag.setdefault(row[0].replace('.IMG', ''), row[10]+row[11])
     diags = list(set([v for v in img2diag.values()]))
     mapper = diagnosis_map(diags, labels)
+    no_findings = [i for i, label in enumerate(labels) if label in 'No Finding']
     findings = {}
     for p in path:
         label0 = np.zeros(len(labels))
         label1 = np.zeros(2)
         if p.find('JPCNN') >= 0:
             label1[0] = 1
+            label0[no_findings[0]] = 1
         else:
             label1[1] = 1
             file_name, _ = os.path.splitext(os.path.basename(p))
