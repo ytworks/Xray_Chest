@@ -246,7 +246,7 @@ class Detecter(Core2.Core):
         roc_auc = auc(fpr, tpr)
         return roc_auc
 
-    def learning(self, data, save_at_log = False, validation_batch_num = 1, batch_ratio = [0.2, 0.3, 0.4]):
+    def learning(self, data, save_at_log = False, validation_batch_num = 1, batch_ratio = [0.2, 0.3, 0.4, 0.5, 0.6]):
         s = time.time()
         for i in range(self.epoch):
             batch = data.train.next_batch(self.batch, batch_ratio = batch_ratio[i % len(batch_ratio)])
