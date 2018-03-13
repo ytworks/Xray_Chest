@@ -29,7 +29,7 @@ def write_fig(test, prob, figname):
 p = sys.argv
 
 diags = ['Atelectasis', 'Cardiomegaly', 'Consolidation', 'Edema', 'Effusion', 'Emphysema', 'Fibrosis',
-         'Hernia', 'Infiltration', 'Mass', 'Nodule', 'Pleural_Thickening', 'Pneumonia', 'Pneumothorax']
+         'Hernia', 'Infiltration', 'Mass', 'No Findings', 'Nodule', 'Pleural_Thickening', 'Pneumonia', 'Pneumothorax',]
 
 f = csv.reader(open(p[1], 'r'), lineterminator='\n')
 test, prob = [], []
