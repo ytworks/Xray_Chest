@@ -126,7 +126,7 @@ def get_results(outfile, testdata, batch, obj, roi, label_def,
                               y[j][6], y[j][7],
                               y[j][8], y[j][9],
                               y[j][10], y[j][11],
-                              y[j][12], y[j][13], y[j][14]
+                              y[j][12], y[j][13], y[j][14],
                               testdata[2][num][0], testdata[2][num][1],
                               testdata[2][num][2], testdata[2][num][3],
                               testdata[2][num][4], testdata[2][num][5],
