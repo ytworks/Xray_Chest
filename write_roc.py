@@ -35,7 +35,6 @@ f = csv.reader(open(p[1], 'r'), lineterminator='\n')
 test, prob = [], []
 test_diag, prob_diag = [[] for i in range(len(diags))], [[] for i in range(len(diags))]
 for row in f:
-    print(len(row))
     test.append(int(float(row[2])))
     prob.append(float(row[0]))
     for i in range(len(diags)):
