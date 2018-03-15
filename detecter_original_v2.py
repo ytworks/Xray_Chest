@@ -110,7 +110,7 @@ class Detecter(Core2.Core):
         self.CH = 3
         self.x = tf.placeholder("float", shape=[None, self.SIZE, self.SIZE, self.CH], name = "Input")
         #self.y_ = tf.placeholder("float", shape=[None, 2], name = "Label_Judgement")
-        self.z_ = tf.placeholder("float", shape=[None, 14], name = "Label_Diagnosis")
+        self.z_ = tf.placeholder("float", shape=[None, 15], name = "Label_Diagnosis")
         self.keep_probs = []
 
     def network(self):
@@ -118,9 +118,9 @@ class Detecter(Core2.Core):
         Activation = 'Gelu'
         Regularization = False
         Renormalization = True
-        SE = True
-        GrowthRate = 24
-        StemChannels = 64
+        SE = False
+        GrowthRate = 12
+        StemChannels = 32
         prob = 1.0
         # dense net
         ## Stem
@@ -143,6 +143,7 @@ class Detecter(Core2.Core):
 
         ## Dense
         self.densenet_output = densenet(x = self.dense_stem,
+                                        root = self.stem_bn,
                                         Act = Activation,
                                         GrowthRate = GrowthRate,
                                         InputNode = [self.SIZE / 4, self.SIZE / 4, StemChannels],
@@ -157,7 +158,7 @@ class Detecter(Core2.Core):
 
         self.y50 = self.densenet_output
         self.y51 = SE_module(x = self.y50,
-                             InputNode = [self.SIZE / 64, self.SIZE / 64, StemChannels + GrowthRate * 16],
+                             InputNode = [self.SIZE / 64, self.SIZE / 64, StemChannels + 12 + GrowthRate * 16],
                              Act = Activation,
                              Rate = 0.5,
                              vname = 'TOP_SE')
@@ -169,26 +170,15 @@ class Detecter(Core2.Core):
                                   algorithm = 'Avg')
 
         # reshape
-        self.y71 = Layers.reshape_tensor(x = self.y61, shape = [StemChannels + GrowthRate * 16])
+        self.y71 = Layers.reshape_tensor(x = self.y61, shape = [StemChannels + 12 + GrowthRate * 16])
         # fnn
         self.y72 = Outputs.output(x = self.y71,
-                                  InputSize = StemChannels + GrowthRate * 16,
-                                  OutputSize = 14,
+                                  InputSize = StemChannels + 12 + GrowthRate * 16,
+                                  OutputSize = 15,
                                   Initializer = 'Xavier',
                                   BatchNormalization = False,
                                   Regularization = True,
                                   vname = 'Output_z')
-        '''
-        self.z0 = Layers.concat([self.y72, self.y71], concat_type = 'Vector')
-        self.y73 = Outputs.output(x = self.z0,
-                                  InputSize = 2048 + 14,
-                                  OutputSize = 2,
-                                  Initializer = 'Xavier',
-                                  BatchNormalization = False,
-                                  Regularization = True,
-                                  vname = 'Output_y')
-        self.y = self.y73
-        '''
         self.z = self.y72
 
 
@@ -199,16 +189,9 @@ class Detecter(Core2.Core):
                                              regularization = self.regularization,
                                              regularization_type = self.regularization_type,
                                              output_type = diag_output_type)
-        '''
-        self.loss_function += Loss.loss_func(y = self.y,
-                                            y_ = self.y_,
-                                            regularization = 0.0,
-                                            regularization_type = self.regularization_type,
-                                            output_type = self.output_type)
-        '''
-
         # For Gear Mode (TBD)
-        self.loss_function += tf.reduce_mean(tf.abs(self.y71)) * self.l1_norm
+        self.l1_loss = tf.reduce_mean(tf.abs(self.y71)) * self.l1_norm
+        self.loss_function += self.l1_loss
 
     def training(self, var_list = None, gradient_cliiping = True, clipping_norm = 0.1):
         self.train_op, self.optimizer = TO.select_algo(loss_function = self.loss_function,
@@ -264,17 +247,18 @@ class Detecter(Core2.Core):
         roc_auc = auc(fpr, tpr)
         return roc_auc
 
-    def learning(self, data, save_at_log = False, validation_batch_num = 1, batch_ratio = 0.2):
+    def learning(self, data, save_at_log = False, validation_batch_num = 1, batch_ratio = [0.2, 0.3, 0.4, 0.5, 0.6]):
         s = time.time()
         for i in range(self.epoch):
-            batch = data.train.next_batch(self.batch, batch_ratio = batch_ratio)
+            batch = data.train.next_batch(self.batch, batch_ratio = batch_ratio[i % len(batch_ratio)])
             # 途中経過のチェック
             if i%self.log == 0 and i != 0:
                 # Train
                 feed_dict = self.make_feed_dict(prob = True, batch = batch, is_Train = True)
-                res = self.sess.run([self.accuracy_z, self.loss_function], feed_dict = feed_dict)
+                res = self.sess.run([self.accuracy_z, self.loss_function, self.l1_loss], feed_dict = feed_dict)
                 train_accuracy_z = res[0]
                 losses = res[1]
+                l1_losses = res[2]
                 train_prediction = self.prediction(data = batch[0], roi = False)
                 aucs_t = ''
                 for d in range(len(train_prediction[1][0])):
@@ -285,11 +269,12 @@ class Detecter(Core2.Core):
 
                 # Test
                 val_accuracy_y, val_accuracy_z, val_losses, test, prob = [], [], [], [], []
-                validation_batch = data.test.next_batch(self.batch, augment = False, batch_ratio = batch_ratio)
+                validation_batch = data.test.next_batch(self.batch, augment = False, batch_ratio = batch_ratio[i % len(batch_ratio)])
                 feed_dict_val = self.make_feed_dict(prob = False, batch = validation_batch, is_Train = False)
-                res_val = self.sess.run([self.accuracy_z, self.loss_function], feed_dict = feed_dict_val)
+                res_val = self.sess.run([self.accuracy_z, self.loss_function, self.l1_loss], feed_dict = feed_dict_val)
                 val_accuracy_z = res_val[0]
                 val_losses = res_val[1]
+                val_l1 = res_val[2]
                 val_prediction = self.prediction(data = validation_batch[0], roi = False)
                 aucs_v = ''
                 for d in range(len(train_prediction[1][0])):
@@ -304,8 +289,8 @@ class Detecter(Core2.Core):
                 logger.debug("step %d ================================================================================="% i)
                 #logger.debug("Train: (judgement, diagnosis, loss, auc) = (%g, %g, %g, %g)"%(train_accuracy_y,train_accuracy_z,losses,train_auc))
                 #logger.debug("Validation: (judgement, diagnosis, loss, auc) = (%g, %g, %g, %g)"%(val_accuracy_y,val_accuracy_z,val_losses,val_auc))
-                logger.debug("Train: (diagnosis, loss, aucs) = (%g, %g, %s)"%(train_accuracy_z,losses, aucs_t))
-                logger.debug("Validation: (diagnosis, loss, aucs) = (%g, %g, %s)"%(val_accuracy_z, val_losses, aucs_v))
+                logger.debug("Train: (diagnosis, loss, l1, aucs) = (%g, %g, %g, %s)"%(train_accuracy_z,losses, l1_losses, aucs_t))
+                logger.debug("Validation: (diagnosis, loss, l1, aucs) = (%g, %g, %g, %s)"%(val_accuracy_z, val_losses, val_l1, aucs_v))
 
                 if save_at_log:
                     self.save_checkpoint()
@@ -339,7 +324,7 @@ class Detecter(Core2.Core):
 
     # 予測器
     def prediction(self, data, roi = False, label_def = None, save_dir = None,
-                   filenames = None, findings = None):
+                   filenames = None, findings = None, roi_force = False):
         # Make feed dict for prediction
         if self.steps <= 5000:
             rmax, dmax = 1.0, 0.0
@@ -372,18 +357,21 @@ class Detecter(Core2.Core):
                               save_dir = save_dir,
                               filename = filenames[i],
                               label_def = label_def,
-                              findings = findings[i])
+                              findings = findings[i],
+                              roi_force = roi_force)
 
             return result_y, result_z
 
-    def make_roi(self, weights, roi_base, save_dir, filename, label_def, findings):
-        img = cv2.imread(filename, cv2.IMREAD_GRAYSCALE)
-        #img, bits = dicom_to_np(path)
-        #img = img / bits * 255
-        #img = img.astype(np.uint8)
+    def make_roi(self, weights, roi_base, save_dir, filename, label_def, findings,
+                 roi_force):
+        if filename.find('.png') >= 0:
+            img = cv2.imread(filename, cv2.IMREAD_GRAYSCALE)
+        else:
+            img, bits = dicom_to_np(filename)
+            img = img / bits * 255
+            img = img.astype(np.uint8)
         img = cv2.resize(img, (self.SIZE, self.SIZE), interpolation = cv2.INTER_AREA)
         img = np.stack((img, img, img), axis = -1)
-        print(filename, findings, roi_base.shape, weights.shape)
         for x, finding in enumerate(label_def):
             images = np.zeros((roi_base.shape[0], roi_base.shape[1], 3))
             for channel in range(roi_base.shape[2]):
@@ -399,6 +387,15 @@ class Detecter(Core2.Core):
             roi_img = cv2.addWeighted(img, 0.8, images, 0.2, 0)
             basename = os.path.basename(filename)
             ftitle, _ = os.path.splitext(basename)
-            if findings.find(finding) >= 0:
-                print(images)
-                cv2.imwrite(save_dir + '/' + str(ftitle) + '_' + str(finding) + '_' + findings + '.png', roi_img)
+            if roi_force:
+                if filename.find('.png') >= 0:
+                    cv2.imwrite(save_dir + '/' + str(ftitle) + '_' + str(finding) + '_' + findings + '.png', roi_img)
+                else:
+                    cv2.imwrite(save_dir + '/' + str(ftitle) + '_' + str(finding) + '.png', roi_img)
+            else:
+                if findings.find(finding) >= 0 or filename.find('.dcm') >= 0:
+                    if filename.find('.png') >= 0:
+                        cv2.imwrite(save_dir + '/' + str(ftitle) + '_' + str(finding) + '_' + findings + '.png', roi_img)
+                    else:
+                        if finding in ['Nodule', 'Mass', 'Pneumonia']:
+                            cv2.imwrite(save_dir + '/' + str(ftitle) + '_' + str(finding) + '.png', roi_img)

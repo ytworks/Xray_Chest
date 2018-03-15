@@ -185,6 +185,7 @@ class DataSet(object):
             img, bits = dicom_to_np(f)
             if self.raw_img or self.zca == False:
                 img = 255.0 * img / bits
+                img = img.astype(np.uint8)
         elif ext == ".png":
             img = cv2.imread(f, cv2.IMREAD_GRAYSCALE)
         else:
@@ -214,8 +215,6 @@ class DataSet(object):
             img = np.stack((img, img, img), axis = -1)
             #img = cv2.applyColorMap(img.astype(np.uint8), cv2.COLORMAP_JET)
             img = self.pi(img.astype(np.float32))
-
-
 
         return img, label[0], label[1], filename, self.labels[filename]['raw']
 
@@ -325,7 +324,8 @@ def make_supevised_data_for_nih(path, filter_list = None):
             finding_count.setdefault(f, 0)
             finding_count[f] += 1
     # バイナライズ
-    binary_def = [l for l in sorted(finding_count.keys()) if not l in 'No Finding']
+    #binary_def = [l for l in sorted(finding_count.keys()) if not l in 'No Finding']
+    binary_def = [l for l in sorted(finding_count.keys())]
     for file_name, finding in findings.items():
         label0 = np.zeros(len(binary_def))
         label1 = np.zeros(2)
@@ -347,12 +347,14 @@ def make_supevised_data_for_conf(path, labels, datapath):
             img2diag.setdefault(row[0].replace('.IMG', ''), row[10]+row[11])
     diags = list(set([v for v in img2diag.values()]))
     mapper = diagnosis_map(diags, labels)
+    no_findings = [i for i, label in enumerate(labels) if label in 'No Finding']
     findings = {}
     for p in path:
         label0 = np.zeros(len(labels))
         label1 = np.zeros(2)
         if p.find('JPCNN') >= 0:
             label1[0] = 1
+            label0[no_findings[0]] = 1
         else:
             label1[1] = 1
             file_name, _ = os.path.splitext(os.path.basename(p))
@@ -389,7 +391,7 @@ def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
                    zca = True,
                    raw_img = False,
                    model = 'xception',
-                   ds = 'conf'):
+                   ds = 'normal'):
     class DataSets(object):
         pass
     data_sets = DataSets()
@@ -463,6 +465,15 @@ def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
                                  raw_img = raw_img,
                                  model = model,
                                  is_train = False)
+        logger.debug("Test Conf")
+        data_sets.conf  = DataSet(data = conf_data,
+                                  label = conf_labels,
+                                  size = img_size,
+                                  zca = zca,
+                                  augment = augment,
+                                  raw_img = raw_img,
+                                  model = model,
+                                  is_train = False)
 
     data_sets.train_summary = nih_count
     return data_sets, label_def
@@ -486,6 +497,8 @@ if __name__ == '__main__':
         print(x[1], x[2], x[3], x[4])
         y = dataset.test.next_batch(6)
         print(y[1], y[2], y[3], y[4])
+        z = dataset.conf.next_batch(6)
+        print(z[1], z[2], z[3], z[4])
     for i in tqdm(range(100)):
         y = dataset.test.next_batch(20)
 
@@ -506,5 +519,7 @@ if __name__ == '__main__':
         print(x[1], x[2], x[3], x[4])
         y = dataset.test.next_batch(6)
         print(y[1], y[2], y[3], y[4])
+        z = dataset.conf.next_batch(6)
+        print(z[1], z[2], z[3], z[4])
     for i in tqdm(range(100)):
         y = dataset.test.next_batch(20)
