@@ -119,9 +119,9 @@ class Detecter(Core2.Core):
         Regularization = False
         Renormalization = True
         SE = False
-        GrowthRate = 8
-        StemChannels = 16
-        prob = 1.0
+        GrowthRate = 64
+        StemChannels = 24
+        prob = 0.7
         # dense net
         ## Stem
         # Batch Normalization
@@ -171,8 +171,12 @@ class Detecter(Core2.Core):
 
         # reshape
         self.y71 = Layers.reshape_tensor(x = self.y61, shape = [StemChannels + 12 + GrowthRate * 16])
+        self.y71_d = Layers.dropout(x = self.y71,
+                                    keep_probs = self.keep_probs,
+                                    training_prob = prob,
+                                    vname = 'Dropout')
         # fnn
-        self.y72 = Outputs.output(x = self.y71,
+        self.y72 = Outputs.output(x = self.y71_d,
                                   InputSize = StemChannels + 12 + GrowthRate * 16,
                                   OutputSize = 15,
                                   Initializer = 'Xavier',
