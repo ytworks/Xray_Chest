@@ -238,7 +238,7 @@ class Detecter(Core2.Core):
         #feed_dict.setdefault(self.GearLevel, self.GearLevelValue)
         i = 0
         for keep_prob in self.keep_probs:
-            if not prob:
+            if prob:
                 feed_dict.setdefault(keep_prob['var'], 1.0)
             else:
                 feed_dict.setdefault(keep_prob['var'], keep_prob['prob'])
@@ -274,7 +274,7 @@ class Detecter(Core2.Core):
                 # Test
                 val_accuracy_y, val_accuracy_z, val_losses, test, prob = [], [], [], [], []
                 validation_batch = data.test.next_batch(self.batch, augment = False, batch_ratio = batch_ratio[i % len(batch_ratio)])
-                feed_dict_val = self.make_feed_dict(prob = False, batch = validation_batch, is_Train = False)
+                feed_dict_val = self.make_feed_dict(prob = True, batch = validation_batch, is_Train = False)
                 res_val = self.sess.run([self.accuracy_z, self.loss_function, self.l1_loss], feed_dict = feed_dict_val)
                 val_accuracy_z = res_val[0]
                 val_losses = res_val[1]
