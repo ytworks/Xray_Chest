@@ -238,7 +238,7 @@ class Detecter(Core2.Core):
         #feed_dict.setdefault(self.GearLevel, self.GearLevelValue)
         i = 0
         for keep_prob in self.keep_probs:
-            if prob:
+            if not prob:
                 feed_dict.setdefault(keep_prob['var'], 1.0)
             else:
                 feed_dict.setdefault(keep_prob['var'], keep_prob['prob'])
