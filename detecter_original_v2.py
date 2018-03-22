@@ -121,7 +121,7 @@ class Detecter(Core2.Core):
         SE = False
         GrowthRate = 24
         StemChannels = 64
-        prob = 0.7
+        prob = 0.4
         # dense net
         ## Stem
         # Batch Normalization
