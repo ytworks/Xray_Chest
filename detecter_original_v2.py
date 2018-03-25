@@ -71,6 +71,7 @@ class Detecter(Core2.Core):
         self.current_loss = 0.0
         self.l1_norm_value = 0.0
         self.regularization_value = 0.0
+        self.eval_l1_loss = 0.0
 
 
     def construct(self):
@@ -221,8 +222,9 @@ class Detecter(Core2.Core):
             self.learning_rate_value = max(0.000001, self.learning_rate_value * 0.9)
             logger.debug("After Learning Rate: %g" % self.learning_rate_value)
             #self.val_losses = []
-        if self.steps % 100 == 0 and self.steps != 0 and is_update:
-            self.l1_norm_value = min(0.03, self.l1_norm_value * 1.2) if not self.l1_norm_value == 0.0 else 0.00001
+        #if self.steps % 100 == 0 and self.steps != 0 and is_update:
+        if self.eval_l1_loss <= 0.0011 and self.steps != 0 and is_update:
+            self.l1_norm_value = min(1.0, self.l1_norm_value * 1.2) if not self.l1_norm_value == 0.0 else 0.00001
             #self.regularization_value = min(0.1, self.regularization_value * 5.0) if not self.regularization_value == 0.0 else 0.0001
             logger.debug("(Regularization, L1 Norm): %g %g" % (self.regularization_value, self.l1_norm_value))
         feed_dict = {}
@@ -288,6 +290,7 @@ class Detecter(Core2.Core):
                     aucs_v += "%03.2f / " % val_auc
                 self.val_losses.append(val_losses)
                 self.current_loss = val_losses
+                self.eval_l1_loss = min(val_l1, l1_losses)
 
                 # Output
                 logger.debug("step %d ================================================================================="% i)
