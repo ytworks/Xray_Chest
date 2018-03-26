@@ -417,7 +417,7 @@ def conv_block(x,
                         vname = vname + '_SE01')
 
     # Batch Normalization
-    if not GroupNorm
+    if not GroupNorm:
         x_bn2 = Layers.batch_normalization(x = x01,
                                           shape = GrowthRate * 4,
                                           vname = vname + '_BN02',
