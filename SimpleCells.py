@@ -193,7 +193,7 @@ def densenet(x,
                                        dmax = dmax)
     '''
     x_bn1 = Layers.group_normalization(x = x08, G = 16,
-                                       eps = 1e-5, vname = vanme + '_GN01')
+                                       eps = 1e-5, vname = vname + '_GN01')
     # Activation Function
     with tf.variable_scope(vname + '_Act01') as scope:
         x_act1 = AF.select_activation(Act)(x_bn1)
@@ -327,7 +327,7 @@ def conv_block(x,
                                        dmax = dmax)
     '''
     x_bn1 = Layers.group_normalization(x = x, G = 16,
-                                       eps = 1e-5, vname = vanme + '_GN01')
+                                       eps = 1e-5, vname = vname + '_GN01')
     # Activation Function
     with tf.variable_scope(vname + '_Act01') as scope:
         x_act1 = AF.select_activation(Act)(x_bn1)
@@ -394,7 +394,7 @@ def conv_block(x,
                                       dmax = dmax)
     '''
     x_bn2 = Layers.group_normalization(x = x01, G = 16,
-                                       eps = 1e-5, vname = vanme + '_GN02')
+                                       eps = 1e-5, vname = vname + '_GN02')
     # Activation Function
     with tf.variable_scope(vname + '_Act02') as scope:
         x_act2 = AF.select_activation(Act)(x_bn2)
@@ -464,7 +464,7 @@ def transition_cell(x,
                                        dmax = dmax)
     '''
     x_bn1 = Layers.group_normalization(x = x, G = 16,
-                                       eps = 1e-5, vname = vanme + '_GN01')
+                                       eps = 1e-5, vname = vname + '_GN01')
     # Activation Function
     with tf.variable_scope(vname + '_Act01') as scope:
         x_act1 = AF.select_activation(Act)(x_bn1)
