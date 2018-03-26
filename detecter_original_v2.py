@@ -159,7 +159,7 @@ class Detecter(Core2.Core):
 
         self.y50 = self.densenet_output
         self.y51 = SE_module(x = self.y50,
-                             InputNode = [self.SIZE / 64, self.SIZE / 64, StemChannels + 12 + GrowthRate * 16],
+                             InputNode = [self.SIZE / 64, self.SIZE / 64, StemChannels + GrowthRate * 16],
                              Act = Activation,
                              Rate = 0.5,
                              vname = 'TOP_SE')
@@ -171,14 +171,14 @@ class Detecter(Core2.Core):
                                   algorithm = 'Avg')
 
         # reshape
-        self.y71 = Layers.reshape_tensor(x = self.y61, shape = [StemChannels + 12 + GrowthRate * 16])
+        self.y71 = Layers.reshape_tensor(x = self.y61, shape = [StemChannels + GrowthRate * 16])
         self.y71_d = Layers.dropout(x = self.y71,
                                     keep_probs = self.keep_probs,
                                     training_prob = prob,
                                     vname = 'Dropout')
         # fnn
         self.y72 = Outputs.output(x = self.y71_d,
-                                  InputSize = StemChannels + 12 + GrowthRate * 16,
+                                  InputSize = StemChannels + GrowthRate * 16,
                                   OutputSize = 15,
                                   Initializer = 'Xavier',
                                   BatchNormalization = False,
