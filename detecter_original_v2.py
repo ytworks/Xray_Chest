@@ -126,7 +126,6 @@ class Detecter(Core2.Core):
         # dense net
         ## Stem
         # Batch Normalization
-        '''
         self.stem_bn = Layers.batch_normalization(x = self.x,
                                                   shape = self.CH,
                                                   vname = 'STEM_TOP_BN01',
@@ -135,9 +134,6 @@ class Detecter(Core2.Core):
                                                   Training = self.istraining,
                                                   rmax = self.rmax,
                                                   dmax = self.dmax)
-        '''
-        self.stem_bn = Layers.group_normalization(x = self.x, G = 3,
-                                                  eps = 1e-5, vname = 'STEM_TOP_GN01')
         self.dense_stem = stem_cell(x = self.stem_bn,
                                     InputNode = [self.SIZE, self.SIZE, self.CH],
                                     Channels = StemChannels,
