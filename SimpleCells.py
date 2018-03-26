@@ -182,6 +182,7 @@ def densenet(x,
                           Training = Training,
                           vname = vname +'_Transition04')
     # Batch Normalization
+    '''
     x_bn1 = Layers.batch_normalization(x = x08,
                                        shape = InputNode[2] + 12 + GrowthRate * 16,
                                        vname = vname + '_BN01',
@@ -190,6 +191,9 @@ def densenet(x,
                                        Training = Training,
                                        rmax = rmax,
                                        dmax = dmax)
+    '''
+    x_bn1 = Layers.group_normalization(x = x08, G = 16,
+                                       eps = 1e-5, vname = '_GN01')
     # Activation Function
     with tf.variable_scope(vname + '_Act01') as scope:
         x_act1 = AF.select_activation(Act)(x_bn1)
@@ -312,6 +316,7 @@ def conv_block(x,
                Training = True,
                vname = '_ConvBlock'):
     # Batch Normalization
+    '''
     x_bn1 = Layers.batch_normalization(x = x,
                                        shape = InputNode[2],
                                        vname = vname + '_BN01',
@@ -320,6 +325,9 @@ def conv_block(x,
                                        Training = Training,
                                        rmax = rmax,
                                        dmax = dmax)
+    '''
+    x_bn1 = Layers.group_normalization(x = x, G = 16,
+                                       eps = 1e-5, vname = '_GN01')
     # Activation Function
     with tf.variable_scope(vname + '_Act01') as scope:
         x_act1 = AF.select_activation(Act)(x_bn1)
@@ -375,6 +383,7 @@ def conv_block(x,
                         vname = vname + '_SE01')
 
     # Batch Normalization
+    '''
     x_bn2 = Layers.batch_normalization(x = x01,
                                       shape = GrowthRate * 4,
                                       vname = vname + '_BN02',
@@ -383,6 +392,9 @@ def conv_block(x,
                                       Training = Training,
                                       rmax = rmax,
                                       dmax = dmax)
+    '''
+    x_bn2 = Layers.group_normalization(x = x01, G = 16,
+                                       eps = 1e-5, vname = '_GN02')
     # Activation Function
     with tf.variable_scope(vname + '_Act02') as scope:
         x_act2 = AF.select_activation(Act)(x_bn2)
@@ -441,6 +453,7 @@ def transition_cell(x,
                     Training = True,
                     vname = '_Transition'):
     # Batch Normalization
+    '''
     x_bn1 = Layers.batch_normalization(x = x,
                                        shape = InputNode[2],
                                        vname = vname + '_BN01',
@@ -449,6 +462,9 @@ def transition_cell(x,
                                        Training = Training,
                                        rmax = rmax,
                                        dmax = dmax)
+    '''
+    x_bn1 = Layers.group_normalization(x = x, G = 16,
+                                       eps = 1e-5, vname = '_GN01')
     # Activation Function
     with tf.variable_scope(vname + '_Act01') as scope:
         x_act1 = AF.select_activation(Act)(x_bn1)
