@@ -51,18 +51,21 @@ def densenet(x,
              dmax = None,
              SE = True,
              Training = True,
+             GroupNorm = True,
+             GroupNum = 8,
              vname = '_DenseNet'):
-
+    '''
     root0 = tf.image.resize_images(images = root,
                                    size = [InputNode[0], InputNode[1]],
                                    method=tf.image.ResizeMethod.BICUBIC,
                                    align_corners=False)
     x_plus_root = Layers.concat(xs = [x, root0], concat_type = 'Channel')
+    '''
 
-    x01 = dense_cell(x = x_plus_root,
+    x01 = dense_cell(x = x,
                      Act = Act,
                      GrowthRate = GrowthRate,
-                     InputNode = [InputNode[0], InputNode[1], InputNode[2] + 3],
+                     InputNode = [InputNode[0], InputNode[1], InputNode[2]],
                      Initializer = Initializer,
                      Strides = Strides,
                      Renormalization = Renormalization,
@@ -71,10 +74,12 @@ def densenet(x,
                      dmax = dmax,
                      SE = SE,
                      Training = Training,
+                     GroupNorm = GroupNorm,
+                     GroupNum = GroupNum,
                      vname = vname + '_Dense01')
     x02 = transition_cell(x = x01,
                           Act = Act,
-                          InputNode = [InputNode[0], InputNode[1], InputNode[2] + 3 + GrowthRate * 4],
+                          InputNode = [InputNode[0], InputNode[1], InputNode[2] + GrowthRate * 4],
                           Initializer = Initializer,
                           Strides = Strides,
                           Renormalization = Renormalization,
@@ -83,18 +88,21 @@ def densenet(x,
                           dmax = dmax,
                           SE = SE,
                           Training = Training,
+                          GroupNorm = GroupNorm,
+                          GroupNum = GroupNum,
                           vname = vname +'_Transition01')
-
+    '''
     root1 = tf.image.resize_images(images = root,
                                    size = [InputNode[0]/2, InputNode[1]/2],
                                    method=tf.image.ResizeMethod.BICUBIC,
                                    align_corners=False)
     x02_plus_root = Layers.concat(xs = [x02, root1], concat_type = 'Channel')
+    '''
 
-    x03 = dense_cell(x = x02_plus_root,
+    x03 = dense_cell(x = x02,
                      Act = Act,
                      GrowthRate = GrowthRate,
-                     InputNode = [InputNode[0] / 2, InputNode[1] / 2, InputNode[2] + 6 + GrowthRate * 4],
+                     InputNode = [InputNode[0] / 2, InputNode[1] / 2, InputNode[2] + GrowthRate * 4],
                      Initializer = Initializer,
                      Strides = Strides,
                      Renormalization = Renormalization,
@@ -103,10 +111,12 @@ def densenet(x,
                      dmax = dmax,
                      SE = SE,
                      Training = Training,
+                     GroupNorm = GroupNorm,
+                     GroupNum = GroupNum,
                      vname = vname + '_Dense02')
     x04 = transition_cell(x = x03,
                           Act = Act,
-                          InputNode = [InputNode[0] / 2, InputNode[1] / 2, InputNode[2] + 6 + GrowthRate * 8],
+                          InputNode = [InputNode[0] / 2, InputNode[1] / 2, InputNode[2] + GrowthRate * 8],
                           Initializer = Initializer,
                           Strides = Strides,
                           Renormalization = Renormalization,
@@ -115,19 +125,22 @@ def densenet(x,
                           dmax = dmax,
                           SE = SE,
                           Training = Training,
+                          GroupNorm = GroupNorm,
+                          GroupNum = GroupNum,
                           vname = vname +'_Transition02')
-
+    '''
     root2 = tf.image.resize_images(images = root,
                                    size = [InputNode[0]/4, InputNode[1]/4],
                                    method=tf.image.ResizeMethod.BICUBIC,
                                    align_corners=False)
     x04_plus_root = Layers.concat(xs = [x04, root2], concat_type = 'Channel')
+    '''
 
 
-    x05 = dense_cell(x = x04_plus_root,
+    x05 = dense_cell(x = x04,
                      Act = Act,
                      GrowthRate = GrowthRate,
-                     InputNode = [InputNode[0] / 4, InputNode[1] / 4, InputNode[2] + 9 + GrowthRate * 8],
+                     InputNode = [InputNode[0] / 4, InputNode[1] / 4, InputNode[2] + GrowthRate * 8],
                      Initializer = Initializer,
                      Strides = Strides,
                      Renormalization = Renormalization,
@@ -136,6 +149,8 @@ def densenet(x,
                      dmax = dmax,
                      SE = SE,
                      Training = Training,
+                     GroupNorm = GroupNorm,
+                     GroupNum = GroupNum,
                      vname = vname + '_Dense03')
     x06 = transition_cell(x = x05,
                           Act = Act,
@@ -148,18 +163,21 @@ def densenet(x,
                           dmax = dmax,
                           SE = SE,
                           Training = Training,
+                          GroupNorm = GroupNorm,
+                          GroupNum = GroupNum,
                           vname = vname +'_Transition03')
-
+    '''
     root3 = tf.image.resize_images(images = root,
                                    size = [InputNode[0]/8, InputNode[1]/8],
                                    method=tf.image.ResizeMethod.BICUBIC,
                                    align_corners=False)
     x06_plus_root = Layers.concat(xs = [x06, root3], concat_type = 'Channel')
+    '''
 
-    x07 = dense_cell(x = x06_plus_root,
+    x07 = dense_cell(x = x06,
                      Act = Act,
                      GrowthRate = GrowthRate,
-                     InputNode = [InputNode[0] / 8, InputNode[1] / 8, InputNode[2] + 12 + GrowthRate * 12],
+                     InputNode = [InputNode[0] / 8, InputNode[1] / 8, InputNode[2] + GrowthRate * 12],
                      Initializer = Initializer,
                      Strides = Strides,
                      Renormalization = Renormalization,
@@ -168,10 +186,12 @@ def densenet(x,
                      dmax = dmax,
                      SE = SE,
                      Training = Training,
+                     GroupNorm = GroupNorm,
+                     GroupNum = GroupNum,
                      vname = vname + '_Dense04')
     x08 = transition_cell(x = x07,
                           Act = Act,
-                          InputNode = [InputNode[0] / 8, InputNode[1] / 8, InputNode[2] + 12 + GrowthRate * 16],
+                          InputNode = [InputNode[0] / 8, InputNode[1] / 8, InputNode[2] + GrowthRate * 16],
                           Initializer = Initializer,
                           Strides = Strides,
                           Renormalization = Renormalization,
@@ -180,20 +200,22 @@ def densenet(x,
                           dmax = dmax,
                           SE = SE,
                           Training = Training,
+                          GroupNorm = GroupNorm,
+                          GroupNum = GroupNum,
                           vname = vname +'_Transition04')
     # Batch Normalization
-    '''
-    x_bn1 = Layers.batch_normalization(x = x08,
-                                       shape = InputNode[2] + 12 + GrowthRate * 16,
-                                       vname = vname + '_BN01',
-                                       dim = [0, 1, 2],
-                                       Renormalization = Renormalization,
-                                       Training = Training,
-                                       rmax = rmax,
-                                       dmax = dmax)
-    '''
-    x_bn1 = Layers.group_normalization(x = x08, G = 16,
-                                       eps = 1e-5, vname = vname + '_GN01')
+    if not GroupNorm:
+        x_bn1 = Layers.batch_normalization(x = x08,
+                                           shape = InputNode[2] + GrowthRate * 16,
+                                           vname = vname + '_BN01',
+                                           dim = [0, 1, 2],
+                                           Renormalization = Renormalization,
+                                           Training = Training,
+                                           rmax = rmax,
+                                           dmax = dmax)
+    else:
+        x_bn1 = Layers.group_normalization(x = x08, G = GroupNum,
+                                           eps = 1e-5, vname = vname + '_GN01')
     # Activation Function
     with tf.variable_scope(vname + '_Act01') as scope:
         x_act1 = AF.select_activation(Act)(x_bn1)
@@ -213,6 +235,8 @@ def dense_cell(x,
                dmax = None,
                SE = True,
                Training = True,
+               GroupNorm = True,
+               GroupNum = 8,
                vname = '_Dense'):
 
     x01 = conv_block(x = x,
@@ -227,6 +251,8 @@ def dense_cell(x,
                      dmax = dmax,
                      SE = SE,
                      Training = Training,
+                     GroupNorm = GroupNorm,
+                     GroupNum = GroupNum,
                      vname = vname + '_ConvBlock01')
     x02 = Layers.concat(xs = [x, x01], concat_type = 'Channel')
     if SE:
@@ -247,6 +273,8 @@ def dense_cell(x,
                      dmax = dmax,
                      SE = SE,
                      Training = Training,
+                     GroupNorm = GroupNorm,
+                     GroupNum = GroupNum,
                      vname = vname +'_ConvBlock02')
     x12 = Layers.concat(xs = [x, x01, x11], concat_type = 'Channel')
     if SE:
@@ -267,6 +295,8 @@ def dense_cell(x,
                      dmax = dmax,
                      SE = SE,
                      Training = Training,
+                     GroupNorm = GroupNorm,
+                     GroupNum = GroupNum,
                      vname = vname +'_ConvBlock03')
     x22 = Layers.concat(xs = [x, x01, x11, x21], concat_type = 'Channel')
     if SE:
@@ -287,6 +317,8 @@ def dense_cell(x,
                      dmax = dmax,
                      SE = SE,
                      Training = Training,
+                     GroupNorm = GroupNorm,
+                     GroupNum = GroupNum,
                      vname = vname +'_ConvBlock04')
     x32 = Layers.concat(xs = [x, x01, x11, x21, x31], concat_type = 'Channel')
     if SE:
@@ -314,20 +346,22 @@ def conv_block(x,
                dmax = None,
                SE = True,
                Training = True,
+               GroupNorm = True,
+               GroupNum = 8,
                vname = '_ConvBlock'):
     # Batch Normalization
-    '''
-    x_bn1 = Layers.batch_normalization(x = x,
-                                       shape = InputNode[2],
-                                       vname = vname + '_BN01',
-                                       dim = [0, 1, 2],
-                                       Renormalization = Renormalization,
-                                       Training = Training,
-                                       rmax = rmax,
-                                       dmax = dmax)
-    '''
-    x_bn1 = Layers.group_normalization(x = x, G = 16,
-                                       eps = 1e-5, vname = vname + '_GN01')
+    if not GroupNorm:
+        x_bn1 = Layers.batch_normalization(x = x,
+                                           shape = InputNode[2],
+                                           vname = vname + '_BN01',
+                                           dim = [0, 1, 2],
+                                           Renormalization = Renormalization,
+                                           Training = Training,
+                                           rmax = rmax,
+                                           dmax = dmax)
+    else:
+        x_bn1 = Layers.group_normalization(x = x, G = GroupNum,
+                                           eps = 1e-5, vname = vname + '_GN01')
     # Activation Function
     with tf.variable_scope(vname + '_Act01') as scope:
         x_act1 = AF.select_activation(Act)(x_bn1)
@@ -383,18 +417,18 @@ def conv_block(x,
                         vname = vname + '_SE01')
 
     # Batch Normalization
-    '''
-    x_bn2 = Layers.batch_normalization(x = x01,
-                                      shape = GrowthRate * 4,
-                                      vname = vname + '_BN02',
-                                      dim = [0, 1, 2],
-                                      Renormalization = Renormalization,
-                                      Training = Training,
-                                      rmax = rmax,
-                                      dmax = dmax)
-    '''
-    x_bn2 = Layers.group_normalization(x = x01, G = 16,
-                                       eps = 1e-5, vname = vname + '_GN02')
+    if not GroupNorm
+        x_bn2 = Layers.batch_normalization(x = x01,
+                                          shape = GrowthRate * 4,
+                                          vname = vname + '_BN02',
+                                          dim = [0, 1, 2],
+                                          Renormalization = Renormalization,
+                                          Training = Training,
+                                          rmax = rmax,
+                                          dmax = dmax)
+    else:
+        x_bn2 = Layers.group_normalization(x = x01, G = GroupNum,
+                                           eps = 1e-5, vname = vname + '_GN02')
     # Activation Function
     with tf.variable_scope(vname + '_Act02') as scope:
         x_act2 = AF.select_activation(Act)(x_bn2)
@@ -451,20 +485,22 @@ def transition_cell(x,
                     dmax = None,
                     SE = True,
                     Training = True,
+                    GroupNorm =  True,
+                    GroupNum = 8,
                     vname = '_Transition'):
     # Batch Normalization
-    '''
-    x_bn1 = Layers.batch_normalization(x = x,
-                                       shape = InputNode[2],
-                                       vname = vname + '_BN01',
-                                       dim = [0, 1, 2],
-                                       Renormalization = Renormalization,
-                                       Training = Training,
-                                       rmax = rmax,
-                                       dmax = dmax)
-    '''
-    x_bn1 = Layers.group_normalization(x = x, G = 16,
-                                       eps = 1e-5, vname = vname + '_GN01')
+    if not GroupNorm:
+        x_bn1 = Layers.batch_normalization(x = x,
+                                           shape = InputNode[2],
+                                           vname = vname + '_BN01',
+                                           dim = [0, 1, 2],
+                                           Renormalization = Renormalization,
+                                           Training = Training,
+                                           rmax = rmax,
+                                           dmax = dmax)
+    else:
+        x_bn1 = Layers.group_normalization(x = x, G = GroupNum,
+                                           eps = 1e-5, vname = vname + '_GN01')
     # Activation Function
     with tf.variable_scope(vname + '_Act01') as scope:
         x_act1 = AF.select_activation(Act)(x_bn1)
