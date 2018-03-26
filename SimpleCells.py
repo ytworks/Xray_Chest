@@ -154,7 +154,7 @@ def densenet(x,
                      vname = vname + '_Dense03')
     x06 = transition_cell(x = x05,
                           Act = Act,
-                          InputNode = [InputNode[0] / 4, InputNode[1] / 4, InputNode[2] + 9 + GrowthRate * 12],
+                          InputNode = [InputNode[0] / 4, InputNode[1] / 4, InputNode[2] + GrowthRate * 12],
                           Initializer = Initializer,
                           Strides = Strides,
                           Renormalization = Renormalization,
