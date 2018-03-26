@@ -136,7 +136,7 @@ class Detecter(Core2.Core):
                                                   rmax = self.rmax,
                                                   dmax = self.dmax)
         '''
-        self.stem_bn = Layers.group_normalization(x = self.x, G = 4,
+        self.stem_bn = Layers.group_normalization(x = self.x, G = 3,
                                                   eps = 1e-5, vname = 'STEM_TOP_GN01')
         self.dense_stem = stem_cell(x = self.stem_bn,
                                     InputNode = [self.SIZE, self.SIZE, self.CH],
