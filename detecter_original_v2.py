@@ -157,7 +157,7 @@ class Detecter(Core2.Core):
                                         dmax = self.dmax,
                                         SE = SE,
                                         Training = self.istraining,
-                                        GroupNum = GroupNorm,
+                                        GroupNorm = GroupNorm,
                                         GroupNum = GroupNum,
                                         vname = 'DenseNet')
 
