@@ -120,12 +120,13 @@ class Detecter(Core2.Core):
         Regularization = False
         Renormalization = True
         SE = False
-        GrowthRate = 12
+        GrowthRate = 10
         StemChannels = 16
         prob = 1.0
         # dense net
         ## Stem
         # Batch Normalization
+        '''
         self.stem_bn = Layers.batch_normalization(x = self.x,
                                                   shape = self.CH,
                                                   vname = 'STEM_TOP_BN01',
@@ -134,6 +135,9 @@ class Detecter(Core2.Core):
                                                   Training = self.istraining,
                                                   rmax = self.rmax,
                                                   dmax = self.dmax)
+        '''
+        self.stem_bn = Layers.group_normalization(x = self.x, G = 4,
+                                                  eps = 1e-5, vname = vname + 'STEM_TOP_GN01')
         self.dense_stem = stem_cell(x = self.stem_bn,
                                     InputNode = [self.SIZE, self.SIZE, self.CH],
                                     Channels = StemChannels,
