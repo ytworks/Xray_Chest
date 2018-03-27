@@ -124,7 +124,7 @@ class Detecter(Core2.Core):
         StemChannels = 64
         prob = 0.3
         GroupNum = 8
-        GroupNorm = True
+        GroupNorm = False
         # dense net
         ## Stem
         # Batch Normalization
