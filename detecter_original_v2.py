@@ -122,7 +122,7 @@ class Detecter(Core2.Core):
         SE = False
         GrowthRate = 24
         StemChannels = 64
-        prob = 0.0
+        prob = 0.1
         GroupNum = 8
         GroupNorm = False
         # dense net
