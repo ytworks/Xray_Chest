@@ -122,7 +122,7 @@ class Detecter(Core2.Core):
         SE = False
         GrowthRate = 24
         StemChannels = 64
-        prob = 0.3
+        prob = 0.0
         GroupNum = 8
         GroupNorm = False
         # dense net
@@ -227,8 +227,8 @@ class Detecter(Core2.Core):
             logger.debug("After Learning Rate: %g" % self.learning_rate_value)
             #self.val_losses = []
         #if self.steps % 100 == 0 and self.steps != 0 and is_update:
-        if self.steps % 100 == 0 and self.steps != 0 and is_update:
-            self.l1_norm_value = min(0.1, self.l1_norm_value * 1.2) if not self.l1_norm_value == 0.0 else 0.00001
+        if self.steps % 100 == 0 and self.eval_l1_loss <= 0.0020 and self.steps != 0 and is_update:
+            self.l1_norm_value = min(10, self.l1_norm_value * 1.2) if not self.l1_norm_value == 0.0 else 0.00001
             #self.regularization_value = min(0.1, self.regularization_value * 5.0) if not self.regularization_value == 0.0 else 0.0001
             logger.debug("(Regularization, L1 Norm): %g %g" % (self.regularization_value, self.l1_norm_value))
         feed_dict = {}
