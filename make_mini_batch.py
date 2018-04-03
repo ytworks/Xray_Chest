@@ -90,13 +90,13 @@ class DataSet(object):
         # flip
         img = self.flip(img = img)
         # rotation
-        if np.random.rand() >= 0.9:
-            img = self.rotation(img, rot = random.choice([0, 90, 180, 270]))
-            img = img.reshape((img.shape[0], img.shape[1], 1))
+        #if np.random.rand() >= 0.9:
+        #    img = self.rotation(img, rot = random.choice([0, 90, 180, 270]))
+        #    img = img.reshape((img.shape[0], img.shape[1], 1))
         # Shift
         img = self.shift(img = img, move_x = 0.05, move_y = 0.05)
         # small rotation
-        if np.random.rand() >= 0.8:
+        if np.random.rand() >= 0.7:
             img = self.rotation(img, rot = 15.0 * (2.0 * random.random() - 1.0))
             img = img.reshape((img.shape[0], img.shape[1], 1))
         return img
@@ -118,10 +118,10 @@ class DataSet(object):
 
 
     def flip(self,img):
-        if np.random.rand() >= 0.9:
-            img = cv2.flip(img, 0)
-            img = img.reshape((img.shape[0], img.shape[1], 1))
-        if np.random.rand() >= 0.9:
+        #if np.random.rand() >= 0.9:
+        #    img = cv2.flip(img, 0)
+        #    img = img.reshape((img.shape[0], img.shape[1], 1))
+        if np.random.rand() >= 0.7:
             img = cv2.flip(img, 1)
             img = img.reshape((img.shape[0], img.shape[1], 1))
         return img
@@ -133,7 +133,7 @@ class DataSet(object):
         return cv2.warpAffine(img, affine_matrix, size, flags=cv2.INTER_LINEAR)
 
     def shift(self, img, move_x = 0.1, move_y = 0.1):
-        if np.random.rand() >= 0.8:
+        if np.random.rand() >= 0.7:
             size = tuple(np.array([img.shape[0], img.shape[1]]))
             mx = int(img.shape[0] * move_x * random.random())
             my = int(img.shape[1] * move_y * random.random())
