@@ -56,7 +56,7 @@ def densenet(x,
              vname = '_DenseNet'):
     root0 = tf.image.resize_images(images = root,
                                    size = [InputNode[0], InputNode[1]],
-                                   method=tf.image.ResizeMethod.AREA,
+                                   method=tf.image.ResizeMethod.BICUBIC,
                                    align_corners=False)
     x_plus_root = Layers.concat(xs = [x, root0], concat_type = 'Channel')
 
@@ -91,7 +91,7 @@ def densenet(x,
                           vname = vname +'_Transition01')
     root1 = tf.image.resize_images(images = root,
                                    size = [InputNode[0]/2, InputNode[1]/2],
-                                   method=tf.image.ResizeMethod.AREA,
+                                   method=tf.image.ResizeMethod.BICUBIC,
                                    align_corners=False)
     x02_plus_root = Layers.concat(xs = [x02, root1], concat_type = 'Channel')
 
@@ -126,7 +126,7 @@ def densenet(x,
                           vname = vname +'_Transition02')
     root2 = tf.image.resize_images(images = root,
                                    size = [InputNode[0]/4, InputNode[1]/4],
-                                   method=tf.image.ResizeMethod.AREA,
+                                   method=tf.image.ResizeMethod.BICUBIC,
                                    align_corners=False)
     x04_plus_root = Layers.concat(xs = [x04, root2], concat_type = 'Channel')
 
@@ -162,7 +162,7 @@ def densenet(x,
                           vname = vname +'_Transition03')
     root3 = tf.image.resize_images(images = root,
                                    size = [InputNode[0]/8, InputNode[1]/8],
-                                   method=tf.image.ResizeMethod.AREA,
+                                   method=tf.image.ResizeMethod.BICUBIC,
                                    align_corners=False)
     x06_plus_root = Layers.concat(xs = [x06, root3], concat_type = 'Channel')
 
