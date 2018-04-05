@@ -131,7 +131,7 @@ def densenet(x,
     x04_plus_root = Layers.concat(xs = [x04, root2], concat_type = 'Channel')
 
 
-    x05 = dense_cell(x = x04x_plus_root,
+    x05 = dense_cell(x = x04_plus_root,
                      Act = Act,
                      GrowthRate = GrowthRate,
                      InputNode = [InputNode[0] / 4, InputNode[1] / 4, InputNode[2] + 9 + GrowthRate * 8],
@@ -166,7 +166,7 @@ def densenet(x,
                                    align_corners=False)
     x06_plus_root = Layers.concat(xs = [x06, root3], concat_type = 'Channel')
 
-    x07 = dense_cell(x = x06,
+    x07 = dense_cell(x = x06_plus_root,
                      Act = Act,
                      GrowthRate = GrowthRate,
                      InputNode = [InputNode[0] / 8, InputNode[1] / 8, InputNode[2] + 12 + GrowthRate * 12],
