@@ -1,20 +1,70 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from make_mini_batch import read_data_sets
-from detecter_original_v2 import Detecter
+from detection import Detecter
 from logging import getLogger, StreamHandler
 from tqdm import tqdm
 import os
 import csv
 import argparse
+import ConfigParser as cp
 logger = getLogger(__name__)
 sh = StreamHandler()
 logger.addHandler(sh)
 logger.setLevel(10)
 
 
+def show_config(ini):
+    '''
+    設定ファイルの全ての内容を表示する（コメントを除く）
+    '''
+    for section in ini.sections():
+        print '[%s]' % (section)
+        show_section(ini, section)
+
+
+def show_section(ini, section):
+    '''
+    設定ファイルの特定のセクションの内容を表示する
+    '''
+    for key in ini.options(section):
+        show_key(ini, section, key)
+
+def show_key(ini, section, key):
+    '''
+    設定ファイルの特定セクションの特定のキー項目（プロパティ）の内容を表示する
+    '''
+    print '%s.%s =%s' % (section, key, ini.get(section, key))
+
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-config')
+    args = parser.parse_args()
+
+
+    config = cp.SafeConfigParser()
+    config.read(args.config)
+    show_config(config)
+    size = config.getint('DLParams', 'size')
+    augment = config.getboolean('DLParams', 'augmentation')
+    checkpoint = config.get('OutputParams', 'checkpoint')
+    lr = config.getfloat('DLParams', 'learning_rate')
+    dlr = config.getfloat('DLParams', 'dynamic_learning_rate')
+    rtype = config.get('DLParams', 'regularization_type')
+    rr = config.getfloat('DLParams', 'regularization_rate')
+    l1_norm = config.getfloat('DLParams', 'l1_normalization')
+    epoch = config.getint('DLParams', 'epoch')
+    batch = config.getint('DLParams', 'batch')
+    log = config.getint('LogParams', 'log_period')
+    ds = config.get('InputParams', 'dataset')
+    roi = config.getboolean('Mode', 'roi_prediction')
+    output_type = config.get('DLParams', 'output_type')
+    outfile = config.get('OutputParams', 'outfile')
+    mode = config.get('Mode', 'running_mode')
+
+
+
     parser = argparse.ArgumentParser()
     parser.add_argument('-size')
     parser.add_argument('-augment')
@@ -32,6 +82,7 @@ def main():
     parser.add_argument('-dataset')
     parser.add_argument('-roi')
     parser.add_argument('-mode', required = True)
+    '''
     args = parser.parse_args()
     size = int(args.size) if args.size != None else 256
     augment = True if args.augment == 'True' else False
@@ -48,9 +99,10 @@ def main():
     roi = False if args.roi == None else True
     output_type = args.output_type if args.output_type != None else 'classified-softmax'
     outfile = args.outfile if args.outfile != None else './Result/result.csv'
-    if args.mode in ['learning']:
+    '''
+    if mode in ['learning']:
         init = True
-    elif args.mode in ['update', 'prediction']:
+    elif mode in ['update', 'prediction']:
         init = False
     else:
         init = False
@@ -84,7 +136,7 @@ def main():
                    size = size,
                    l1_norm = l1_norm)
     obj.construct()
-    if args.mode != 'prediction':
+    if mode != 'prediction':
         logger.debug("Start learning")
         obj.learning(data = dataset,
                      validation_batch_num = int(250 / batch) + 1 if ds == 'conf' else 1)
