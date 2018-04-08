@@ -252,7 +252,6 @@ def dense_cell(x,
                         InputNode = [InputNode[0], InputNode[1], InputNode[2] + GrowthRate],
                         Act = Act,
                         vname = vname + '_SE01')
-    print(x02.shape)
     x11 = conv_block(x = x02,
                      Act = Act,
                      GrowthRate = GrowthRate,
