@@ -470,7 +470,23 @@ def conv_block(x,
                                        Regularization = Regularization,
                                        vname = vname + '_Conv_02d')
     x1_res = Layers.concat(xs = [x1a, x1b, x1c, x1d], concat_type = 'Channel')
-    x1e = Layers.dilated_convolution2d(x = x1_res,
+    # Batch Normalization
+    if not GroupNorm:
+        x_bn3 = Layers.batch_normalization(x = x1_res,
+                                          shape = GrowthRate * 4,
+                                          vname = vname + '_BN03',
+                                          dim = [0, 1, 2],
+                                          Renormalization = Renormalization,
+                                          Training = Training,
+                                          rmax = rmax,
+                                          dmax = dmax)
+    else:
+        x_bn3 = Layers.group_normalization(x = x1_res, G = GroupNum,
+                                           eps = 1e-5, vname = vname + '_GN03')
+    # Activation Function
+    with tf.variable_scope(vname + '_Act03') as scope:
+        x_act3 = AF.select_activation(Act)(x_bn3)
+    x1e = Layers.dilated_convolution2d(x = x1_act3,
                                        FilterSize = [5, 5, GrowthRate, GrowthRate/4],
                                        Initializer = Initializer,
                                        Rate = 2,
@@ -482,7 +498,7 @@ def conv_block(x,
                                        Training = Training,
                                        Regularization = Regularization,
                                        vname = vname + '_Conv_02e')
-    x1f = Layers.separable_convolution2d(x = x1_res,
+    x1f = Layers.separable_convolution2d(x = x1_act3,
                                          FilterSize = [3, 3, GrowthRate, GrowthRate/4],
                                          Initializer = Initializer,
                                          ChannelMultiplier = 2,
@@ -495,7 +511,7 @@ def conv_block(x,
                                          Training = Training,
                                          Regularization = Regularization,
                                          vname = vname + '_Conv_02f')
-    x1g = Layers.separable_convolution2d(x = x1_res,
+    x1g = Layers.separable_convolution2d(x = x1_act3,
                                          FilterSize = [5, 5, GrowthRate, GrowthRate/4],
                                          Initializer = Initializer,
                                          ChannelMultiplier = 2,
@@ -508,7 +524,7 @@ def conv_block(x,
                                          Training = Training,
                                          Regularization = Regularization,
                                          vname = vname + '_Conv_02g')
-    x1h = Layers.separable_convolution2d(x = x1_res,
+    x1h = Layers.separable_convolution2d(x = x1_act3,
                                          FilterSize = [7, 7, GrowthRate, GrowthRate/4],
                                          Initializer = Initializer,
                                          ChannelMultiplier = 2,
@@ -522,8 +538,18 @@ def conv_block(x,
                                          Regularization = Regularization,
                                          vname = vname + '_Conv_02h')
     x2_res = Layers.concat(xs = [x1e, x1f, x1g, x1h], concat_type = 'Channel')
-    x02 = x1_res + x2_res
-    print(x02.shape, x1_res.shape, x2_res.shape)
+    x3a = Layers.convolution2d(x = x01,
+                               FilterSize = [1, 1, GrowthRate * 4, GrowthRate],
+                               Initializer = Initializer,
+                               Strides = [Strides[1], Strides[2]],
+                               Padding = 'SAME',
+                               ActivationFunction = 'Equal',
+                               BatchNormalization = False,
+                               Renormalization = False,
+                               Training = Training,
+                               Regularization = Regularization,
+                               vname = vname + '_Conv_03a')
+    x02 = x3a + x2_res
     if SE:
         x02 = SE_module(x = x02,
                         InputNode = [InputNode[0], InputNode[1], GrowthRate],
