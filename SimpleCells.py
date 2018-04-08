@@ -252,6 +252,7 @@ def dense_cell(x,
                         InputNode = [InputNode[0], InputNode[1], InputNode[2] + GrowthRate],
                         Act = Act,
                         vname = vname + '_SE01')
+    print(x02.shape)
     x11 = conv_block(x = x02,
                      Act = Act,
                      GrowthRate = GrowthRate,
@@ -425,7 +426,7 @@ def conv_block(x,
         x_act2 = AF.select_activation(Act)(x_bn2)
 
     x1a = Layers.convolution2d(x = x_act2,
-                               FilterSize = [3, 3, GrowthRate * 4, GrowthRate],
+                               FilterSize = [3, 3, GrowthRate * 4, GrowthRate/4],
                                Initializer = Initializer,
                                Strides = [Strides[1], Strides[2]],
                                Padding = 'SAME',
@@ -436,7 +437,7 @@ def conv_block(x,
                                Regularization = Regularization,
                                vname = vname + '_Conv_02a')
     x1b = Layers.convolution2d(x = x_act2,
-                               FilterSize = [3, 1, GrowthRate * 4, GrowthRate],
+                               FilterSize = [3, 1, GrowthRate * 4, GrowthRate/4],
                                Initializer = Initializer,
                                Strides = [Strides[1], Strides[2]],
                                Padding = 'SAME',
@@ -447,7 +448,7 @@ def conv_block(x,
                                Regularization = Regularization,
                                vname = vname + '_Conv_02b')
     x1c = Layers.convolution2d(x = x_act2,
-                               FilterSize = [1, 3, GrowthRate * 4, GrowthRate],
+                               FilterSize = [1, 3, GrowthRate * 4, GrowthRate/4],
                                Initializer = Initializer,
                                Strides = [Strides[1], Strides[2]],
                                Padding = 'SAME',
@@ -458,7 +459,7 @@ def conv_block(x,
                                Regularization = Regularization,
                                vname = vname + '_Conv_02c')
     x1d = Layers.dilated_convolution2d(x = x_act2,
-                                       FilterSize = [3, 3, GrowthRate * 4, GrowthRate],
+                                       FilterSize = [3, 3, GrowthRate * 4, GrowthRate/4],
                                        Initializer = Initializer,
                                        Rate = 2,
                                        Strides = [Strides[1], Strides[2]],
@@ -471,7 +472,7 @@ def conv_block(x,
                                        vname = vname + '_Conv_02d')
     x1_res = Layers.concat(xs = [x1a, x1b, x1c, x1d], concat_type = 'Channel')
     x1e = Layers.dilated_convolution2d(x = x1_res,
-                                       FilterSize = [5, 5, GrowthRate * 4, GrowthRate],
+                                       FilterSize = [5, 5, GrowthRate, GrowthRate/4],
                                        Initializer = Initializer,
                                        Rate = 2,
                                        Strides = [Strides[1], Strides[2]],
@@ -483,7 +484,7 @@ def conv_block(x,
                                        Regularization = Regularization,
                                        vname = vname + '_Conv_02e')
     x1f = Layers.separable_convolution2d(x = x1_res,
-                                         FilterSize = [3, 3, GrowthRate * 4, GrowthRate],
+                                         FilterSize = [3, 3, GrowthRate, GrowthRate/4],
                                          Initializer = Initializer,
                                          ChannelMultiplier = 2,
                                          Rate = (1,1),
@@ -496,7 +497,7 @@ def conv_block(x,
                                          Regularization = Regularization,
                                          vname = vname + '_Conv_02f')
     x1g = Layers.separable_convolution2d(x = x1_res,
-                                         FilterSize = [5, 5, GrowthRate * 4, GrowthRate],
+                                         FilterSize = [5, 5, GrowthRate, GrowthRate/4],
                                          Initializer = Initializer,
                                          ChannelMultiplier = 2,
                                          Rate = (1,1),
@@ -509,7 +510,7 @@ def conv_block(x,
                                          Regularization = Regularization,
                                          vname = vname + '_Conv_02g')
     x1h = Layers.separable_convolution2d(x = x1_res,
-                                         FilterSize = [7, 7, GrowthRate * 4, GrowthRate],
+                                         FilterSize = [7, 7, GrowthRate, GrowthRate/4],
                                          Initializer = Initializer,
                                          ChannelMultiplier = 2,
                                          Rate = (1,1),
@@ -523,6 +524,7 @@ def conv_block(x,
                                          vname = vname + '_Conv_02h')
     x2_res = Layers.concat(xs = [x1e, x1f, x1g, x1h], concat_type = 'Channel')
     x02 = x1_res + x2_res
+    print(x02.shape, x1_res.shape, x2_res.shape)
     if SE:
         x02 = SE_module(x = x02,
                         InputNode = [InputNode[0], InputNode[1], GrowthRate],
