@@ -522,7 +522,7 @@ def conv_block(x,
                                          Regularization = Regularization,
                                          vname = vname + '_Conv_02h')
     x2_res = Layers.concat(xs = [x1e, x1f, x1g, x1h], concat_type = 'Channel')
-    x02 = x01_res + x1_res
+    x02 = x1_res + x2_res
     if SE:
         x02 = SE_module(x = x02,
                         InputNode = [InputNode[0], InputNode[1], GrowthRate],
