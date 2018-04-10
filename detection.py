@@ -182,7 +182,7 @@ class Detecter(Core2.Core):
                                     vname = 'Dropout')
         # fnn
         self.y72 = Outputs.output(x = self.y71_d,
-                                  InputSize = StemChannels + 12 +GrowthRate * 16,
+                                  InputSize = StemChannels + 12 + GrowthRate * 16,
                                   OutputSize = 15,
                                   Initializer = 'Xavier',
                                   BatchNormalization = False,
@@ -199,8 +199,9 @@ class Detecter(Core2.Core):
                                              regularization_type = self.regularization_type,
                                              output_type = diag_output_type)
         # For Gear Mode (TBD)
-        self.l1_loss = tf.reduce_mean(tf.abs(self.y71)) * self.l1_norm
-        self.loss_function += self.l1_loss
+        #self.l1_loss = tf.reduce_mean(tf.abs(self.y71)) * self.l1_norm
+        self.l2_loss= tf.sqrt(tf.reduce_mean(tf.multiply(tf.sigmoid(self.z) -self.z_, tf.sigmoid(self.z) -self.z_))) * 0.5
+        self.loss_function += self.l2_loss
 
     def training(self, var_list = None, gradient_cliiping = True, clipping_norm = 0.1):
         self.train_op, self.optimizer = TO.select_algo(loss_function = self.loss_function,
@@ -265,7 +266,7 @@ class Detecter(Core2.Core):
             if i%self.log == 0 and i != 0:
                 # Train
                 feed_dict = self.make_feed_dict(prob = True, batch = batch, is_Train = True)
-                res = self.sess.run([self.accuracy_z, self.loss_function, self.l1_loss], feed_dict = feed_dict)
+                res = self.sess.run([self.accuracy_z, self.loss_function, self.l2_loss], feed_dict = feed_dict)
                 train_accuracy_z = res[0]
                 losses = res[1]
                 l1_losses = res[2]
@@ -281,7 +282,7 @@ class Detecter(Core2.Core):
                 val_accuracy_y, val_accuracy_z, val_losses, test, prob = [], [], [], [], []
                 validation_batch = data.test.next_batch(self.batch, augment = False, batch_ratio = batch_ratio[i % len(batch_ratio)])
                 feed_dict_val = self.make_feed_dict(prob = True, batch = validation_batch, is_Train = False)
-                res_val = self.sess.run([self.accuracy_z, self.loss_function, self.l1_loss], feed_dict = feed_dict_val)
+                res_val = self.sess.run([self.accuracy_z, self.loss_function, self.l2_loss], feed_dict = feed_dict_val)
                 val_accuracy_z = res_val[0]
                 val_losses = res_val[1]
                 val_l1 = res_val[2]
@@ -300,8 +301,8 @@ class Detecter(Core2.Core):
                 logger.debug("step %d ================================================================================="% i)
                 #logger.debug("Train: (judgement, diagnosis, loss, auc) = (%g, %g, %g, %g)"%(train_accuracy_y,train_accuracy_z,losses,train_auc))
                 #logger.debug("Validation: (judgement, diagnosis, loss, auc) = (%g, %g, %g, %g)"%(val_accuracy_y,val_accuracy_z,val_losses,val_auc))
-                logger.debug("Train: (diagnosis, loss, l1, aucs) = (%g, %g, %g, %s)"%(train_accuracy_z,losses, l1_losses, aucs_t))
-                logger.debug("Validation: (diagnosis, loss, l1, aucs) = (%g, %g, %g, %s)"%(val_accuracy_z, val_losses, val_l1, aucs_v))
+                logger.debug("Train: (diagnosis, loss, l2, aucs) = (%g, %g, %g, %s)"%(train_accuracy_z,losses, l1_losses, aucs_t))
+                logger.debug("Validation: (diagnosis, loss, l2, aucs) = (%g, %g, %g, %s)"%(val_accuracy_z, val_losses, val_l1, aucs_v))
 
                 if save_at_log:
                     self.save_checkpoint()
