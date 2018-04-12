@@ -198,10 +198,11 @@ class Detecter(Core2.Core):
                                              regularization = self.regularization,
                                              regularization_type = self.regularization_type,
                                              output_type = diag_output_type)
+        self.l2_loss = 0
         # For Gear Mode (TBD)
         #self.l1_loss = tf.reduce_mean(tf.abs(self.y71)) * self.l1_norm
-        self.l2_loss= tf.sqrt(tf.reduce_mean(tf.multiply(tf.sigmoid(self.z) -self.z_, tf.sigmoid(self.z) -self.z_))) * 0.5
-        self.loss_function += self.l2_loss
+        #self.l2_loss= tf.sqrt(tf.reduce_mean(tf.multiply(tf.sigmoid(self.z) -self.z_, tf.sigmoid(self.z) -self.z_))) * 0.5
+        #self.loss_function += self.l2_loss
 
     def training(self, var_list = None, gradient_cliiping = True, clipping_norm = 0.1):
         self.train_op, self.optimizer = TO.select_algo(loss_function = self.loss_function,
