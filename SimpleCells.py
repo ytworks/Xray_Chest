@@ -75,7 +75,6 @@ def densenet(x,
                      GroupNorm = GroupNorm,
                      GroupNum = GroupNum,
                      vname = vname + '_Dense01')
-    print(x01.shape)
     x02 = transition_cell(x = x01,
                           Act = Act,
                           InputNode = [InputNode[0], InputNode[1], InputNode[2] + 3 + GrowthRate * 6],
@@ -358,13 +357,12 @@ def dense_cell(x,
                      GroupNum = GroupNum,
                      vname = vname +'_ConvBlock06')
     x52 = Layers.concat(xs = [x, x01, x11, x21, x31, x41, x51], concat_type = 'Channel')
-    print(x52.shape)
     if SE:
         x52 = SE_module(x = x52,
                         InputNode = [InputNode[0], InputNode[1], InputNode[2] + GrowthRate * 6],
                         Act = Act,
                         vname = vname + '_SE05')
-    return x32
+    return x52
 
 
 
