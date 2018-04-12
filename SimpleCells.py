@@ -75,6 +75,7 @@ def densenet(x,
                      GroupNorm = GroupNorm,
                      GroupNum = GroupNum,
                      vname = vname + '_Dense01')
+    print(x01.shape)
     x02 = transition_cell(x = x01,
                           Act = Act,
                           InputNode = [InputNode[0], InputNode[1], InputNode[2] + 3 + GrowthRate * 6],
