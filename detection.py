@@ -302,8 +302,8 @@ class Detecter(Core2.Core):
                 logger.debug("step %d ================================================================================="% i)
                 #logger.debug("Train: (judgement, diagnosis, loss, auc) = (%g, %g, %g, %g)"%(train_accuracy_y,train_accuracy_z,losses,train_auc))
                 #logger.debug("Validation: (judgement, diagnosis, loss, auc) = (%g, %g, %g, %g)"%(val_accuracy_y,val_accuracy_z,val_losses,val_auc))
-                logger.debug("Train: (diagnosis, loss, aucs) = (%g, %g, %g, %s)"%(train_accuracy_z,losses, aucs_t))
-                logger.debug("Validation: (diagnosis, loss, aucs) = (%g, %g, %g, %s)"%(val_accuracy_z, val_losses, aucs_v))
+                logger.debug("Train: (diagnosis, loss, aucs) = (%g, %g, %s)"%(train_accuracy_z,losses, aucs_t))
+                logger.debug("Validation: (diagnosis, loss, aucs) = (%g, %g, %s)"%(val_accuracy_z, val_losses, aucs_v))
 
                 if save_at_log:
                     self.save_checkpoint()
