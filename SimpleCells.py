@@ -355,7 +355,7 @@ def dense_cell(x,
                      Training = Training,
                      GroupNorm = GroupNorm,
                      GroupNum = GroupNum,
-                     vname = vname +'_ConvBlock05')
+                     vname = vname +'_ConvBlock06')
     x52 = Layers.concat(xs = [x, x01, x11, x21, x31, x41, x51], concat_type = 'Channel')
     if SE:
         x52 = SE_module(x = x52,
