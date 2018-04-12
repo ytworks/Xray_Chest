@@ -296,7 +296,7 @@ class Detecter(Core2.Core):
                     aucs_v += "%03.2f / " % val_auc
                 self.val_losses.append(val_losses)
                 self.current_loss = val_losses
-                self.eval_l1_loss = min(val_l1, l1_losses)
+                #self.eval_l1_loss = min(val_l1, l1_losses)
 
                 # Output
                 logger.debug("step %d ================================================================================="% i)
