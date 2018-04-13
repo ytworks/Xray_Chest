@@ -62,6 +62,7 @@ def densenet(x,
 
     x01 = dense_cell(x = x_plus_root,
                      Act = Act,
+                     Num = 6,
                      GrowthRate = GrowthRate,
                      InputNode = [InputNode[0], InputNode[1], InputNode[2] + 3],
                      Initializer = Initializer,
@@ -97,6 +98,7 @@ def densenet(x,
 
     x03 = dense_cell(x = x02_plus_root,
                      Act = Act,
+                     Num = 12
                      GrowthRate = GrowthRate,
                      InputNode = [InputNode[0] / 2, InputNode[1] / 2, InputNode[2] + 6 +GrowthRate * 6],
                      Initializer = Initializer,
@@ -112,7 +114,7 @@ def densenet(x,
                      vname = vname + '_Dense02')
     x04 = transition_cell(x = x03,
                           Act = Act,
-                          InputNode = [InputNode[0] / 2, InputNode[1] / 2, InputNode[2] + 6 + GrowthRate * 12],
+                          InputNode = [InputNode[0] / 2, InputNode[1] / 2, InputNode[2] + 6 + GrowthRate * 18],
                           Initializer = Initializer,
                           Strides = Strides,
                           Renormalization = Renormalization,
@@ -133,8 +135,9 @@ def densenet(x,
 
     x05 = dense_cell(x = x04_plus_root,
                      Act = Act,
+                     Num = 48
                      GrowthRate = GrowthRate,
-                     InputNode = [InputNode[0] / 4, InputNode[1] / 4, InputNode[2] + 9 + GrowthRate * 12],
+                     InputNode = [InputNode[0] / 4, InputNode[1] / 4, InputNode[2] + 9 + GrowthRate * 18],
                      Initializer = Initializer,
                      Strides = Strides,
                      Renormalization = Renormalization,
@@ -168,8 +171,9 @@ def densenet(x,
 
     x07 = dense_cell(x = x06_plus_root,
                      Act = Act,
+                     Num = 32,
                      GrowthRate = GrowthRate,
-                     InputNode = [InputNode[0] / 8, InputNode[1] / 8, InputNode[2] + 12 + GrowthRate * 18],
+                     InputNode = [InputNode[0] / 8, InputNode[1] / 8, InputNode[2] + 12 + GrowthRate * 66],
                      Initializer = Initializer,
                      Strides = Strides,
                      Renormalization = Renormalization,
@@ -183,7 +187,7 @@ def densenet(x,
                      vname = vname + '_Dense04')
     x08 = transition_cell(x = x07,
                           Act = Act,
-                          InputNode = [InputNode[0] / 8, InputNode[1] / 8, InputNode[2] + 12 + GrowthRate * 24],
+                          InputNode = [InputNode[0] / 8, InputNode[1] / 8, InputNode[2] + 12 + GrowthRate * 98],
                           Initializer = Initializer,
                           Strides = Strides,
                           Renormalization = Renormalization,
@@ -198,7 +202,7 @@ def densenet(x,
     # Batch Normalization
     if not GroupNorm:
         x_bn1 = Layers.batch_normalization(x = x08,
-                                           shape = InputNode[2] + GrowthRate * 24 + 12,
+                                           shape = InputNode[2] + GrowthRate * 98 + 12,
                                            vname = vname + '_BN01',
                                            dim = [0, 1, 2],
                                            Renormalization = Renormalization,
@@ -216,6 +220,7 @@ def densenet(x,
 
 
 def dense_cell(x,
+               Num = 6,
                Act = 'Relu',
                GrowthRate = 12,
                InputNode = [64, 64, 32],
@@ -230,7 +235,31 @@ def dense_cell(x,
                GroupNorm = True,
                GroupNum = 8,
                vname = '_Dense'):
-
+    outputs = [x]
+    input  = x
+    for i in range(Num):
+        outputs.append(conv_block(x = input,
+                         Act = Act,
+                         GrowthRate = GrowthRate,
+                         InputNode = [InputNode[0], InputNode[1], InputNode[2] + GrowthRate * i],
+                         Initializer = Initializer,
+                         Strides = [1, 1, 1, 1],
+                         Renormalization = Renormalization,
+                         Regularization = Regularization,
+                         rmax = rmax,
+                         dmax = dmax,
+                         SE = SE,
+                         Training = Training,
+                         GroupNorm = GroupNorm,
+                         GroupNum = GroupNum,
+                         vname = vname + '_ConvBlock' + Str(Num)))
+        input = Layers.concat(xs = outputs, concat_type = 'Channel')
+        if SE:
+            input = SE_module(x = input,
+                              InputNode = [InputNode[0], InputNode[1], InputNode[2] + GrowthRate * (i+1)],
+                              Act = Act,vname = vname + '_SE' + str(Num))
+    return input
+    '''
     x01 = conv_block(x = x,
                      Act = Act,
                      GrowthRate = GrowthRate,
@@ -363,6 +392,7 @@ def dense_cell(x,
                         Act = Act,
                         vname = vname + '_SE05')
     return x52
+    '''
 
 
 
