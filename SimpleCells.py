@@ -98,7 +98,7 @@ def densenet(x,
 
     x03 = dense_cell(x = x02_plus_root,
                      Act = Act,
-                     Num = 12
+                     Num = 12,
                      GrowthRate = GrowthRate,
                      InputNode = [InputNode[0] / 2, InputNode[1] / 2, InputNode[2] + 6 +GrowthRate * 6],
                      Initializer = Initializer,
@@ -135,7 +135,7 @@ def densenet(x,
 
     x05 = dense_cell(x = x04_plus_root,
                      Act = Act,
-                     Num = 48
+                     Num = 48,
                      GrowthRate = GrowthRate,
                      InputNode = [InputNode[0] / 4, InputNode[1] / 4, InputNode[2] + 9 + GrowthRate * 18],
                      Initializer = Initializer,
