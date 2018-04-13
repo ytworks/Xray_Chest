@@ -252,12 +252,12 @@ def dense_cell(x,
                          Training = Training,
                          GroupNorm = GroupNorm,
                          GroupNum = GroupNum,
-                         vname = vname + '_ConvBlock' + str(Num)))
+                         vname = vname + '_ConvBlock' + str(i)))
         input = Layers.concat(xs = outputs, concat_type = 'Channel')
         if SE:
             input = SE_module(x = input,
                               InputNode = [InputNode[0], InputNode[1], InputNode[2] + GrowthRate * (i+1)],
-                              Act = Act,vname = vname + '_SE' + str(Num))
+                              Act = Act,vname = vname + '_SE' + str(i))
     return input
     '''
     x01 = conv_block(x = x,
