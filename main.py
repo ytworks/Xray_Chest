@@ -82,24 +82,6 @@ def main():
     parser.add_argument('-dataset')
     parser.add_argument('-roi')
     parser.add_argument('-mode', required = True)
-    '''
-    args = parser.parse_args()
-    size = int(args.size) if args.size != None else 256
-    augment = True if args.augment == 'True' else False
-    checkpoint = args.checkpoint if args.checkpoint != None else './Model/Core.ckpt'
-    lr = float(args.lr) if args.lr != None else 0.0001
-    dlr = float(args.dlr) if args.dlr != None else 0.0
-    rtype = args.rtype if args.rtype != None else 'L2'
-    rr = float(args.rr) if args.rr != None else 0.0
-    l1_norm = float(args.l1_norm) if args.l1_norm != None else 0.0
-    epoch = int(args.epoch) if args.epoch != None else 2
-    batch = int(args.batch) if args.batch != None else 5
-    log = int(args.log) if args.log != None else 2
-    ds = 'conf' if args.dataset == None else 'nih'
-    roi = False if args.roi == None else True
-    output_type = args.output_type if args.output_type != None else 'classified-softmax'
-    outfile = args.outfile if args.outfile != None else './Result/result.csv'
-    '''
     if mode in ['learning']:
         init = True
     elif mode in ['update', 'prediction']:
