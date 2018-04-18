@@ -46,6 +46,8 @@ class DataSet(object):
             self.pi = tf.keras.applications.resnet50.preprocess_input
         elif model == 'inception':
             self.pi = tf.keras.applications.inception_v3.preprocess_input
+        elif model == 'densenet':
+            self.pi = tf.keras.applications.densenet.preprocess_input
         else:
             self.pi = tf.keras.applications.vgg19.preprocess_input
 

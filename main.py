@@ -99,7 +99,7 @@ def main():
                              img_size = size,
                              augment = augment,
                              raw_img = True,
-                             model = 'resnet',
+                             model = 'densenet',
                              zca = False,
                              ds = ds)
     print("label definitions:")
