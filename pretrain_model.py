@@ -94,7 +94,9 @@ class Detecter(Core2.Core):
         # セッションの定義
         self.sess = tf.InteractiveSession()
         # tensor board
-        self.summary, self.train_writer, self.test_writer = vs.file_writer(sess = self.sess, file_name = './Result')
+        now = datetime.now()
+        now = now.strftime("%Y-%m-%d")
+        self.summary, self.train_writer, self.test_writer = vs.file_writer(sess = self.sess, file_name = './Result/' + now)
         # チェックポイントの呼び出し
         self.saver = tf.train.Saver()
         self.restore()
