@@ -21,6 +21,7 @@ from LinearMotor import TrainOptimizers as TO
 from LinearMotor import Utilities as UT
 from LinearMotor import Loss
 from LinearMotor import Transfer as trans
+from LinearMotor import Visualizer as vs
 from SimpleCells import *
 from logging import getLogger, StreamHandler
 logger = getLogger(__name__)
@@ -95,10 +96,13 @@ class Detecter(Core2.Core):
             self.accuracy_z = tf.sqrt(tf.reduce_mean(tf.multiply(self.z - self.z_, self.z - self.z_)))
         else:
             self.accuracy_z = tf.sqrt(tf.reduce_mean(tf.multiply(tf.sigmoid(self.z) -self.z_, tf.sigmoid(self.z) -self.z_)))
+        vs.variable_summary(self.loss_function, 'Accuracy', is_scalar = True)
 
         logger.debug("06: TF Accuracy measure definition done")
         # セッションの定義
         self.sess = tf.InteractiveSession()
+        # tensor board
+        self.summary, self.train_writer, self.test_writer = vs.file_writer(sess = self.sess, file_name = './Result')
         # チェックポイントの呼び出し
         self.saver = tf.train.Saver()
         self.restore()
@@ -198,6 +202,7 @@ class Detecter(Core2.Core):
                                              regularization = self.regularization,
                                              regularization_type = self.regularization_type,
                                              output_type = diag_output_type)
+        vs.variable_summary(self.loss_function, 'Loss', is_scalar = True)
         #self.l2_loss = 0
         # For Gear Mode (TBD)
         #self.l1_loss = tf.reduce_mean(tf.abs(self.y71)) * self.l1_norm
@@ -316,7 +321,8 @@ class Detecter(Core2.Core):
             feed_dict = self.make_feed_dict(prob = False, batch = batch, is_Train = True, is_update = True)
             if self.DP and i != 0:
                 self.dynamic_learning_rate(feed_dict)
-            self.train_op.run(feed_dict=feed_dict)
+            _, summary = self.sess.run([self.train_op, self.summary], feed_dict=feed_dict)
+            vs.add_log(writer = self.train_writer, summary = summary, step = i)
             self.steps += 1
         self.save_checkpoint()
 

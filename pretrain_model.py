@@ -21,6 +21,7 @@ from LinearMotor import TrainOptimizers as TO
 from LinearMotor import Utilities as UT
 from LinearMotor import Loss
 from LinearMotor import Transfer as trans
+from LinearMotor import Visualizer as vs
 from Cells import inception_res_cell
 from logging import getLogger, StreamHandler
 logger = getLogger(__name__)
@@ -88,9 +89,12 @@ class Detecter(Core2.Core):
         else:
             self.accuracy_z = tf.sqrt(tf.reduce_mean(tf.multiply(tf.sigmoid(self.z) -self.z_, tf.sigmoid(self.z) -self.z_)))
             #self.accuracy_z = tf.reduce_mean(tf.keras.metrics.cosine_proximity(self.z_, tf.sigmoid(self.z)))
+        vs.variable_summary(self.loss_function, 'Accuracy', is_scalar = True)
         logger.debug("06: TF Accuracy measure definition done")
         # セッションの定義
         self.sess = tf.InteractiveSession()
+        # tensor board
+        self.summary, self.train_writer, self.test_writer = vs.file_writer(sess = self.sess, file_name = './Result')
         # チェックポイントの呼び出し
         self.saver = tf.train.Saver()
         self.restore()
@@ -160,6 +164,7 @@ class Detecter(Core2.Core):
 
         # For Gear Mode (TBD)
         self.loss_function += tf.reduce_mean(tf.abs(self.y71)) * self.l1_norm
+        vs.variable_summary(self.loss_function, 'Loss', is_scalar = True)
 
     # 学習
     def training(self, var_list = None, gradient_cliiping = True, clipping_norm = 1.0):
@@ -247,7 +252,8 @@ class Detecter(Core2.Core):
             if self.DP and i != 0:
                 self.dynamic_learning_rate(feed_dict)
             self.p.change_phase(True)
-            self.train_op.run(feed_dict=feed_dict)
+            _, summary = self.sess.run([self.train_op, self.summary], feed_dict=feed_dict)
+            vs.add_log(writer = self.train_writer, summary = summary, step = i)
         self.save_checkpoint()
 
 
@@ -267,7 +273,8 @@ class Detecter(Core2.Core):
 
     # 予測器
     def prediction(self, data, roi = False, label_def = None, save_dir = None,
-                   filenames = None, paths = None):
+                   filenames = None, findings = None, roi_force = False):
+        # Make feed dict for prediction
         self.p.change_phase(False)
         # Make feed dict for prediction
         feed_dict = {self.x : data}
@@ -280,19 +287,20 @@ class Detecter(Core2.Core):
         else:
             #result_y = self.sess.run(tf.nn.softmax(self.y), feed_dict = feed_dict)
             result_z = self.sess.run(tf.sigmoid(self.z), feed_dict = feed_dict)
-        result_y = [[1, 0] for i in range(len(paths))]
+        result_y = [[1, 0] for i in range(len(result_z))]
         if not roi:
             return result_y, result_z
         else:
             weights = self.get_output_weights(feed_dict = feed_dict)
             roi_base = self.get_roi_map_base(feed_dict = feed_dict)
-            for i in range(len(paths)):
+            for i in range(len(filenames)):
                 self.make_roi(weights = weights[0],
                               roi_base = roi_base[0][i, :, :, :],
                               save_dir = save_dir,
                               filename = filenames[i],
                               label_def = label_def,
-                              path = paths[i])
+                              findings = findings[i],
+                              roi_force = roi_force)
 
             return result_y, result_z
 
