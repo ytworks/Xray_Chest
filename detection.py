@@ -91,7 +91,6 @@ class Detecter(Core2.Core):
         self.training(var_list = None)
         logger.debug("05: TF Training operation done")
         # 精度の定義
-        #self.accuracy_y = UT.correct_rate(self.y, self.y_)
         if self.output_type.find('hinge') >= 0:
             self.accuracy_z = tf.sqrt(tf.reduce_mean(tf.multiply(self.z - self.z_, self.z - self.z_)))
         else:
@@ -116,7 +115,6 @@ class Detecter(Core2.Core):
     def io_def(self):
         self.CH = 3
         self.x = tf.placeholder("float", shape=[None, self.SIZE, self.SIZE, self.CH], name = "Input")
-        #self.y_ = tf.placeholder("float", shape=[None, 2], name = "Label_Judgement")
         self.z_ = tf.placeholder("float", shape=[None, 15], name = "Label_Diagnosis")
         self.keep_probs = []
 
@@ -230,19 +228,12 @@ class Detecter(Core2.Core):
             rmax = min(1.0 + 2.0 * float(self.steps - 5000.0) / 35000.0, 3.0)
             dmax = min(5.0 * float(self.steps -5000.0) / 20000.0, 5.0)
         if self.steps % 3000 == 0 and self.steps != 0 and is_update:
-        #if self.current_loss > np.mean(self.val_losses) - np.std(self.val_losses) and len(self.val_losses) > 10 and is_update:
             logger.debug("Before Learning Rate: %g" % self.learning_rate_value)
             self.learning_rate_value = max(0.000001, self.learning_rate_value * 0.9)
             logger.debug("After Learning Rate: %g" % self.learning_rate_value)
-            #self.val_losses = []
-        #if self.steps % 100 == 0 and self.steps != 0 and is_update:
-        #if self.steps % 100 == 0 and self.eval_l1_loss <= 0.0020 and self.steps != 0 and is_update:
-        #    self.l1_norm_value = min(10, self.l1_norm_value * 1.2) if not self.l1_norm_value == 0.0 else 0.00001
-            #self.regularization_value = min(0.1, self.regularization_value * 5.0) if not self.regularization_value == 0.0 else 0.0001
-        #    logger.debug("(Regularization, L1 Norm): %g %g" % (self.regularization_value, self.l1_norm_value))
+
         feed_dict = {}
         feed_dict.setdefault(self.x, batch[0])
-        #feed_dict.setdefault(self.y_, batch[1])
         feed_dict.setdefault(self.z_, batch[2])
         feed_dict.setdefault(self.learning_rate, self.learning_rate_value)
         feed_dict.setdefault(self.istraining, is_Train)
@@ -250,7 +241,6 @@ class Detecter(Core2.Core):
         feed_dict.setdefault(self.dmax, dmax)
         feed_dict.setdefault(self.regularization, self.regularization_value)
         feed_dict.setdefault(self.l1_norm, self.l1_norm_value)
-        #feed_dict.setdefault(self.GearLevel, self.GearLevelValue)
         i = 0
         for keep_prob in self.keep_probs:
             if prob:
@@ -277,7 +267,6 @@ class Detecter(Core2.Core):
                 res = self.sess.run([self.accuracy_z, self.loss_function], feed_dict = feed_dict)
                 train_accuracy_z = res[0]
                 losses = res[1]
-                #l1_losses = res[2]
                 train_prediction = self.prediction(data = batch[0], roi = False)
                 aucs_t = ''
                 for d in range(len(train_prediction[1][0])):
@@ -293,7 +282,6 @@ class Detecter(Core2.Core):
                 res_val = self.sess.run([self.accuracy_z, self.loss_function], feed_dict = feed_dict_val)
                 val_accuracy_z = res_val[0]
                 val_losses = res_val[1]
-                #val_l1 = res_val[2]
                 val_prediction = self.prediction(data = validation_batch[0], roi = False)
                 aucs_v = ''
                 for d in range(len(train_prediction[1][0])):
