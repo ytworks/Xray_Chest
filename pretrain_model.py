@@ -64,6 +64,7 @@ class Detecter(Core2.Core):
         self.l1_norm = l1_norm
         self.val_losses = []
         self.current_loss = 0.0
+        self.steps = 0
 
     def construct(self):
 
@@ -160,11 +161,16 @@ class Detecter(Core2.Core):
         self.grad_op = self.optimizer.compute_gradients(self.loss_function)
 
     # 入出力ベクトルの配置
-    def make_feed_dict(self, prob, batch):
+    def make_feed_dict(self, prob, batch, is_update = False):
+
         feed_dict = {}
         feed_dict.setdefault(self.x, batch[0])
         feed_dict.setdefault(self.z_, batch[2])
         feed_dict.setdefault(self.learning_rate, self.learning_rate_value)
+        if self.steps % 3000 == 0 and self.steps != 0 and is_update:
+            logger.debug("Before Learning Rate: %g" % self.learning_rate_value)
+            self.learning_rate_value = max(0.000001, self.learning_rate_value * 0.9)
+            logger.debug("After Learning Rate: %g" % self.learning_rate_value)
         i = 0
         for keep_prob in self.keep_probs:
             if prob:
@@ -235,12 +241,13 @@ class Detecter(Core2.Core):
                 s = e
 
             # 学習
-            feed_dict = self.make_feed_dict(prob = False, batch = batch)
+            feed_dict = self.make_feed_dict(prob = False, batch = batch, is_update = True)
             if self.DP and i != 0:
                 self.dynamic_learning_rate(feed_dict)
             self.p.change_phase(True)
             _, summary = self.sess.run([self.train_op, self.summary], feed_dict=feed_dict)
             vs.add_log(writer = self.train_writer, summary = summary, step = i)
+            self.steps += 1
         self.save_checkpoint()
 
 
