@@ -157,12 +157,12 @@ class Detecter(Core2.Core):
                                   Regularization = False,
                                   vname = 'Output_z1')
         self.z1 = self.y72_1
-        self.attention = tf.multiply(255.0, tf.sigmoid(tf.reduce_mean(self.y51_1, 3)))
+        self.attention = Layers.reshape_tensor(tf.multiply(255.0, tf.sigmoid(tf.reduce_mean(self.y51_1, 3))), [7,7,1])
         self.attention_full_size = tf.image.resize_images(images = self.attention,
                                                           size = [self.SIZE, self.SIZE],
                                                           method=tf.image.ResizeMethod.BICUBIC,
                                                           align_corners=False)
-        self.attention_image = Layers.concat(xs = [self.x, Layers.reshape_tensor(self.attention_full_size, [-1, self.SIZE, self.SIZE, 1])],
+        self.attention_image = Layers.concat(xs = [self.x, self.attention_full_size],
                                              concat_type = 'Channel')
 
         self.stem_bn = Layers.batch_normalization(x = self.attention_image,
