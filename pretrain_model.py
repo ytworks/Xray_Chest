@@ -193,7 +193,7 @@ class Detecter(Core2.Core):
             # 途中経過のチェック
             if i%self.log == 0 and i != 0:
                 # Train
-                self.p.change_phase(True)
+                self.p.change_phase(False)
                 feed_dict = self.make_feed_dict(prob = True, batch = batch)
                 res = self.sess.run([self.accuracy_z, self.loss_function], feed_dict = feed_dict)
                 train_accuracy_z = res[0]
@@ -244,13 +244,12 @@ class Detecter(Core2.Core):
             feed_dict = self.make_feed_dict(prob = False, batch = batch, is_update = True)
             if self.DP and i != 0:
                 self.dynamic_learning_rate(feed_dict)
-            self.p.change_phase(True)
+            self.p.change_phase(False)
             if i%self.log == 0:
                 _, summary = self.sess.run([self.train_op, self.summary], feed_dict=feed_dict)
                 vs.add_log(writer = self.train_writer, summary = summary, step = i)
             else:
                 _ = self.sess.run([self.train_op], feed_dict=feed_dict)
-
             self.steps += 1
         self.save_checkpoint()
 
