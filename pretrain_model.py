@@ -193,7 +193,7 @@ class Detecter(Core2.Core):
             batch = data.train.next_batch(self.batch)
             ee = time.time()
             pp = ee - ss
-            ogger.debug(" batch elasped time: %g" % pp)
+            logger.debug(" batch elasped time: %g" % pp)
             # 途中経過のチェック
             if i%self.log == 0 and i != 0:
                 # Train
