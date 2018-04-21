@@ -249,7 +249,16 @@ class Detecter(Core2.Core):
             if self.DP and i != 0:
                 self.dynamic_learning_rate(feed_dict)
             self.p.change_phase(True)
+            ss = time.time()
             _, summary = self.sess.run([self.train_op, self.summary], feed_dict=feed_dict)
+            ee = time.time()
+            pp = ee - ss
+            logger.debug(" train elasped time: %g" % pp)
+            ss = time.time()
+            _ = self.sess.run([self.train_op], feed_dict=feed_dict)
+            ee = time.time()
+            pp = ee - ss
+            logger.debug(" train elasped time: %g" % pp)
             ss = time.time()
             vs.add_log(writer = self.train_writer, summary = summary, step = i)
             ee = time.time()
