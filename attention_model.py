@@ -380,8 +380,11 @@ class Detecter(Core2.Core):
             if self.DP and i != 0:
                 self.dynamic_learning_rate(feed_dict)
             self.p.change_phase(True)
-            _, summary = self.sess.run([self.train_op, self.summary], feed_dict=feed_dict)
-            vs.add_log(writer = self.train_writer, summary = summary, step = i)
+            if i%self.log == 0:
+                _, summary = self.sess.run([self.train_op, self.summary], feed_dict=feed_dict)
+                vs.add_log(writer = self.train_writer, summary = summary, step = i)
+            else:
+                _ = self.sess.run([self.train_op], feed_dict=feed_dict)
             self.steps += 1
         self.save_checkpoint()
 

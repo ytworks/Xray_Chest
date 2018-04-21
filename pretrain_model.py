@@ -189,11 +189,7 @@ class Detecter(Core2.Core):
     def learning(self, data, save_at_log = False, validation_batch_num = 1, batch_ratio = [0.2, 0.3, 0.4, 0.5, 0.6]):
         s = time.time()
         for i in range(self.epoch):
-            ss = time.time()
             batch = data.train.next_batch(self.batch)
-            ee = time.time()
-            pp = ee - ss
-            logger.debug(" batch elasped time: %g" % pp)
             # 途中経過のチェック
             if i%self.log == 0 and i != 0:
                 # Train
@@ -249,21 +245,12 @@ class Detecter(Core2.Core):
             if self.DP and i != 0:
                 self.dynamic_learning_rate(feed_dict)
             self.p.change_phase(True)
-            ss = time.time()
-            _, summary = self.sess.run([self.train_op, self.summary], feed_dict=feed_dict)
-            ee = time.time()
-            pp = ee - ss
-            logger.debug(" train elasped time: %g" % pp)
-            ss = time.time()
-            _ = self.sess.run([self.train_op], feed_dict=feed_dict)
-            ee = time.time()
-            pp = ee - ss
-            logger.debug(" train elasped time: %g" % pp)
-            ss = time.time()
-            vs.add_log(writer = self.train_writer, summary = summary, step = i)
-            ee = time.time()
-            pp = ee - ss
-            logger.debug(" logger elasped time: %g" % pp)
+            if i%self.log == 0:
+                _, summary = self.sess.run([self.train_op, self.summary], feed_dict=feed_dict)
+                vs.add_log(writer = self.train_writer, summary = summary, step = i)
+            else:
+                _ = self.sess.run([self.train_op], feed_dict=feed_dict)
+
             self.steps += 1
         self.save_checkpoint()
 
