@@ -250,7 +250,11 @@ class Detecter(Core2.Core):
                 self.dynamic_learning_rate(feed_dict)
             self.p.change_phase(True)
             _, summary = self.sess.run([self.train_op, self.summary], feed_dict=feed_dict)
+            ss = time.time()
             vs.add_log(writer = self.train_writer, summary = summary, step = i)
+            ee = time.time()
+            pp = ee - ss
+            logger.debug(" logger elasped time: %g" % pp)
             self.steps += 1
         self.save_checkpoint()
 
