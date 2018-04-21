@@ -189,7 +189,11 @@ class Detecter(Core2.Core):
     def learning(self, data, save_at_log = False, validation_batch_num = 1, batch_ratio = [0.2, 0.3, 0.4, 0.5, 0.6]):
         s = time.time()
         for i in range(self.epoch):
+            ss = time.time()
             batch = data.train.next_batch(self.batch)
+            ee = time.time()
+            pp = ee - ss
+            ogger.debug(" batch elasped time: %g" % pp)
             # 途中経過のチェック
             if i%self.log == 0 and i != 0:
                 # Train
