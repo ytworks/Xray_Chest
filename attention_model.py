@@ -22,6 +22,7 @@ from LinearMotor import Utilities as UT
 from LinearMotor import Loss
 from LinearMotor import Transfer as trans
 from LinearMotor import Visualizer as vs
+from SimpleCells import *
 from Cells import inception_res_cell
 from logging import getLogger, StreamHandler
 logger = getLogger(__name__)
@@ -60,11 +61,18 @@ class Detecter(Core2.Core):
                                        checkpoint = checkpoint,
                                        init = init
                                        )
+
         self.SIZE = size
-        self.l1_norm = l1_norm
+        self.l1_norm = tf.placeholder(tf.float32)
+        self.regularization = tf.placeholder(tf.float32)
+        self.rmax = tf.placeholder(tf.float32, shape=())
+        self.dmax = tf.placeholder(tf.float32, shape=())
+        self.steps = 0
         self.val_losses = []
         self.current_loss = 0.0
-        self.steps = 0
+        self.l1_norm_value = 0.0
+        self.regularization_value = 0.0
+        self.eval_l1_loss = 0.0
 
     def construct(self):
 
@@ -113,11 +121,25 @@ class Detecter(Core2.Core):
         self.keep_probs = []
 
     def network(self):
-        self.p = trans.Transfer(self.x, 'densenet201', pooling = None, vname = 'Transfer',
+        Initializer = 'He'
+        Activation = 'Gelu'
+        Regularization = False
+        Renormalization = True
+        SE = False
+        GrowthRate = 8
+        StemChannels = 32
+        prob = 1.0
+        GroupNum = 8
+        GroupNorm = False
+        DenseNums = [4, 4, 4, 4]
+        self.root = tf.image.resize_images(images = self.x,
+                                           size = [224, 224],
+                                           method=tf.image.ResizeMethod.BICUBIC,
+                                           align_corners=False)
+        self.p = trans.Transfer(self.root, 'densenet201', pooling = None, vname = 'Transfer',
                                 trainable = False)
-        self.y51 = self.p.get_output_tensor()
-        print(self.y51.shape)
-        self.y61 = Layers.pooling(x = self.y51,
+        self.y51_1 = self.p.get_output_tensor()
+        self.y61_1 = Layers.pooling(x = self.y51_1,
                                   ksize=[7, 7],
                                   strides=[7, 7],
                                   padding='SAME',
@@ -125,29 +147,131 @@ class Detecter(Core2.Core):
 
 
         # reshape
-        self.y71 = Layers.reshape_tensor(x = self.y61, shape = [1 * 1 * 1920])
+        self.y71_1 = Layers.reshape_tensor(x = self.y61_1, shape = [1 * 1 * 1920])
         # fnn
-        self.y72 = Outputs.output(x = self.y71,
+        self.y72_1 = Outputs.output(x = self.y71_1,
                                   InputSize = 1920,
                                   OutputSize = 15,
                                   Initializer = 'Xavier',
                                   BatchNormalization = False,
-                                  Regularization = True,
+                                  Regularization = False,
+                                  vname = 'Output_z1')
+        self.z1 = self.y72_1
+        self.attention = Layers.reshape_tensor(tf.multiply(255.0, tf.sigmoid(tf.reduce_mean(self.y51_1, 3))), [7,7,1])
+        self.attention_full_size = tf.image.resize_images(images = self.attention,
+                                                          size = [self.SIZE, self.SIZE],
+                                                          method=tf.image.ResizeMethod.BICUBIC,
+                                                          align_corners=False)
+        self.attention_image = Layers.concat(xs = [self.x, self.attention_full_size],
+                                             concat_type = 'Channel')
+
+        self.stem_bn = Layers.batch_normalization(x = self.attention_image,
+                                                  shape = self.CH + 1,
+                                                  vname = 'STEM_TOP_BN01',
+                                                  dim = [0, 1, 2],
+                                                  Renormalization = Renormalization,
+                                                  Training = self.istraining,
+                                                  rmax = self.rmax,
+                                                  dmax = self.dmax)
+        self.dense_stem = stem_cell(x = self.stem_bn,
+                                    InputNode = [self.SIZE, self.SIZE, self.CH+1],
+                                    Channels = StemChannels,
+                                    Initializer = Initializer,
+                                    vname = 'Stem',
+                                    regularization = Regularization,
+                                    Training = self.istraining)
+
+        ## Dense
+        self.densenet_output = densenet_template(x = self.dense_stem,
+                                                 root = self.stem_bn,
+                                                 Nums = [4, 4, 4, 4],
+                                                 Act = Activation,
+                                                 GrowthRate = GrowthRate,
+                                                 InputNode = [self.SIZE / 4, self.SIZE / 4, StemChannels],
+                                                 Strides = [1, 1, 1, 1],
+                                                 Renormalization = Renormalization,
+                                                 Regularization = Regularization,
+                                                 rmax = self.rmax,
+                                                 dmax = self.dmax,
+                                                 SE = SE,
+                                                 Training = self.istraining,
+                                                 GroupNorm = GroupNorm,
+                                                 GroupNum = GroupNum,
+                                                 vname = 'DenseNet')
+        self.y50 = self.densenet_output
+        self.y51_2 = SE_module(x = self.y50,
+                               InputNode = [self.SIZE / 64, self.SIZE / 64, StemChannels + 4 * (self.CH + 1) + GrowthRate * sum(DenseNums)],
+                               Act = Activation,
+                               Rate = 0.5,
+                               vname = 'TOP_SE')
+
+        self.y61_2 = Layers.pooling(x = self.y51_2,
+                                    ksize=[self.SIZE / 64, self.SIZE / 64],
+                                    strides=[self.SIZE / 64, self.SIZE / 64],
+                                    padding='SAME',
+                                    algorithm = 'Avg')
+
+        # reshape
+        self.y71_2 = Layers.reshape_tensor(x = self.y61_2, shape = [StemChannels + 4 * (self.CH + 1) + GrowthRate * sum(DenseNums)])
+        # fnn
+        self.y72_2 = Outputs.output(x = self.y71_2,
+                                    InputSize = StemChannels + 4 * (self.CH + 1) + GrowthRate * sum(DenseNums),
+                                    OutputSize = 15,
+                                    Initializer = 'Xavier',
+                                    BatchNormalization = False,
+                                    Regularization = False,
+                                    vname = 'Output_z2')
+        self.z2 = self.y72_2
+
+        self.y51_2_1 = tf.image.resize_images(images = self.y51_2,
+                                              size = [7, 7],
+                                              method=tf.image.ResizeMethod.BICUBIC,
+                                              align_corners=False)
+        self.y51 = Layers.concat(xs = [self.y51_1, self.y51_2_1], concat_type = 'Channel')
+        self.y61 = Layers.pooling(x = self.y51,
+                                    ksize=[self.SIZE / 64, self.SIZE / 64],
+                                    strides=[self.SIZE / 64, self.SIZE / 64],
+                                    padding='SAME',
+                                    algorithm = 'Avg')
+
+        # reshape
+        self.y71 = Layers.reshape_tensor(x = self.y61, shape = [StemChannels + 4 * (self.CH + 1) + GrowthRate * sum(DenseNums) + 1920])
+        # fnn
+        self.y72 = Outputs.output(x = self.y71,
+                                  InputSize = StemChannels + 4 * (self.CH + 1) + GrowthRate * sum(DenseNums) + 1920,
+                                  OutputSize = 15,
+                                  Initializer = 'Xavier',
+                                  BatchNormalization = False,
+                                  Regularization = False,
                                   vname = 'Output_z')
         self.z = self.y72
 
 
+
+
+
     def loss(self):
         diag_output_type = self.output_type if self.output_type.find('hinge') >= 0 else 'classified-sigmoid'
-        self.loss_function = Loss.loss_func(y = self.z,
+        self.loss_function1 = Loss.loss_func(y = self.z1,
                                              y_ = self.z_,
                                              regularization = self.regularization,
                                              regularization_type = self.regularization_type,
                                              output_type = diag_output_type)
-
-        # For Gear Mode (TBD)
-        self.loss_function += tf.reduce_mean(tf.abs(self.y71)) * self.l1_norm
+        self.loss_function2 = Loss.loss_func(y = self.z2,
+                                             y_ = self.z_,
+                                             regularization = self.regularization,
+                                             regularization_type = self.regularization_type,
+                                             output_type = diag_output_type)
+        self.loss_function3 = Loss.loss_func(y = self.z,
+                                             y_ = self.z_,
+                                             regularization = self.regularization,
+                                             regularization_type = self.regularization_type,
+                                             output_type = diag_output_type)
+        self.loss_function = self.loss_function1 + self.loss_function2 + self.loss_function3
         vs.variable_summary(self.loss_function, 'Loss', is_scalar = True)
+        vs.variable_summary(self.loss_function1, 'Loss1', is_scalar = True)
+        vs.variable_summary(self.loss_function2, 'Loss2', is_scalar = True)
+        vs.variable_summary(self.loss_function3, 'Loss3', is_scalar = True)
 
     # 学習
     def training(self, var_list = None, gradient_cliiping = True, clipping_norm = 1.0):
@@ -160,17 +284,28 @@ class Detecter(Core2.Core):
                                                         clipping_norm = clipping_norm)
         self.grad_op = self.optimizer.compute_gradients(self.loss_function)
 
+
     # 入出力ベクトルの配置
-    def make_feed_dict(self, prob, batch, is_update = False):
+    def make_feed_dict(self, prob, batch, is_Train = True, is_update = False):
+        if self.steps <= 5000:
+            rmax, dmax = 1.0, 0.0
+        else:
+            rmax = min(1.0 + 2.0 * float(self.steps - 5000.0) / 35000.0, 3.0)
+            dmax = min(5.0 * float(self.steps -5000.0) / 20000.0, 5.0)
+        if self.steps % 3000 == 0 and self.steps != 0 and is_update:
+            logger.debug("Before Learning Rate: %g" % self.learning_rate_value)
+            self.learning_rate_value = max(0.000001, self.learning_rate_value * 0.9)
+            logger.debug("After Learning Rate: %g" % self.learning_rate_value)
 
         feed_dict = {}
         feed_dict.setdefault(self.x, batch[0])
         feed_dict.setdefault(self.z_, batch[2])
         feed_dict.setdefault(self.learning_rate, self.learning_rate_value)
-        if self.steps % 3000 == 0 and self.steps != 0 and is_update:
-            logger.debug("Before Learning Rate: %g" % self.learning_rate_value)
-            self.learning_rate_value = max(0.000001, self.learning_rate_value * 0.9)
-            logger.debug("After Learning Rate: %g" % self.learning_rate_value)
+        feed_dict.setdefault(self.istraining, is_Train)
+        feed_dict.setdefault(self.rmax, rmax)
+        feed_dict.setdefault(self.dmax, dmax)
+        feed_dict.setdefault(self.regularization, self.regularization_value)
+        feed_dict.setdefault(self.l1_norm, self.l1_norm_value)
         i = 0
         for keep_prob in self.keep_probs:
             if prob:
@@ -194,7 +329,7 @@ class Detecter(Core2.Core):
             if i%self.log == 0 and i != 0:
                 # Train
                 self.p.change_phase(True)
-                feed_dict = self.make_feed_dict(prob = True, batch = batch)
+                feed_dict = self.make_feed_dict(prob = True, batch = batch, is_Train = True)
                 res = self.sess.run([self.accuracy_z, self.loss_function], feed_dict = feed_dict)
                 train_accuracy_z = res[0]
                 losses = res[1]
@@ -210,7 +345,7 @@ class Detecter(Core2.Core):
                 self.p.change_phase(False)
                 val_accuracy_y, val_accuracy_z, val_losses, test, prob = [], [], [], [], []
                 validation_batch = data.test.next_batch(self.batch, augment = False, batch_ratio = batch_ratio[i % len(batch_ratio)])
-                feed_dict_val = self.make_feed_dict(prob = True, batch = validation_batch)
+                feed_dict_val = self.make_feed_dict(prob = True, batch = validation_batch, is_Train = True)
                 res_val = self.sess.run([self.accuracy_z, self.loss_function], feed_dict = feed_dict_val)
                 val_accuracy_z = res_val[0]
                 val_losses = res_val[1]
@@ -241,7 +376,7 @@ class Detecter(Core2.Core):
                 s = e
 
             # 学習
-            feed_dict = self.make_feed_dict(prob = False, batch = batch, is_update = True)
+            feed_dict = self.make_feed_dict(prob = False, batch = batch, is_update = True, is_Train = True)
             if self.DP and i != 0:
                 self.dynamic_learning_rate(feed_dict)
             self.p.change_phase(True)
@@ -270,8 +405,15 @@ class Detecter(Core2.Core):
                    filenames = None, findings = None, roi_force = False):
         # Make feed dict for prediction
         self.p.change_phase(False)
-        # Make feed dict for prediction
-        feed_dict = {self.x : data}
+        if self.steps <= 5000:
+            rmax, dmax = 1.0, 0.0
+        else:
+            rmax = min(1.0 + 2.0 * float(self.steps - 5000.0) / 35000.0, 3.0)
+            dmax = min(5.0 * float(self.steps -5000.0) / 20000.0, 5.0)
+        feed_dict = {self.x : data,
+                     self.istraining : False,
+                     self.rmax : rmax,
+                     self.dmax : dmax}
         for keep_prob in self.keep_probs:
             feed_dict.setdefault(keep_prob['var'], 1.0)
 
