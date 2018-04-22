@@ -497,6 +497,9 @@ if __name__ == '__main__':
     for i in range(2):
         x = dataset.train.next_batch(4)
         print(x[1], x[2], x[3], x[4])
+        cv2.imshow('window', x[0][0])
+        cv2.waitKey(10000)
+        cv2.destroyAllWindows()
         y = dataset.test.next_batch(6)
         print(y[1], y[2], y[3], y[4])
         z = dataset.conf.next_batch(6)
