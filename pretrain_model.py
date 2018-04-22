@@ -130,7 +130,7 @@ class Detecter(Core2.Core):
         self.y72 = Outputs.output(x = self.y71,
                                   InputSize = 1920,
                                   OutputSize = 15,
-                                  Initializer = 'Xavier',
+                                  Initializer = 'Xavier_normal',
                                   BatchNormalization = False,
                                   Regularization = True,
                                   vname = 'Output_z')
@@ -245,11 +245,8 @@ class Detecter(Core2.Core):
             if self.DP and i != 0:
                 self.dynamic_learning_rate(feed_dict)
             self.p.change_phase(False)
-            if i%self.log == 0:
-                _, summary = self.sess.run([self.train_op, self.summary], feed_dict=feed_dict)
-                vs.add_log(writer = self.train_writer, summary = summary, step = i)
-            else:
-                _ = self.sess.run([self.train_op], feed_dict=feed_dict)
+            _, summary = self.sess.run([self.train_op, self.summary], feed_dict=feed_dict)
+            vs.add_log(writer = self.train_writer, summary = summary, step = i)
             self.steps += 1
         self.save_checkpoint()
 
