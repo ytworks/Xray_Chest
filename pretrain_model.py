@@ -133,7 +133,8 @@ class Detecter(Core2.Core):
                                   Initializer = 'Xavier_normal',
                                   BatchNormalization = False,
                                   Regularization = True,
-                                  vname = 'Output_z')
+                                  vname = 'Output_z',
+                                  Is_bias = False)
         self.z = self.y72
 
 
