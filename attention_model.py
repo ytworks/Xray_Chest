@@ -254,17 +254,17 @@ class Detecter(Core2.Core):
         diag_output_type = self.output_type if self.output_type.find('hinge') >= 0 else 'classified-sigmoid'
         self.loss_function1 = Loss.loss_func(y = self.z1,
                                              y_ = self.z_,
-                                             regularization = self.regularization,
+                                             regularization = 0.0,
                                              regularization_type = self.regularization_type,
                                              output_type = diag_output_type)
         self.loss_function2 = Loss.loss_func(y = self.z2,
                                              y_ = self.z_,
-                                             regularization = self.regularization,
+                                             regularization = 0.0,
                                              regularization_type = self.regularization_type,
                                              output_type = diag_output_type)
         self.loss_function3 = Loss.loss_func(y = self.z,
                                              y_ = self.z_,
-                                             regularization = self.regularization,
+                                             regularization = 0.0,
                                              regularization_type = self.regularization_type,
                                              output_type = diag_output_type)
         self.loss_function = self.loss_function1 + self.loss_function2 + self.loss_function3
