@@ -492,39 +492,22 @@ if __name__ == '__main__':
                              augment = True,
                              zca = True,
                              raw_img = True,
-                             model = 'inception')
+                             model = 'densenet')
     print(len(dataset.test.get_all_data()), len(dataset.test.get_all_data()[2]))
     for i in range(2):
         x = dataset.train.next_batch(4)
         print(x[1], x[2], x[3], x[4])
-        cv2.imshow('window', x[0][0])
-        cv2.waitKey(10000)
-        cv2.destroyAllWindows()
+        for j in range(4):
+            cv2.imshow('window', x[0][j])
+            cv2.waitKey(1000)
+            cv2.destroyAllWindows()
         y = dataset.test.next_batch(6)
         print(y[1], y[2], y[3], y[4])
         z = dataset.conf.next_batch(6)
         print(z[1], z[2], z[3], z[4])
-    for i in tqdm(range(100)):
-        y = dataset.test.next_batch(20)
-
-    # raw_img
-    dataset, _ = read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
-                             nih_supervised_datapath = "./Data/Open/Data_Entry_2017.csv",
-                             nih_boxlist = "./Data/Open/BBox_List_2017.csv",
-                             benchmark_datapath = ["./Data/CR_DATA/BenchMark/*/*.dcm"],
-                             benchmark_supervised_datapath = "./Data/CR_DATA/BenchMark/CLNDAT_EN.txt",
-                             kfold = 1,
-                             img_size = 512,
-                             augment = True,
-                             zca = True,
-                             raw_img = False)
-    print(len(dataset.test.get_all_data()), len(dataset.test.get_all_data()[2]))
-    for i in range(2):
-        x = dataset.train.next_batch(4)
-        print(x[1], x[2], x[3], x[4])
-        y = dataset.test.next_batch(6)
-        print(y[1], y[2], y[3], y[4])
-        z = dataset.conf.next_batch(6)
-        print(z[1], z[2], z[3], z[4])
+        for j in range(6):
+            cv2.imshow('window', z[0][j])
+            cv2.waitKey(1000)
+            cv2.destroyAllWindows()
     for i in tqdm(range(100)):
         y = dataset.test.next_batch(20)
