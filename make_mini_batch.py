@@ -27,7 +27,8 @@ class DataSet(object):
                  augment,
                  raw_img,
                  model,
-                 is_train):
+                 is_train,
+                 counts):
         self.size = size
         self.augment = augment
         self.zca = zca
@@ -50,6 +51,7 @@ class DataSet(object):
             self.pi = tf.keras.applications.densenet.preprocess_input
         else:
             self.pi = tf.keras.applications.vgg19.preprocess_input
+
 
         # 正常/異常のファイルの分類
         self.normal, self.abnormal = [], []
@@ -438,7 +440,8 @@ def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
                                   augment = augment,
                                   raw_img = raw_img,
                                   model = model,
-                                  is_train = True)
+                                  is_train = True,
+                                  counts = nih_count_train)
         logger.debug("Test Conf")
         data_sets.test  = DataSet(data = conf_data,
                                   label = conf_labels,
@@ -447,7 +450,8 @@ def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
                                   augment = augment,
                                   raw_img = raw_img,
                                   model = model,
-                                  is_train = False)
+                                  is_train = False,
+                                  counts = None)
     else:
         logger.debug("Training")
         data_sets.train = DataSet(data = nih_data_train,
@@ -457,7 +461,8 @@ def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
                                   augment = augment,
                                   raw_img = raw_img,
                                   model = model,
-                                  is_train = True)
+                                  is_train = True,
+                                  counts = nih_count_train)
         logger.debug("Test")
         data_sets.test = DataSet(data = nih_data_test,
                                  label = nih_labels_test,
@@ -466,7 +471,8 @@ def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
                                  augment = augment,
                                  raw_img = raw_img,
                                  model = model,
-                                 is_train = False)
+                                 is_train = False,
+                                 counts = None)
         logger.debug("Test Conf")
         data_sets.conf  = DataSet(data = conf_data,
                                   label = conf_labels,
@@ -475,7 +481,8 @@ def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
                                   augment = augment,
                                   raw_img = raw_img,
                                   model = model,
-                                  is_train = False)
+                                  is_train = False,
+                                  counts = None)
 
     data_sets.train_summary = nih_count
     return data_sets, label_def

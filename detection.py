@@ -45,7 +45,8 @@ class Detecter(Core2.Core):
                  checkpoint = './Storages/Core.ckpt',
                  init = True,
                  size = 256,
-                 l1_norm = 0.1):
+                 l1_norm = 0.1,
+                 step = 0):
         super(Detecter, self).__init__(output_type = output_type,
                                        epoch = epoch,
                                        batch = batch,
@@ -67,13 +68,16 @@ class Detecter(Core2.Core):
         self.dmax = tf.placeholder(tf.float32, shape=())
         #self.rmax = tf.placeholder_with_default(1.0, shape=())
         #self.dmax = tf.placeholder_with_default(0.0, shape=())
-        self.steps = 0
+        self.steps = step
         self.val_losses = []
         self.current_loss = 0.0
         self.l1_norm_value = 0.0
         self.regularization_value = 0.0
         self.eval_l1_loss = 0.0
-
+        for i in range(self.steps):
+            if i != 0 and i % 3000 == 0:
+                self.learning_rate_value = max(0.000001, self.learning_rate_value * 0.9)
+        logger.info("start step %g, learning_rate %g" % (self.steps, self.learning_rate_value))
 
     def construct(self):
 
