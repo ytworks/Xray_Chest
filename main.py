@@ -7,7 +7,6 @@ from tqdm import tqdm
 import os
 import csv
 import argparse
-import gc
 import ConfigParser as cp
 logger = getLogger(__name__)
 sh = StreamHandler()
@@ -172,7 +171,7 @@ def get_results(outfile, testdata, batch, obj, roi, label_def,
                               ]
                     writer.writerow(record)
                 ts, nums, filenames = [], [], []
-                gc.collect()
+                tf.keras.backend.clear_session()
 
 
 if __name__ == '__main__':
