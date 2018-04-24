@@ -8,6 +8,7 @@ import os
 import csv
 import argparse
 import ConfigParser as cp
+import tensorflow as tf
 logger = getLogger(__name__)
 sh = StreamHandler()
 logger.addHandler(sh)
