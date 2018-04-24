@@ -139,16 +139,17 @@ def get_results(outfile, testdata, batch, obj, roi, label_def,
     with open(outfile, "w") as f:
         writer = csv.writer(f)
         ts, nums, filenames = [], [], []
+        pred_func = obj.prediction
         for i, t in enumerate(testdata[0]):
             ts.append(img_reader(t, augment = False)[0])
             filenames.append(t)
             nums.append(i)
             if len(ts) == batch or len(testdata[0]) == i + 1:
                 findings = [testdata[4][num] for num in nums]
-                x, y = obj.prediction(data = ts, roi = roi,
-                                      label_def = label_def, save_dir = './Pic',
-                                      filenames = filenames,
-                                      findings = findings)
+                x, y = pred_func(data = ts, roi = roi,
+                                 label_def = label_def, save_dir = './Pic',
+                                 filenames = filenames,
+                                 findings = findings)
                 for j, num in enumerate(nums):
                     print(i, j, num)
                     print("File name:", testdata[3][num])
