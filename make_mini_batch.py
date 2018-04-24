@@ -46,6 +46,8 @@ class DataSet(object):
             self.pi = tf.keras.applications.resnet50.preprocess_input
         elif model == 'inception':
             self.pi = tf.keras.applications.inception_v3.preprocess_input
+        elif model == 'densenet':
+            self.pi = tf.keras.applications.densenet.preprocess_input
         else:
             self.pi = tf.keras.applications.vgg19.preprocess_input
 
@@ -90,13 +92,13 @@ class DataSet(object):
         # flip
         img = self.flip(img = img)
         # rotation
-        if np.random.rand() >= 0.9:
-            img = self.rotation(img, rot = random.choice([0, 90, 180, 270]))
-            img = img.reshape((img.shape[0], img.shape[1], 1))
+        #if np.random.rand() >= 0.9:
+        #    img = self.rotation(img, rot = random.choice([0, 90, 180, 270]))
+        #    img = img.reshape((img.shape[0], img.shape[1], 1))
         # Shift
         img = self.shift(img = img, move_x = 0.05, move_y = 0.05)
         # small rotation
-        if np.random.rand() >= 0.8:
+        if np.random.rand() >= 0.7:
             img = self.rotation(img, rot = 15.0 * (2.0 * random.random() - 1.0))
             img = img.reshape((img.shape[0], img.shape[1], 1))
         return img
@@ -118,10 +120,10 @@ class DataSet(object):
 
 
     def flip(self,img):
-        if np.random.rand() >= 0.9:
-            img = cv2.flip(img, 0)
-            img = img.reshape((img.shape[0], img.shape[1], 1))
-        if np.random.rand() >= 0.9:
+        #if np.random.rand() >= 0.9:
+        #    img = cv2.flip(img, 0)
+        #    img = img.reshape((img.shape[0], img.shape[1], 1))
+        if np.random.rand() >= 0.7:
             img = cv2.flip(img, 1)
             img = img.reshape((img.shape[0], img.shape[1], 1))
         return img
@@ -133,7 +135,7 @@ class DataSet(object):
         return cv2.warpAffine(img, affine_matrix, size, flags=cv2.INTER_LINEAR)
 
     def shift(self, img, move_x = 0.1, move_y = 0.1):
-        if np.random.rand() >= 0.8:
+        if np.random.rand() >= 0.7:
             size = tuple(np.array([img.shape[0], img.shape[1]]))
             mx = int(img.shape[0] * move_x * random.random())
             my = int(img.shape[1] * move_y * random.random())
@@ -490,36 +492,22 @@ if __name__ == '__main__':
                              augment = True,
                              zca = True,
                              raw_img = True,
-                             model = 'inception')
+                             model = 'densenet')
     print(len(dataset.test.get_all_data()), len(dataset.test.get_all_data()[2]))
     for i in range(2):
         x = dataset.train.next_batch(4)
         print(x[1], x[2], x[3], x[4])
+        for j in range(4):
+            cv2.imshow('window', x[0][j])
+            cv2.waitKey(1000)
+            cv2.destroyAllWindows()
         y = dataset.test.next_batch(6)
         print(y[1], y[2], y[3], y[4])
         z = dataset.conf.next_batch(6)
         print(z[1], z[2], z[3], z[4])
-    for i in tqdm(range(100)):
-        y = dataset.test.next_batch(20)
-
-    # raw_img
-    dataset, _ = read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
-                             nih_supervised_datapath = "./Data/Open/Data_Entry_2017.csv",
-                             nih_boxlist = "./Data/Open/BBox_List_2017.csv",
-                             benchmark_datapath = ["./Data/CR_DATA/BenchMark/*/*.dcm"],
-                             benchmark_supervised_datapath = "./Data/CR_DATA/BenchMark/CLNDAT_EN.txt",
-                             kfold = 1,
-                             img_size = 512,
-                             augment = True,
-                             zca = True,
-                             raw_img = False)
-    print(len(dataset.test.get_all_data()), len(dataset.test.get_all_data()[2]))
-    for i in range(2):
-        x = dataset.train.next_batch(4)
-        print(x[1], x[2], x[3], x[4])
-        y = dataset.test.next_batch(6)
-        print(y[1], y[2], y[3], y[4])
-        z = dataset.conf.next_batch(6)
-        print(z[1], z[2], z[3], z[4])
+        for j in range(6):
+            cv2.imshow('window', z[0][j])
+            cv2.waitKey(1000)
+            cv2.destroyAllWindows()
     for i in tqdm(range(100)):
         y = dataset.test.next_batch(20)
