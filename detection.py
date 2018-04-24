@@ -95,7 +95,7 @@ class Detecter(Core2.Core):
             self.accuracy_z = tf.sqrt(tf.reduce_mean(tf.multiply(self.z - self.z_, self.z - self.z_)))
         else:
             self.accuracy_z = tf.sqrt(tf.reduce_mean(tf.multiply(tf.sigmoid(self.z) -self.z_, tf.sigmoid(self.z) -self.z_)))
-        vs.variable_summary(self.loss_function, 'Accuracy', is_scalar = True)
+        vs.variable_summary(self.accuracy_z, 'Accuracy', is_scalar = True)
 
         logger.debug("06: TF Accuracy measure definition done")
         # セッションの定義
