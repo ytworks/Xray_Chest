@@ -142,7 +142,7 @@ def get_results(outfile, testdata, batch, obj, roi, label_def,
             ts.append(img_reader(t, augment = False)[0])
             filenames.append(t)
             nums.append(i)
-            if len(ts) == batch:
+            if len(ts) == batch or len(testdata[0]) == i + 1:
                 findings = [testdata[4][num] for num in nums]
                 x, y = obj.prediction(data = ts, roi = roi,
                                       label_def = label_def, save_dir = './Pic',
