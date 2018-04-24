@@ -193,6 +193,7 @@ class Detecter(Core2.Core):
                                   Regularization = True,
                                   vname = 'Output_z')
         self.z = self.y72
+        self.logit = tf.sigmoid(self.z)
 
 
     def loss(self):
@@ -353,7 +354,7 @@ class Detecter(Core2.Core):
             result_z = self.sess.run(2.0 * self.z - 1.0, feed_dict = feed_dict)
         else:
             #result_y = self.sess.run(tf.nn.softmax(self.y), feed_dict = feed_dict)
-            result_z = self.sess.run(tf.sigmoid(self.z), feed_dict = feed_dict)
+            result_z = self.sess.run(self.logit, feed_dict = feed_dict)
         result_y = [[1, 0] for i in range(len(result_z))]
         if not roi:
             return result_y, result_z
