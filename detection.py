@@ -75,7 +75,7 @@ class Detecter(Core2.Core):
         self.regularization_value = 0.0
         self.eval_l1_loss = 0.0
         for i in range(self.steps):
-            if i != 0 and i % 3000 == 0:
+            if i != 0 and i % 9000 == 0:
                 self.learning_rate_value = max(0.000001, self.learning_rate_value * 0.9)
         logger.info("start step %g, learning_rate %g" % (self.steps, self.learning_rate_value))
 
@@ -232,7 +232,7 @@ class Detecter(Core2.Core):
         else:
             rmax = min(1.0 + 2.0 * float(self.steps - 5000.0) / 35000.0, 3.0)
             dmax = min(5.0 * float(self.steps -5000.0) / 20000.0, 5.0)
-        if self.steps % 3000 == 0 and self.steps != 0 and is_update:
+        if self.steps % 9000 == 0 and self.steps != 0 and is_update:
             logger.debug("Before Learning Rate: %g" % self.learning_rate_value)
             self.learning_rate_value = max(0.000001, self.learning_rate_value * 0.9)
             logger.debug("After Learning Rate: %g" % self.learning_rate_value)
