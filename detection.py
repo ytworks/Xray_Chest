@@ -184,6 +184,7 @@ class Detecter(Core2.Core):
 
         # reshape
         self.y71 = Layers.reshape_tensor(x = self.y61, shape = [StemChannels + 12 +GrowthRate * 98])
+        vs.variable_summary(self.y71, 'Features')
         self.y71_d = Layers.dropout(x = self.y71,
                                     keep_probs = self.keep_probs,
                                     training_prob = prob,
