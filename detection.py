@@ -74,10 +74,11 @@ class Detecter(Core2.Core):
         self.l1_norm_value = 0.0
         self.regularization_value = 0.0
         self.eval_l1_loss = 0.0
-        for i in range(self.steps):
-            if i != 0 and i % 9000 == 0:
-                self.learning_rate_value = max(0.000001, self.learning_rate_value * 0.9)
         self.dumping_rate_period = 12000
+        for i in range(self.steps):
+            if i != 0 and i % self.dumping_rate_period == 0:
+                self.learning_rate_value = max(0.000001, self.learning_rate_value * 0.9)
+
         logger.info("start step %g, learning_rate %g" % (self.steps, self.learning_rate_value))
 
     def construct(self):
