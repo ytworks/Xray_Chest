@@ -25,6 +25,7 @@ def write_fig(test, prob, figname):
     pl.title('ROC')
     pl.legend(loc="lower right")
     pl.savefig("./Result/"+figname)
+    return roc_auc
 
 p = sys.argv
 
@@ -40,11 +41,15 @@ for row in f:
     for i in range(len(diags)):
         test_diag[i].append(int(float(row[i + 15 + 4])))
         prob_diag[i].append(float(row[i + 4]))
+rocs = []
 for i, n in enumerate(diags):
     try:
         print n,
-        write_fig(test_diag[i], prob_diag[i], n + ".png")
+        roc = write_fig(test_diag[i], prob_diag[i], n + ".png")
+        if not n == 'No Findings':
+            rocs.append(roc)
     except:
         print n, "error"
+print("average:", np.mean(rocs))
 
 #write_fig(test, prob, "judgement.png")
