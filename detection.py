@@ -74,7 +74,7 @@ class Detecter(Core2.Core):
         self.l1_norm_value = 0.0
         self.regularization_value = 0.0
         self.eval_l1_loss = 0.0
-        self.dumping_rate_period = 12000
+        self.dumping_rate_period = 9000
         for i in range(self.steps):
             if i != 0 and i % self.dumping_rate_period == 0:
                 self.learning_rate_value = max(0.000001, self.learning_rate_value * 0.9)
@@ -264,7 +264,7 @@ class Detecter(Core2.Core):
         roc_auc = auc(fpr, tpr)
         return roc_auc
 
-    def learning(self, data, save_at_log = False, validation_batch_num = 1, batch_ratio = [0.2, 0.3, 0.4, 0.5, 0.6]):
+    def learning(self, data, save_at_log = False, validation_batch_num = 1, batch_ratio = [0.2, 0.3, 0.4]):
         s = time.time()
         for i in range(self.epoch):
             batch = data.train.next_batch(self.batch, batch_ratio = batch_ratio[i % len(batch_ratio)])
