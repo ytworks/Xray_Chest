@@ -64,26 +64,8 @@ def main():
     outfile = config.get('OutputParams', 'outfile')
     mode = config.get('Mode', 'running_mode')
     step = config.getint('DLParams', 'step')
+    split_mode = config.get('Mode', 'split_mode')
 
-
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-size')
-    parser.add_argument('-augment')
-    parser.add_argument('-checkpoint')
-    parser.add_argument('-lr')
-    parser.add_argument('-dlr')
-    parser.add_argument('-rtype')
-    parser.add_argument('-rr')
-    parser.add_argument('-epoch')
-    parser.add_argument('-batch')
-    parser.add_argument('-l1_norm')
-    parser.add_argument('-log')
-    parser.add_argument('-outfile')
-    parser.add_argument('-output_type')
-    parser.add_argument('-dataset')
-    parser.add_argument('-roi')
-    parser.add_argument('-mode', required = True)
     if mode in ['learning']:
         init = True
     elif mode in ['update', 'prediction']:
@@ -97,7 +79,7 @@ def main():
                              nih_boxlist = "./Data/Open/BBox_List_2017.csv",
                              benchmark_datapath = ["./Data/CR_DATA/BenchMark/*/*.dcm"],
                              benchmark_supervised_datapath = "./Data/CR_DATA/BenchMark/CLNDAT_EN.txt",
-                             kfold = 1,
+                             split_mode = split_mode,
                              img_size = size,
                              augment = augment,
                              raw_img = True,
