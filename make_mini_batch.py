@@ -8,6 +8,7 @@ import csv
 import numpy as np
 import cv2
 import time
+from sklearn.model_selection import train_test_split
 import tensorflow as tf
 from DICOMReader.DICOMReader import dicom_to_np
 from preprocessing_tool import preprocessing as PP
@@ -380,6 +381,44 @@ def diagnosis_map(diags, labels):
                 mapper[d].append(i)
     return mapper
 
+def split_data(path, split_file_dir, mode = 'patient-wise'):
+    files, patients = [], {}
+    # ファイルの読み込み
+    with open(path, 'rU') as f:
+        lines = csv.reader(f)
+        lines.next()
+        for line in lines:
+            patient = line[0].split('_')[0]
+            files.append({'file' : line[0], 'patient' : patient})
+            patients.setdefault(patient, True)
+        patients = [k for k in patients.keys()]
+    if mode == 'random':
+        train_list, test_list = train_test_split(files, test_size=0.3)
+        with open(split_file_dir + '/train_list.csv', 'w') as f:
+            writer = csv.writer(f)
+            for filename in train_list:
+                writer.writerow([filename['file']])
+        with open(split_file_dir + '/test_list.csv', 'w') as f:
+            writer = csv.writer(f)
+            for filename in test_list:
+                writer.writerow([filename['file']])
+    elif mode == 'patient-wise':
+        train_list, test_list = train_test_split(patients, test_size=0.3)
+        f1 = open(split_file_dir + '/train_list.csv', 'w')
+        f2 = open(split_file_dir + '/test_list.csv', 'w')
+        train_file = csv.writer(f1)
+        test_file = csv.writer(f2)
+        for filename in files:
+            if filename['patient'] in train_list:
+                train_file.writerow([filename['file']])
+            if filename['patient'] in test_list:
+                test_file.writerow([filename['file']])
+        f1.close()
+        f2.close()
+    else:
+        return None, None
+
+    return split_file_dir + '/train_list.csv', split_file_dir + '/test_list.csv'
 
 
 def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
@@ -389,6 +428,7 @@ def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
                    nih_test_list = "./Data/Open/test_list.txt",
                    benchmark_datapath = ["./Data/CR_DATA/BenchMark/*/*.dcm"],
                    benchmark_supervised_datapath = "./Data/CR_DATA/BenchMark/CLNDAT_EN.txt",
+                   split_file_dir = "./Data",
                    split_mode = 'official',
                    img_size = 512,
                    augment = True,
@@ -400,7 +440,8 @@ def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
         pass
     data_sets = DataSets()
 
-
+    # データセットの分割
+    train_set, test_set = split_data(nih_supervised_datapath, split_file_dir, split_mode)
 
     # 学会データセットのファイルパスを読み込む
     conf_data = get_filepath(benchmark_datapath)
@@ -412,15 +453,23 @@ def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
     nih_data = get_filepath(nih_datapath)
 
     # NIHの教師データをトレーニングセットのみ読み込む
-    nih_labels_train, nih_count_train, label_def_train = make_supevised_data_for_nih(nih_supervised_datapath,
-                                                                                     nih_train_list)
+    if train_set == None:
+        nih_labels_train, nih_count_train, label_def_train = make_supevised_data_for_nih(nih_supervised_datapath,
+                                                                                         nih_train_list)
+    else:
+        nih_labels_train, nih_count_train, label_def_train = make_supevised_data_for_nih(nih_supervised_datapath,
+                                                                                         train_set)
 
     # NIHのデータセットのファイルパスを読み込む
     nih_data_train = get_filepath(nih_datapath, nih_labels_train)
 
     # NIHの教師データをテストセットのみ読み込む
-    nih_labels_test, nih_count_test, label_def_test = make_supevised_data_for_nih(nih_supervised_datapath,
-                                                                                  nih_test_list)
+    if test_set == None:
+        nih_labels_test, nih_count_test, label_def_test = make_supevised_data_for_nih(nih_supervised_datapath,
+                                                                                      nih_test_list)
+    else:
+        nih_labels_test, nih_count_test, label_def_test = make_supevised_data_for_nih(nih_supervised_datapath,
+                                                                                      test_set)
 
     # NIHのデータセットのファイルパスを読み込む
     nih_data_test = get_filepath(nih_datapath, nih_labels_test)
@@ -494,7 +543,7 @@ if __name__ == '__main__':
                              nih_boxlist = "./Data/Open/BBox_List_2017.csv",
                              benchmark_datapath = ["./Data/CR_DATA/BenchMark/*/*.dcm"],
                              benchmark_supervised_datapath = "./Data/CR_DATA/BenchMark/CLNDAT_EN.txt",
-                             split_mode = 'official',
+                             split_mode = 'random',
                              img_size = 512,
                              augment = True,
                              zca = True,
