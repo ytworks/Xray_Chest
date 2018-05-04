@@ -182,9 +182,7 @@ class DataSet(object):
         return [imgs, np.array(labels1), np.array(labels0), filenames, raw_data]
 
 
-    def img_reader(self, f, augment = True):
-        root, ext = os.path.splitext(f)
-        filename = os.path.basename(f)
+    def img_process(self, f, ext, augment = True):
         # 画像の読み込み
         if ext == ".dcm":
             img, bits = dicom_to_np(f)
@@ -195,9 +193,6 @@ class DataSet(object):
             img = cv2.imread(f, cv2.IMREAD_GRAYSCALE)
         else:
             img = []
-
-        # 教師データの読み込み
-        label = self.labels[filename]['label']
 
         # データオーギュメンテーション
         if augment:
@@ -220,6 +215,15 @@ class DataSet(object):
             img = np.stack((img, img, img), axis = -1)
             #img = cv2.applyColorMap(img.astype(np.uint8), cv2.COLORMAP_JET)
             img = self.pi(img.astype(np.float32))
+        return img
+
+
+    def img_reader(self, f, augment = True):
+        root, ext = os.path.splitext(f)
+        filename = os.path.basename(f)
+        # 教師データの読み込み
+        label = self.labels[filename]['label']
+        img = self.img_process(f, ext, augment)
 
         return img, label[0], label[1], filename, self.labels[filename]['raw']
 

@@ -1,71 +1,89 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from make_mini_batch import read_data_sets
-from detecter_original_v2 import Detecter
+from detection import Detecter
 from logging import getLogger, StreamHandler
 from tqdm import tqdm
 import os
 import csv
 import argparse
+import ConfigParser as cp
+import cv2
 logger = getLogger(__name__)
 sh = StreamHandler()
 logger.addHandler(sh)
 logger.setLevel(10)
 
+def show_config(ini):
+    '''
+    設定ファイルの全ての内容を表示する（コメントを除く）
+    '''
+    for section in ini.sections():
+        print '[%s]' % (section)
+        show_section(ini, section)
+
+
+def show_section(ini, section):
+    '''
+    設定ファイルの特定のセクションの内容を表示する
+    '''
+    for key in ini.options(section):
+        show_key(ini, section, key)
+
+def show_key(ini, section, key):
+    '''
+    設定ファイルの特定セクションの特定のキー項目（プロパティ）の内容を表示する
+    '''
+    print '%s.%s =%s' % (section, key, ini.get(section, key))
+
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-size')
-    parser.add_argument('-augment')
-    parser.add_argument('-checkpoint')
-    parser.add_argument('-lr')
-    parser.add_argument('-dlr')
-    parser.add_argument('-rtype')
-    parser.add_argument('-rr')
-    parser.add_argument('-epoch')
-    parser.add_argument('-batch')
-    parser.add_argument('-l1_norm')
-    parser.add_argument('-log')
+    parser.add_argument('-config')
     parser.add_argument('-file')
-    parser.add_argument('-output_type')
-    parser.add_argument('-dataset')
-    parser.add_argument('-roi')
-    parser.add_argument('-mode', required = True)
     args = parser.parse_args()
-    size = int(args.size) if args.size != None else 256
-    augment = True if args.augment == 'True' else False
-    checkpoint = args.checkpoint if args.checkpoint != None else './Model/Core.ckpt'
-    lr = float(args.lr) if args.lr != None else 0.0001
-    dlr = float(args.dlr) if args.dlr != None else 0.0
-    rtype = args.rtype if args.rtype != None else 'L2'
-    rr = float(args.rr) if args.rr != None else 0.0
-    l1_norm = float(args.l1_norm) if args.l1_norm != None else 0.0
-    epoch = int(args.epoch) if args.epoch != None else 2
-    batch = int(args.batch) if args.batch != None else 5
-    log = 1
-    roi = False if args.roi == None else True
-    output_type = args.output_type if args.output_type != None else 'classified-softmax'
     filename = args.file
+    print(filename)
 
-    print("read dataset")
+
+    config = cp.SafeConfigParser()
+    config.read(args.config)
+    show_config(config)
+    size = config.getint('DLParams', 'size')
+    augment = config.getboolean('DLParams', 'augmentation')
+    checkpoint = config.get('OutputParams', 'checkpoint')
+    lr = config.getfloat('DLParams', 'learning_rate')
+    dlr = config.getfloat('DLParams', 'dynamic_learning_rate')
+    rtype = config.get('DLParams', 'regularization_type')
+    rr = config.getfloat('DLParams', 'regularization_rate')
+    l1_norm = config.getfloat('DLParams', 'l1_normalization')
+    epoch = config.getint('DLParams', 'epoch')
+    batch = config.getint('DLParams', 'batch')
+    log = config.getint('LogParams', 'log_period')
+    ds = config.get('InputParams', 'dataset')
+    roi = config.getboolean('Mode', 'roi_prediction')
+    output_type = config.get('DLParams', 'output_type')
+    outfile = config.get('OutputParams', 'outfile')
+    mode = config.get('Mode', 'running_mode')
+    step = config.getint('DLParams', 'step')
+    split_mode = config.get('Mode', 'split_mode')
+
+
     dataset, label_def = read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
                              nih_supervised_datapath = "./Data/Open/Data_Entry_2017_v2.csv",
                              nih_boxlist = "./Data/Open/BBox_List_2017.csv",
                              benchmark_datapath = ["./Data/CR_DATA/BenchMark/*/*.dcm"],
                              benchmark_supervised_datapath = "./Data/CR_DATA/BenchMark/CLNDAT_EN.txt",
-                             kfold = 1,
                              img_size = size,
                              augment = augment,
                              raw_img = True,
-                             model = 'resnet',
+                             model = 'densenet',
                              zca = False)
-    print("label definitions:")
-    print(label_def)
 
-    if args.mode in ['learning']:
+    if mode in ['learning']:
         init = True
-    elif args.mode in ['update', 'prediction']:
+    elif mode in ['update', 'prediction']:
         init = False
     else:
         init = False
@@ -86,11 +104,15 @@ def main():
 
     testdata = dataset.test.get_all_files()
     findings = [testdata[4][0]]
-    ts = [dataset.test.img_reader(filename, augment = False)[0]]
+    root, ext = os.path.splitext(filename)
+    img = dataset.test.img_process(filename, ext, augment = False)
+    print(img.shape)
+    ts = [img]
     x, y = obj.prediction(data = ts, roi = roi,
                           label_def = label_def, save_dir = './Pic',
                           filenames = [filename],
-                          findings = findings)
+                          findings = findings,
+                          roi_force = True)
     print("File name:", filename)
     print(y[0])
 
