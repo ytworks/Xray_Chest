@@ -45,7 +45,8 @@ class Detecter(Core2.Core):
                  checkpoint = './Storages/Core.ckpt',
                  init = True,
                  size = 256,
-                 l1_norm = 0.1):
+                 l1_norm = 0.1,
+                 step = 0):
         super(Detecter, self).__init__(output_type = output_type,
                                        epoch = epoch,
                                        batch = batch,
@@ -67,13 +68,18 @@ class Detecter(Core2.Core):
         self.dmax = tf.placeholder(tf.float32, shape=())
         #self.rmax = tf.placeholder_with_default(1.0, shape=())
         #self.dmax = tf.placeholder_with_default(0.0, shape=())
-        self.steps = 0
+        self.steps = step
         self.val_losses = []
         self.current_loss = 0.0
         self.l1_norm_value = 0.0
         self.regularization_value = 0.0
         self.eval_l1_loss = 0.0
+        self.dumping_rate_period = 9000
+        for i in range(self.steps):
+            if i != 0 and i % self.dumping_rate_period == 0:
+                self.learning_rate_value = max(0.000001, self.learning_rate_value * 0.9)
 
+        logger.info("start step %g, learning_rate %g" % (self.steps, self.learning_rate_value))
 
     def construct(self):
 
@@ -180,6 +186,7 @@ class Detecter(Core2.Core):
 
         # reshape
         self.y71 = Layers.reshape_tensor(x = self.y61, shape = [StemChannels + 12 +GrowthRate * 98])
+        vs.variable_summary(self.y71, 'Features')
         self.y71_d = Layers.dropout(x = self.y71,
                                     keep_probs = self.keep_probs,
                                     training_prob = prob,
@@ -228,7 +235,7 @@ class Detecter(Core2.Core):
         else:
             rmax = min(1.0 + 2.0 * float(self.steps - 5000.0) / 35000.0, 3.0)
             dmax = min(5.0 * float(self.steps -5000.0) / 20000.0, 5.0)
-        if self.steps % 3000 == 0 and self.steps != 0 and is_update:
+        if self.steps % self.dumping_rate_period == 0 and self.steps != 0 and is_update:
             logger.debug("Before Learning Rate: %g" % self.learning_rate_value)
             self.learning_rate_value = max(0.000001, self.learning_rate_value * 0.9)
             logger.debug("After Learning Rate: %g" % self.learning_rate_value)
@@ -257,7 +264,7 @@ class Detecter(Core2.Core):
         roc_auc = auc(fpr, tpr)
         return roc_auc
 
-    def learning(self, data, save_at_log = False, validation_batch_num = 1, batch_ratio = [0.2, 0.3, 0.4, 0.5, 0.6]):
+    def learning(self, data, save_at_log = False, validation_batch_num = 1, batch_ratio = [0.2, 0.3, 0.4]):
         s = time.time()
         for i in range(self.epoch):
             batch = data.train.next_batch(self.batch, batch_ratio = batch_ratio[i % len(batch_ratio)])

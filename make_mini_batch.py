@@ -8,6 +8,7 @@ import csv
 import numpy as np
 import cv2
 import time
+from sklearn.model_selection import train_test_split
 import tensorflow as tf
 from DICOMReader.DICOMReader import dicom_to_np
 from preprocessing_tool import preprocessing as PP
@@ -27,7 +28,8 @@ class DataSet(object):
                  augment,
                  raw_img,
                  model,
-                 is_train):
+                 is_train,
+                 counts):
         self.size = size
         self.augment = augment
         self.zca = zca
@@ -50,6 +52,7 @@ class DataSet(object):
             self.pi = tf.keras.applications.densenet.preprocess_input
         else:
             self.pi = tf.keras.applications.vgg19.preprocess_input
+
 
         # 正常/異常のファイルの分類
         self.normal, self.abnormal = [], []
@@ -92,9 +95,9 @@ class DataSet(object):
         # flip
         img = self.flip(img = img)
         # rotation
-        #if np.random.rand() >= 0.9:
-        #    img = self.rotation(img, rot = random.choice([0, 90, 180, 270]))
-        #    img = img.reshape((img.shape[0], img.shape[1], 1))
+        if np.random.rand() >= 0.9:
+            img = self.rotation(img, rot = random.choice([0, 90, 180, 270]))
+            img = img.reshape((img.shape[0], img.shape[1], 1))
         # Shift
         img = self.shift(img = img, move_x = 0.05, move_y = 0.05)
         # small rotation
@@ -120,9 +123,9 @@ class DataSet(object):
 
 
     def flip(self,img):
-        #if np.random.rand() >= 0.9:
-        #    img = cv2.flip(img, 0)
-        #    img = img.reshape((img.shape[0], img.shape[1], 1))
+        if np.random.rand() >= 0.9:
+            img = cv2.flip(img, 0)
+            img = img.reshape((img.shape[0], img.shape[1], 1))
         if np.random.rand() >= 0.7:
             img = cv2.flip(img, 1)
             img = img.reshape((img.shape[0], img.shape[1], 1))
@@ -179,9 +182,7 @@ class DataSet(object):
         return [imgs, np.array(labels1), np.array(labels0), filenames, raw_data]
 
 
-    def img_reader(self, f, augment = True):
-        root, ext = os.path.splitext(f)
-        filename = os.path.basename(f)
+    def img_process(self, f, ext, augment = True):
         # 画像の読み込み
         if ext == ".dcm":
             img, bits = dicom_to_np(f)
@@ -192,9 +193,6 @@ class DataSet(object):
             img = cv2.imread(f, cv2.IMREAD_GRAYSCALE)
         else:
             img = []
-
-        # 教師データの読み込み
-        label = self.labels[filename]['label']
 
         # データオーギュメンテーション
         if augment:
@@ -217,6 +215,15 @@ class DataSet(object):
             img = np.stack((img, img, img), axis = -1)
             #img = cv2.applyColorMap(img.astype(np.uint8), cv2.COLORMAP_JET)
             img = self.pi(img.astype(np.float32))
+        return img
+
+
+    def img_reader(self, f, augment = True):
+        root, ext = os.path.splitext(f)
+        filename = os.path.basename(f)
+        # 教師データの読み込み
+        label = self.labels[filename]['label']
+        img = self.img_process(f, ext, augment)
 
         return img, label[0], label[1], filename, self.labels[filename]['raw']
 
@@ -378,6 +385,44 @@ def diagnosis_map(diags, labels):
                 mapper[d].append(i)
     return mapper
 
+def split_data(path, split_file_dir, mode = 'patient-wise'):
+    files, patients = [], {}
+    # ファイルの読み込み
+    with open(path, 'rU') as f:
+        lines = csv.reader(f)
+        lines.next()
+        for line in lines:
+            patient = line[0].split('_')[0]
+            files.append({'file' : line[0], 'patient' : patient})
+            patients.setdefault(patient, True)
+        patients = [k for k in patients.keys()]
+    if mode == 'random':
+        train_list, test_list = train_test_split(files, test_size=0.3)
+        with open(split_file_dir + '/train_list.csv', 'w') as f:
+            writer = csv.writer(f)
+            for filename in train_list:
+                writer.writerow([filename['file']])
+        with open(split_file_dir + '/test_list.csv', 'w') as f:
+            writer = csv.writer(f)
+            for filename in test_list:
+                writer.writerow([filename['file']])
+    elif mode == 'patient-wise':
+        train_list, test_list = train_test_split(patients, test_size=0.3)
+        f1 = open(split_file_dir + '/train_list.csv', 'w')
+        f2 = open(split_file_dir + '/test_list.csv', 'w')
+        train_file = csv.writer(f1)
+        test_file = csv.writer(f2)
+        for filename in files:
+            if filename['patient'] in train_list:
+                train_file.writerow([filename['file']])
+            if filename['patient'] in test_list:
+                test_file.writerow([filename['file']])
+        f1.close()
+        f2.close()
+    else:
+        return None, None
+
+    return split_file_dir + '/train_list.csv', split_file_dir + '/test_list.csv'
 
 
 def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
@@ -387,7 +432,8 @@ def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
                    nih_test_list = "./Data/Open/test_list.txt",
                    benchmark_datapath = ["./Data/CR_DATA/BenchMark/*/*.dcm"],
                    benchmark_supervised_datapath = "./Data/CR_DATA/BenchMark/CLNDAT_EN.txt",
-                   kfold = 1,
+                   split_file_dir = "./Data",
+                   split_mode = 'official',
                    img_size = 512,
                    augment = True,
                    zca = True,
@@ -398,7 +444,8 @@ def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
         pass
     data_sets = DataSets()
 
-
+    # データセットの分割
+    train_set, test_set = split_data(nih_supervised_datapath, split_file_dir, split_mode)
 
     # 学会データセットのファイルパスを読み込む
     conf_data = get_filepath(benchmark_datapath)
@@ -410,15 +457,23 @@ def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
     nih_data = get_filepath(nih_datapath)
 
     # NIHの教師データをトレーニングセットのみ読み込む
-    nih_labels_train, nih_count_train, label_def_train = make_supevised_data_for_nih(nih_supervised_datapath,
-                                                                                     nih_train_list)
+    if train_set == None:
+        nih_labels_train, nih_count_train, label_def_train = make_supevised_data_for_nih(nih_supervised_datapath,
+                                                                                         nih_train_list)
+    else:
+        nih_labels_train, nih_count_train, label_def_train = make_supevised_data_for_nih(nih_supervised_datapath,
+                                                                                         train_set)
 
     # NIHのデータセットのファイルパスを読み込む
     nih_data_train = get_filepath(nih_datapath, nih_labels_train)
 
     # NIHの教師データをテストセットのみ読み込む
-    nih_labels_test, nih_count_test, label_def_test = make_supevised_data_for_nih(nih_supervised_datapath,
-                                                                                  nih_test_list)
+    if test_set == None:
+        nih_labels_test, nih_count_test, label_def_test = make_supevised_data_for_nih(nih_supervised_datapath,
+                                                                                      nih_test_list)
+    else:
+        nih_labels_test, nih_count_test, label_def_test = make_supevised_data_for_nih(nih_supervised_datapath,
+                                                                                      test_set)
 
     # NIHのデータセットのファイルパスを読み込む
     nih_data_test = get_filepath(nih_datapath, nih_labels_test)
@@ -438,7 +493,8 @@ def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
                                   augment = augment,
                                   raw_img = raw_img,
                                   model = model,
-                                  is_train = True)
+                                  is_train = True,
+                                  counts = nih_count_train)
         logger.debug("Test Conf")
         data_sets.test  = DataSet(data = conf_data,
                                   label = conf_labels,
@@ -447,7 +503,8 @@ def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
                                   augment = augment,
                                   raw_img = raw_img,
                                   model = model,
-                                  is_train = False)
+                                  is_train = False,
+                                  counts = None)
     else:
         logger.debug("Training")
         data_sets.train = DataSet(data = nih_data_train,
@@ -457,7 +514,8 @@ def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
                                   augment = augment,
                                   raw_img = raw_img,
                                   model = model,
-                                  is_train = True)
+                                  is_train = True,
+                                  counts = nih_count_train)
         logger.debug("Test")
         data_sets.test = DataSet(data = nih_data_test,
                                  label = nih_labels_test,
@@ -466,7 +524,8 @@ def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
                                  augment = augment,
                                  raw_img = raw_img,
                                  model = model,
-                                 is_train = False)
+                                 is_train = False,
+                                 counts = None)
         logger.debug("Test Conf")
         data_sets.conf  = DataSet(data = conf_data,
                                   label = conf_labels,
@@ -475,7 +534,8 @@ def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
                                   augment = augment,
                                   raw_img = raw_img,
                                   model = model,
-                                  is_train = False)
+                                  is_train = False,
+                                  counts = None)
 
     data_sets.train_summary = nih_count
     return data_sets, label_def
@@ -487,7 +547,7 @@ if __name__ == '__main__':
                              nih_boxlist = "./Data/Open/BBox_List_2017.csv",
                              benchmark_datapath = ["./Data/CR_DATA/BenchMark/*/*.dcm"],
                              benchmark_supervised_datapath = "./Data/CR_DATA/BenchMark/CLNDAT_EN.txt",
-                             kfold = 1,
+                             split_mode = 'random',
                              img_size = 512,
                              augment = True,
                              zca = True,

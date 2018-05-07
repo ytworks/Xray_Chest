@@ -63,26 +63,9 @@ def main():
     output_type = config.get('DLParams', 'output_type')
     outfile = config.get('OutputParams', 'outfile')
     mode = config.get('Mode', 'running_mode')
+    step = config.getint('DLParams', 'step')
+    split_mode = config.get('Mode', 'split_mode')
 
-
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-size')
-    parser.add_argument('-augment')
-    parser.add_argument('-checkpoint')
-    parser.add_argument('-lr')
-    parser.add_argument('-dlr')
-    parser.add_argument('-rtype')
-    parser.add_argument('-rr')
-    parser.add_argument('-epoch')
-    parser.add_argument('-batch')
-    parser.add_argument('-l1_norm')
-    parser.add_argument('-log')
-    parser.add_argument('-outfile')
-    parser.add_argument('-output_type')
-    parser.add_argument('-dataset')
-    parser.add_argument('-roi')
-    parser.add_argument('-mode', required = True)
     if mode in ['learning']:
         init = True
     elif mode in ['update', 'prediction']:
@@ -96,7 +79,8 @@ def main():
                              nih_boxlist = "./Data/Open/BBox_List_2017.csv",
                              benchmark_datapath = ["./Data/CR_DATA/BenchMark/*/*.dcm"],
                              benchmark_supervised_datapath = "./Data/CR_DATA/BenchMark/CLNDAT_EN.txt",
-                             kfold = 1,
+                             split_file_dir = "./Data",
+                             split_mode = split_mode,
                              img_size = size,
                              augment = augment,
                              raw_img = True,
@@ -117,7 +101,8 @@ def main():
                    checkpoint = checkpoint,
                    init = init,
                    size = size,
-                   l1_norm = l1_norm)
+                   l1_norm = l1_norm,
+                   step = step)
     obj.construct()
     if mode != 'prediction':
         logger.debug("Start learning")
@@ -139,17 +124,16 @@ def get_results(outfile, testdata, batch, obj, roi, label_def,
     with open(outfile, "w") as f:
         writer = csv.writer(f)
         ts, nums, filenames = [], [], []
-        pred_func = obj.prediction
         for i, t in enumerate(testdata[0]):
             ts.append(img_reader(t, augment = False)[0])
             filenames.append(t)
             nums.append(i)
             if len(ts) == batch or len(testdata[0]) == i + 1:
                 findings = [testdata[4][num] for num in nums]
-                x, y = pred_func(data = ts, roi = roi,
-                                 label_def = label_def, save_dir = './Pic',
-                                 filenames = filenames,
-                                 findings = findings)
+                x, y = obj.prediction(data = ts, roi = roi,
+                                      label_def = label_def, save_dir = './Pic',
+                                      filenames = filenames,
+                                      findings = findings)
                 for j, num in enumerate(nums):
                     print(i, j, num)
                     print("File name:", testdata[3][num])
@@ -173,7 +157,6 @@ def get_results(outfile, testdata, batch, obj, roi, label_def,
                               ]
                     writer.writerow(record)
                 ts, nums, filenames = [], [], []
-                tf.keras.backend.clear_session()
 
 
 if __name__ == '__main__':
