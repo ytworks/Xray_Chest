@@ -96,7 +96,6 @@ def main():
                              nih_boxlist = "./Data/Open/BBox_List_2017.csv",
                              benchmark_datapath = ["./Data/CR_DATA/BenchMark/*/*.dcm"],
                              benchmark_supervised_datapath = "./Data/CR_DATA/BenchMark/CLNDAT_EN.txt",
-                             kfold = 1,
                              img_size = size,
                              augment = augment,
                              zca = True,
