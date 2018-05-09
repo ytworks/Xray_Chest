@@ -141,8 +141,9 @@ class Detecter(Core2.Core):
         diag_output_type = self.output_type if self.output_type.find('hinge') >= 0 else 'classified-sigmoid'
         self.loss_function = Loss.loss_func(y = self.z,
                                              y_ = self.z_,
-                                             regularization = 0.0,
+                                             regularization = self.regularization,
                                              regularization_type = self.regularization_type,
+                                             force_regularization = True,
                                              output_type = diag_output_type)
 
         # For Gear Mode (TBD)
