@@ -133,7 +133,7 @@ class Detecter(Core2.Core):
                                   BatchNormalization = False,
                                   Regularization = True,
                                   vname = 'Output_z',
-                                  Is_bias = False)
+                                  Is_bias = True)
         self.z = self.y72
 
 
@@ -168,9 +168,9 @@ class Detecter(Core2.Core):
         feed_dict.setdefault(self.x, batch[0])
         feed_dict.setdefault(self.z_, batch[2])
         feed_dict.setdefault(self.learning_rate, self.learning_rate_value)
-        if self.steps % 17000 == 0 and self.steps != 0 and is_update:
+        if self.steps % 1700 == 0 and self.steps != 0 and is_update:
             logger.debug("Before Learning Rate: %g" % self.learning_rate_value)
-            self.learning_rate_value = max(0.000001, self.learning_rate_value * 0.1)
+            self.learning_rate_value = max(0.000001, self.learning_rate_value * 0.9)
             logger.debug("After Learning Rate: %g" % self.learning_rate_value)
         i = 0
         for keep_prob in self.keep_probs:
