@@ -10,6 +10,7 @@ from LinearMotor import ActivationFunctions as AF
 from LinearMotor import Layers
 from LinearMotor import Outputs
 from LinearMotor import Visualizer as vs
+from LinearMotor import Transfer as trans
 from SimpleCells import *
 
 
@@ -94,3 +95,29 @@ def scratch_model(x, SIZE, CH, istraining, rmax, dmax, keep_probs):
     z = y72
     logit = tf.sigmoid(z)
     return z, logit, y51
+
+
+def pretrain_model(x):
+    p = trans.Transfer(x, 'densenet201', pooling=None, vname='Transfer',
+                       trainable=True)
+    y51 = p.get_output_tensor()
+    y61 = Layers.pooling(x=y51,
+                         ksize=[7, 7],
+                         strides=[7, 7],
+                         padding='SAME',
+                         algorithm='Avg')
+
+    # reshape
+    y71 = Layers.reshape_tensor(x=y61, shape=[1 * 1 * 1920])
+    # fnn
+    y72 = Outputs.output(x=y71,
+                         InputSize=1920,
+                         OutputSize=15,
+                         Initializer='Xavier_normal',
+                         BatchNormalization=False,
+                         Regularization=True,
+                         vname='Output_z',
+                         Is_bias=True)
+    z = y72
+    logit = tf.sigmoid(z)
+    return z, logit, y51, p

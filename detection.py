@@ -43,7 +43,8 @@ class Detecter(Core2.Core):
                  init=True,
                  size=256,
                  l1_norm=0.1,
-                 step=0):
+                 step=0,
+                 network_mode='scratch'):
         super(Detecter, self).__init__(output_type=output_type,
                                        epoch=epoch,
                                        batch=batch,
@@ -70,6 +71,7 @@ class Detecter(Core2.Core):
         self.regularization_value = 0.0
         self.eval_l1_loss = 0.0
         self.dumping_rate_period = 9000
+        self.network_mode = network_mode
         for i in range(self.steps):
             if i != 0 and i % self.dumping_rate_period == 0:
                 self.learning_rate_value = max(
@@ -123,14 +125,24 @@ class Detecter(Core2.Core):
         self.keep_probs = []
 
     def network(self):
-        self.z, self.logit, self.y51 = scratch_model(x=self.x,
-                                                     SIZE=self.SIZE,
-                                                     CH=self.CH,
-                                                     istraining=self.istraining,
-                                                     rmax=self.rmax,
-                                                     dmax=self.dmax,
-                                                     keep_probs=self.keep_probs)
-        
+        if self.network_mode == 'scratch':
+            self.z, self.logit, self.y51 = scratch_model(x=self.x,
+                                                         SIZE=self.SIZE,
+                                                         CH=self.CH,
+                                                         istraining=self.istraining,
+                                                         rmax=self.rmax,
+                                                         dmax=self.dmax,
+                                                         keep_probs=self.keep_probs)
+        elif self.network_mode == 'pretrain':
+            self.z, self.logit, self.y51, self.p = pretrain_model(x=self.x)
+        else:
+            self.z, self.logit, self.y51 = scratch_model(x=self.x,
+                                                         SIZE=self.SIZE,
+                                                         CH=self.CH,
+                                                         istraining=self.istraining,
+                                                         rmax=self.rmax,
+                                                         dmax=self.dmax,
+                                                         keep_probs=self.keep_probs)
 
     def loss(self):
         diag_output_type = self.output_type if self.output_type.find(
@@ -196,6 +208,8 @@ class Detecter(Core2.Core):
                 self.batch, batch_ratio=batch_ratio[i % len(batch_ratio)])
             # 途中経過のチェック
             if i % self.log == 0 and i != 0:
+                if self.network_mode == 'pretrain':
+                    self.p.change_phase(False)
                 # Train
                 feed_dict = self.make_feed_dict(
                     prob=True, batch=batch, is_Train=True)
@@ -250,6 +264,8 @@ class Detecter(Core2.Core):
                 logger.debug("elasped time: %g" % elasped)
                 s = e
             # 学習
+            if self.network_mode == 'pretrain':
+                self.p.change_phase(True)
             feed_dict = self.make_feed_dict(
                 prob=False, batch=batch, is_Train=True, is_update=True)
             if self.DP and i != 0:
@@ -277,6 +293,8 @@ class Detecter(Core2.Core):
     def prediction(self, data, roi=False, label_def=None, save_dir=None,
                    filenames=None, findings=None, roi_force=False):
         # Make feed dict for prediction
+        if self.network_mode == 'pretrain':
+            self.p.change_phase(False)
         if self.steps <= 5000:
             rmax, dmax = 1.0, 0.0
         else:

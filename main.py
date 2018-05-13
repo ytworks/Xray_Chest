@@ -82,7 +82,8 @@ def main():
                    init=init,
                    size=size,
                    l1_norm=l1_norm,
-                   step=step)
+                   step=step,
+                   network_mode=network_mode)
     obj.construct()
     if mode != 'prediction':
         logger.debug("Start learning")
