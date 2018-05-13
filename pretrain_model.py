@@ -79,10 +79,10 @@ class Detecter(Core2.Core):
         self.loss()
         logger.debug("04: TF Loss definition done")
         # 学習
-        non_p_vars = list(set(tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)) - self.p.model_weights_tensors)
-        self.training(var_list = non_p_vars)
         #non_p_vars = list(set(tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)) - self.p.model_weights_tensors)
-        #self.training(var_list = None)
+        #self.training(var_list = non_p_vars)
+        #non_p_vars = list(set(tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)) - self.p.model_weights_tensors)
+        self.training(var_list = None)
         logger.debug("05: TF Training operation done")
         # 精度の定義
         if self.output_type.find('hinge') >= 0:
@@ -114,9 +114,8 @@ class Detecter(Core2.Core):
 
     def network(self):
         self.p = trans.Transfer(self.x, 'densenet201', pooling = None, vname = 'Transfer',
-                                trainable = False)
+                                trainable = True)
         self.y51 = self.p.get_output_tensor()
-        print(self.y51.shape)
         self.y61 = Layers.pooling(x = self.y51,
                                   ksize=[7, 7],
                                   strides=[7, 7],
@@ -134,7 +133,7 @@ class Detecter(Core2.Core):
                                   BatchNormalization = False,
                                   Regularization = True,
                                   vname = 'Output_z',
-                                  Is_bias = False)
+                                  Is_bias = True)
         self.z = self.y72
 
 
@@ -142,8 +141,9 @@ class Detecter(Core2.Core):
         diag_output_type = self.output_type if self.output_type.find('hinge') >= 0 else 'classified-sigmoid'
         self.loss_function = Loss.loss_func(y = self.z,
                                              y_ = self.z_,
-                                             regularization = 0.0,
+                                             regularization = self.regularization,
                                              regularization_type = self.regularization_type,
+                                             force_regularization = True,
                                              output_type = diag_output_type)
 
         # For Gear Mode (TBD)
@@ -168,7 +168,7 @@ class Detecter(Core2.Core):
         feed_dict.setdefault(self.x, batch[0])
         feed_dict.setdefault(self.z_, batch[2])
         feed_dict.setdefault(self.learning_rate, self.learning_rate_value)
-        if self.steps % 3000 == 0 and self.steps != 0 and is_update:
+        if self.steps % 1700 == 0 and self.steps != 0 and is_update:
             logger.debug("Before Learning Rate: %g" % self.learning_rate_value)
             self.learning_rate_value = max(0.000001, self.learning_rate_value * 0.9)
             logger.debug("After Learning Rate: %g" % self.learning_rate_value)
