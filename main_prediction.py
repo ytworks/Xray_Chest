@@ -68,6 +68,8 @@ def main():
     mode = config.get('Mode', 'running_mode')
     step = config.getint('DLParams', 'step')
     split_mode = config.get('Mode', 'split_mode')
+    network_mode = config.get('Mode', 'network_mode')
+    auc_file = config.get('OutputParams', 'auc_file')
 
 
     dataset, label_def = read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
