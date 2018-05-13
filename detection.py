@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
-
 import tensorflow as tf
 import numpy as np
 import cv2
@@ -28,8 +26,6 @@ logger = getLogger(__name__)
 sh = StreamHandler()
 logger.addHandler(sh)
 logger.setLevel(10)
-
-
 
 
 class Detecter(Core2.Core):
@@ -66,8 +62,6 @@ class Detecter(Core2.Core):
         self.regularization = tf.placeholder(tf.float32)
         self.rmax = tf.placeholder(tf.float32, shape=())
         self.dmax = tf.placeholder(tf.float32, shape=())
-        #self.rmax = tf.placeholder_with_default(1.0, shape=())
-        #self.dmax = tf.placeholder_with_default(0.0, shape=())
         self.steps = step
         self.val_losses = []
         self.current_loss = 0.0
@@ -81,8 +75,8 @@ class Detecter(Core2.Core):
 
         logger.info("start step %g, learning_rate %g" % (self.steps, self.learning_rate_value))
 
-    def construct(self):
 
+    def construct(self):
         logger.debug("01: TF session Start")
         # 入出力の定義
         self.io_def()
@@ -116,13 +110,12 @@ class Detecter(Core2.Core):
         logger.debug("07: TF Model file definition done")
 
 
-
-
     def io_def(self):
         self.CH = 3
         self.x = tf.placeholder("float", shape=[None, self.SIZE, self.SIZE, self.CH], name = "Input")
         self.z_ = tf.placeholder("float", shape=[None, 15], name = "Label_Diagnosis")
         self.keep_probs = []
+
 
     def network(self):
         Initializer = 'He'
@@ -211,11 +204,7 @@ class Detecter(Core2.Core):
                                              regularization_type = self.regularization_type,
                                              output_type = diag_output_type)
         vs.variable_summary(self.loss_function, 'Loss', is_scalar = True)
-        #self.l2_loss = 0
-        # For Gear Mode (TBD)
-        #self.l1_loss = tf.reduce_mean(tf.abs(self.y71)) * self.l1_norm
-        #self.l2_loss= tf.sqrt(tf.reduce_mean(tf.multiply(tf.sigmoid(self.z) -self.z_, tf.sigmoid(self.z) -self.z_))) * 0.5
-        #self.loss_function += self.l2_loss
+
 
     def training(self, var_list = None, gradient_cliiping = True, clipping_norm = 0.1):
         self.train_op, self.optimizer = TO.select_algo(loss_function = self.loss_function,
@@ -264,6 +253,7 @@ class Detecter(Core2.Core):
         roc_auc = auc(fpr, tpr)
         return roc_auc
 
+
     def learning(self, data, save_at_log = False, validation_batch_num = 1, batch_ratio = [0.2, 0.3, 0.4]):
         s = time.time()
         for i in range(self.epoch):
@@ -299,12 +289,9 @@ class Detecter(Core2.Core):
                     aucs_v += "%03.2f / " % val_auc
                 self.val_losses.append(val_losses)
                 self.current_loss = val_losses
-                #self.eval_l1_loss = min(val_l1, l1_losses)
 
                 # Output
                 logger.debug("step %d ================================================================================="% i)
-                #logger.debug("Train: (judgement, diagnosis, loss, auc) = (%g, %g, %g, %g)"%(train_accuracy_y,train_accuracy_z,losses,train_auc))
-                #logger.debug("Validation: (judgement, diagnosis, loss, auc) = (%g, %g, %g, %g)"%(val_accuracy_y,val_accuracy_z,val_losses,val_auc))
                 logger.debug("Train: (diagnosis, loss, aucs) = (%g, %g, %s)"%(train_accuracy_z,losses, aucs_t))
                 logger.debug("Validation: (diagnosis, loss, aucs) = (%g, %g, %s)"%(val_accuracy_z, val_losses, aucs_v))
 
@@ -314,7 +301,6 @@ class Detecter(Core2.Core):
                 elasped = e - s
                 logger.debug("elasped time: %g" % elasped)
                 s = e
-
             # 学習
             feed_dict = self.make_feed_dict(prob = False, batch = batch, is_Train = True, is_update = True)
             if self.DP and i != 0:
@@ -357,10 +343,8 @@ class Detecter(Core2.Core):
             feed_dict.setdefault(keep_prob['var'], 1.0)
 
         if self.output_type.find('hinge') >= 0:
-            #result_y = self.sess.run(2.0 * self.y - 1.0, feed_dict = feed_dict)
             result_z = self.sess.run(2.0 * self.z - 1.0, feed_dict = feed_dict)
         else:
-            #result_y = self.sess.run(tf.nn.softmax(self.y), feed_dict = feed_dict)
             result_z = self.sess.run(self.logit, feed_dict = feed_dict)
         result_y = [[1, 0] for i in range(len(result_z))]
         if not roi:
@@ -378,6 +362,7 @@ class Detecter(Core2.Core):
                               roi_force = roi_force)
 
             return result_y, result_z
+
 
     def make_roi(self, weights, roi_base, save_dir, filename, label_def, findings,
                  roi_force):
@@ -398,7 +383,6 @@ class Detecter(Core2.Core):
                 images += image * weights[channel][x]
             images = np.maximum(images - np.mean(images), 0)
             images = 255.0 * (images - np.min(images)) / (np.max(images) - np.min(images))
-            #images = 255.0 * (images) / np.max(images)
             images = cv2.applyColorMap(images.astype(np.uint8), cv2.COLORMAP_JET)
             images = cv2.resize(images.astype(np.uint8), (self.SIZE, self.SIZE))
             roi_img = cv2.addWeighted(img, 0.8, images, 0.2, 0)
