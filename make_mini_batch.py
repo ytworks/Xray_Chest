@@ -427,7 +427,9 @@ def split_data(path, split_file_dir, mode='patient-wise'):
 
     return split_file_dir + '/train_list.csv', split_file_dir + '/test_list.csv'
 
-
+'''
+Todo: ds機能を削除
+'''
 def read_data_sets(nih_datapath=["./Data/Open/images/*.png"],
                    nih_supervised_datapath="./Data/Open/Data_Entry_2017.csv",
                    nih_boxlist="./Data/Open/BBox_List_2017.csv",

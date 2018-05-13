@@ -15,7 +15,9 @@ sh = StreamHandler()
 logger.addHandler(sh)
 logger.setLevel(10)
 
-
+'''
+Todo: mainとの共通化
+'''
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-config')
@@ -93,6 +95,9 @@ def main():
                           findings=findings,
                           roi_force=True)
     print("File name:", filename)
+    '''
+    Todo: 出力確率をAUCから感度ベースにする
+    '''
     print(y[0])
 
 

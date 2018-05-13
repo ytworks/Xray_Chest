@@ -59,6 +59,9 @@ class Detecter(Core2.Core):
                                        checkpoint=checkpoint,
                                        init=init
                                        )
+        '''
+        Todo: いらない変数の削除
+        '''
         self.SIZE = size
         self.l1_norm = tf.placeholder(tf.float32)
         self.regularization = tf.placeholder(tf.float32)
@@ -70,6 +73,9 @@ class Detecter(Core2.Core):
         self.l1_norm_value = 0.0
         self.regularization_value = 0.0
         self.eval_l1_loss = 0.0
+        '''
+        Todo: dumping rateの引数化
+        '''
         self.dumping_rate_period = 9000
         self.network_mode = network_mode
         for i in range(self.steps):
@@ -165,7 +171,9 @@ class Detecter(Core2.Core):
         self.grad_op = self.optimizer.compute_gradients(self.loss_function)
 
     # 入出力ベクトルの配置
-
+    '''
+    Todo: 予測時と訓練時で関数を共通化
+    '''
     def make_feed_dict(self, prob, batch, is_Train=True, is_update=False):
         if self.steps <= 5000:
             rmax, dmax = 1.0, 0.0
@@ -210,6 +218,9 @@ class Detecter(Core2.Core):
             if i % self.log == 0 and i != 0:
                 if self.network_mode == 'pretrain':
                     self.p.change_phase(False)
+                '''
+                Todo: 重複部分の共通化
+                '''
                 # Train
                 feed_dict = self.make_feed_dict(
                     prob=True, batch=batch, is_Train=True)
@@ -289,7 +300,9 @@ class Detecter(Core2.Core):
         return self.sess.run([self.y51], feed_dict=feed_dict)
 
     # 予測器
-
+    '''
+    Todo: 予測時と訓練時で関数を共通化
+    '''
     def prediction(self, data, roi=False, label_def=None, save_dir=None,
                    filenames=None, findings=None, roi_force=False):
         # Make feed dict for prediction

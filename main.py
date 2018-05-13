@@ -15,7 +15,9 @@ sh = StreamHandler()
 logger.addHandler(sh)
 logger.setLevel(10)
 
-
+'''
+Todo: main_predictionとの重複部分の共通化
+'''
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-config')
@@ -98,6 +100,9 @@ def main():
     testdata = dataset.test.get_all_files()
     get_results(outfile.replace('result', 'nih_result'), testdata, batch, obj, roi, label_def,
                 img_reader=dataset.test.img_reader)
+    '''
+    Todo: 感度テーブルを作成する
+    '''
 
 
 def get_results(outfile, testdata, batch, obj, roi, label_def,
