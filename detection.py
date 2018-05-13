@@ -21,6 +21,7 @@ from LinearMotor import Loss
 from LinearMotor import Transfer as trans
 from LinearMotor import Visualizer as vs
 from SimpleCells import *
+from NetworkModules import *
 from logging import getLogger, StreamHandler
 logger = getLogger(__name__)
 sh = StreamHandler()
@@ -122,85 +123,14 @@ class Detecter(Core2.Core):
         self.keep_probs = []
 
     def network(self):
-        Initializer = 'He'
-        Activation = 'Gelu'
-        Regularization = False
-        Renormalization = True
-        SE = False
-        GrowthRate = 8
-        StemChannels = 32
-        prob = 1.0
-        GroupNum = 8
-        GroupNorm = False
-        # dense net
-        # Stem
-        # Batch Normalization
-        self.stem_bn = Layers.batch_normalization(x=self.x,
-                                                  shape=self.CH,
-                                                  vname='STEM_TOP_BN01',
-                                                  dim=[0, 1, 2],
-                                                  Renormalization=Renormalization,
-                                                  Training=self.istraining,
-                                                  rmax=self.rmax,
-                                                  dmax=self.dmax)
-        self.dense_stem = stem_cell(x=self.stem_bn,
-                                    InputNode=[self.SIZE, self.SIZE, self.CH],
-                                    Channels=StemChannels,
-                                    Initializer=Initializer,
-                                    vname='Stem',
-                                    regularization=Regularization,
-                                    Training=self.istraining)
-
-        # Dense
-        self.densenet_output = densenet(x=self.dense_stem,
-                                        root=self.stem_bn,
-                                        Act=Activation,
-                                        GrowthRate=GrowthRate,
-                                        InputNode=[self.SIZE / 4,
-                                                   self.SIZE / 4, StemChannels],
-                                        Strides=[1, 1, 1, 1],
-                                        Renormalization=Renormalization,
-                                        Regularization=Regularization,
-                                        rmax=self.rmax,
-                                        dmax=self.dmax,
-                                        SE=SE,
-                                        Training=self.istraining,
-                                        GroupNorm=GroupNorm,
-                                        GroupNum=GroupNum,
-                                        vname='DenseNet')
-
-        self.y50 = self.densenet_output
-        self.y51 = SE_module(x=self.y50,
-                             InputNode=[self.SIZE / 64, self.SIZE / 64,
-                                        StemChannels + 12 + GrowthRate * 98],
-                             Act=Activation,
-                             Rate=0.5,
-                             vname='TOP_SE')
-
-        self.y61 = Layers.pooling(x=self.y51,
-                                  ksize=[self.SIZE / 64, self.SIZE / 64],
-                                  strides=[self.SIZE / 64, self.SIZE / 64],
-                                  padding='SAME',
-                                  algorithm='Avg')
-
-        # reshape
-        self.y71 = Layers.reshape_tensor(
-            x=self.y61, shape=[StemChannels + 12 + GrowthRate * 98])
-        vs.variable_summary(self.y71, 'Features')
-        self.y71_d = Layers.dropout(x=self.y71,
-                                    keep_probs=self.keep_probs,
-                                    training_prob=prob,
-                                    vname='Dropout')
-        # fnn
-        self.y72 = Outputs.output(x=self.y71_d,
-                                  InputSize=StemChannels + 12 + GrowthRate * 98,
-                                  OutputSize=15,
-                                  Initializer='Xavier',
-                                  BatchNormalization=False,
-                                  Regularization=True,
-                                  vname='Output_z')
-        self.z = self.y72
-        self.logit = tf.sigmoid(self.z)
+        self.z, self.logit, self.y51 = scratch_model(x=self.x,
+                                                     SIZE=self.SIZE,
+                                                     CH=self.CH,
+                                                     istraining=self.istraining,
+                                                     rmax=self.rmax,
+                                                     dmax=self.dmax,
+                                                     keep_probs=self.keep_probs)
+        
 
     def loss(self):
         diag_output_type = self.output_type if self.output_type.find(
