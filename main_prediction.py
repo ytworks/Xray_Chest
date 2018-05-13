@@ -24,7 +24,6 @@ def main():
     filename = args.file
     print(filename)
 
-
     config = cp.SafeConfigParser()
     config.read(args.config)
     show_config(config)
@@ -49,17 +48,17 @@ def main():
     network_mode = config.get('Mode', 'network_mode')
     auc_file = config.get('OutputParams', 'auc_file')
 
-
-    dataset, label_def = read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
-                             nih_supervised_datapath = "./Data/Open/Data_Entry_2017_v2.csv",
-                             nih_boxlist = "./Data/Open/BBox_List_2017.csv",
-                             benchmark_datapath = ["./Data/CR_DATA/BenchMark/*/*.dcm"],
-                             benchmark_supervised_datapath = "./Data/CR_DATA/BenchMark/CLNDAT_EN.txt",
-                             img_size = size,
-                             augment = augment,
-                             raw_img = True,
-                             model = 'densenet',
-                             zca = False)
+    dataset, label_def = read_data_sets(nih_datapath=["./Data/Open/images/*.png"],
+                                        nih_supervised_datapath="./Data/Open/Data_Entry_2017_v2.csv",
+                                        nih_boxlist="./Data/Open/BBox_List_2017.csv",
+                                        benchmark_datapath=[
+                                            "./Data/CR_DATA/BenchMark/*/*.dcm"],
+                                        benchmark_supervised_datapath="./Data/CR_DATA/BenchMark/CLNDAT_EN.txt",
+                                        img_size=size,
+                                        augment=augment,
+                                        raw_img=True,
+                                        model='densenet',
+                                        zca=False)
 
     if mode in ['learning']:
         init = True
@@ -68,34 +67,33 @@ def main():
     else:
         init = False
 
-    obj = Detecter(output_type = output_type,
-                   epoch = epoch, batch = batch, log = log,
-                   optimizer_type = 'Adam',
-                   learning_rate = lr,
-                   dynamic_learning_rate = dlr,
-                   beta1 = 0.9, beta2 = 0.999,
-                   regularization = rr,
-                   regularization_type = rtype,
-                   checkpoint = checkpoint,
-                   init = init,
-                   size = size,
-                   l1_norm = l1_norm)
+    obj = Detecter(output_type=output_type,
+                   epoch=epoch, batch=batch, log=log,
+                   optimizer_type='Adam',
+                   learning_rate=lr,
+                   dynamic_learning_rate=dlr,
+                   beta1=0.9, beta2=0.999,
+                   regularization=rr,
+                   regularization_type=rtype,
+                   checkpoint=checkpoint,
+                   init=init,
+                   size=size,
+                   l1_norm=l1_norm)
     obj.construct()
 
     testdata = dataset.test.get_all_files()
     findings = [testdata[4][0]]
     root, ext = os.path.splitext(filename)
-    img = dataset.test.img_process(filename, ext, augment = False)
+    img = dataset.test.img_process(filename, ext, augment=False)
     print(img.shape)
     ts = [img]
-    x, y = obj.prediction(data = ts, roi = roi,
-                          label_def = label_def, save_dir = './Pic',
-                          filenames = [filename],
-                          findings = findings,
-                          roi_force = True)
+    x, y = obj.prediction(data=ts, roi=roi,
+                          label_def=label_def, save_dir='./Pic',
+                          filenames=[filename],
+                          findings=findings,
+                          roi_force=True)
     print("File name:", filename)
     print(y[0])
-
 
 
 def get_results(outfile, testdata, batch, obj, roi, label_def,
@@ -104,15 +102,15 @@ def get_results(outfile, testdata, batch, obj, roi, label_def,
         writer = csv.writer(f)
         ts, nums, filenames = [], [], []
         for i, t in enumerate(testdata[0]):
-            ts.append(img_reader(t, augment = False)[0])
+            ts.append(img_reader(t, augment=False)[0])
             filenames.append(t)
             nums.append(i)
             if len(ts) == batch:
                 findings = [testdata[4][num] for num in nums]
-                x, y = obj.prediction(data = ts, roi = roi,
-                                      label_def = label_def, save_dir = './Pic',
-                                      filenames = filenames,
-                                      findings = findings)
+                x, y = obj.prediction(data=ts, roi=roi,
+                                      label_def=label_def, save_dir='./Pic',
+                                      filenames=filenames,
+                                      findings=findings)
                 for j, num in enumerate(nums):
                     print(i, j, num)
                     print("File name:", testdata[3][num])

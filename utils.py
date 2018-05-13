@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
+
 def show_config(ini):
     '''
     設定ファイルの全ての内容を表示する（コメントを除く）
@@ -15,6 +17,7 @@ def show_section(ini, section):
     '''
     for key in ini.options(section):
         show_key(ini, section, key)
+
 
 def show_key(ini, section, key):
     '''

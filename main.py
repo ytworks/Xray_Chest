@@ -21,7 +21,6 @@ def main():
     parser.add_argument('-config')
     args = parser.parse_args()
 
-
     config = cp.SafeConfigParser()
     config.read(args.config)
     show_config(config)
@@ -54,49 +53,50 @@ def main():
         init = False
 
     print("read dataset")
-    dataset, label_def = read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
-                             nih_supervised_datapath = "./Data/Open/Data_Entry_2017_v2.csv",
-                             nih_boxlist = "./Data/Open/BBox_List_2017.csv",
-                             benchmark_datapath = ["./Data/CR_DATA/BenchMark/*/*.dcm"],
-                             benchmark_supervised_datapath = "./Data/CR_DATA/BenchMark/CLNDAT_EN.txt",
-                             split_file_dir = "./Data",
-                             split_mode = split_mode,
-                             img_size = size,
-                             augment = augment,
-                             raw_img = True,
-                             model = 'densenet',
-                             zca = False,
-                             ds = ds)
+    dataset, label_def = read_data_sets(nih_datapath=["./Data/Open/images/*.png"],
+                                        nih_supervised_datapath="./Data/Open/Data_Entry_2017_v2.csv",
+                                        nih_boxlist="./Data/Open/BBox_List_2017.csv",
+                                        benchmark_datapath=[
+                                            "./Data/CR_DATA/BenchMark/*/*.dcm"],
+                                        benchmark_supervised_datapath="./Data/CR_DATA/BenchMark/CLNDAT_EN.txt",
+                                        split_file_dir="./Data",
+                                        split_mode=split_mode,
+                                        img_size=size,
+                                        augment=augment,
+                                        raw_img=True,
+                                        model='densenet',
+                                        zca=False,
+                                        ds=ds)
     print("label definitions:")
     print(label_def)
 
-    obj = Detecter(output_type = output_type,
-                   epoch = epoch, batch = batch, log = log,
-                   optimizer_type = 'Adam',
-                   learning_rate = lr,
-                   dynamic_learning_rate = dlr,
-                   beta1 = 0.9, beta2 = 0.999,
-                   regularization = rr,
-                   regularization_type = rtype,
-                   checkpoint = checkpoint,
-                   init = init,
-                   size = size,
-                   l1_norm = l1_norm,
-                   step = step)
+    obj = Detecter(output_type=output_type,
+                   epoch=epoch, batch=batch, log=log,
+                   optimizer_type='Adam',
+                   learning_rate=lr,
+                   dynamic_learning_rate=dlr,
+                   beta1=0.9, beta2=0.999,
+                   regularization=rr,
+                   regularization_type=rtype,
+                   checkpoint=checkpoint,
+                   init=init,
+                   size=size,
+                   l1_norm=l1_norm,
+                   step=step)
     obj.construct()
     if mode != 'prediction':
         logger.debug("Start learning")
-        obj.learning(data = dataset,
-                     validation_batch_num = int(250 / batch) + 1 if ds == 'conf' else 1)
+        obj.learning(data=dataset,
+                     validation_batch_num=int(250 / batch) + 1 if ds == 'conf' else 1)
         logger.debug("Finish learning")
     else:
         logger.debug("Skipped learning")
     confdata = dataset.conf.get_all_files()
     get_results(outfile.replace('result', 'conf_result'), confdata, batch, obj, roi, label_def,
-                img_reader = dataset.conf.img_reader)
+                img_reader=dataset.conf.img_reader)
     testdata = dataset.test.get_all_files()
     get_results(outfile.replace('result', 'nih_result'), testdata, batch, obj, roi, label_def,
-                img_reader = dataset.test.img_reader)
+                img_reader=dataset.test.img_reader)
 
 
 def get_results(outfile, testdata, batch, obj, roi, label_def,
@@ -105,15 +105,15 @@ def get_results(outfile, testdata, batch, obj, roi, label_def,
         writer = csv.writer(f)
         ts, nums, filenames = [], [], []
         for i, t in enumerate(testdata[0]):
-            ts.append(img_reader(t, augment = False)[0])
+            ts.append(img_reader(t, augment=False)[0])
             filenames.append(t)
             nums.append(i)
             if len(ts) == batch or len(testdata[0]) == i + 1:
                 findings = [testdata[4][num] for num in nums]
-                x, y = obj.prediction(data = ts, roi = roi,
-                                      label_def = label_def, save_dir = './Pic',
-                                      filenames = filenames,
-                                      findings = findings)
+                x, y = obj.prediction(data=ts, roi=roi,
+                                      label_def=label_def, save_dir='./Pic',
+                                      filenames=filenames,
+                                      findings=findings)
                 for j, num in enumerate(nums):
                     print(i, j, num)
                     print("File name:", testdata[3][num])
