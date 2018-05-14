@@ -96,9 +96,6 @@ def main():
                              suffixs=['result'],
                              roi_force=True)
     print("File name:", filename)
-    '''
-    Todo: 出力確率をAUCから感度ベースにする
-    '''
     print(y[0])
     s = [0 for j in range(len(y[0]))]
     for i, diag in enumerate(label_list['label_def']):
