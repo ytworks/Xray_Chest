@@ -69,8 +69,7 @@ def main():
                                         augment=augment,
                                         raw_img=True,
                                         model='densenet',
-                                        zca=False,
-                                        ds=ds)
+                                        zca=False)
     print("label definitions:")
     print(label_def)
     '''

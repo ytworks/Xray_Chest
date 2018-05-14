@@ -92,6 +92,8 @@ def main():
     root, ext = os.path.splitext(filename)
     img = dataset.test.img_process(filename, ext, augment=False)
     print(img.shape)
+    print(label_def)
+    print(findings)
     ts = [img]
     x, y = obj.prediction(data=ts, roi=roi,
                           label_def=label_def, save_dir='./Pic',

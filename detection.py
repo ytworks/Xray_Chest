@@ -277,7 +277,9 @@ class Detecter(Core2.Core):
         return self.sess.run([self.y51], feed_dict=feed_dict)
 
     # 予測器
-
+    '''
+    Todo: findingsの廃止、出力ファイル名の定義の疎結合化
+    '''
     def prediction(self, data, roi=False, label_def=None, save_dir=None,
                    filenames=None, findings=None, roi_force=False):
         # Make feed dict for prediction

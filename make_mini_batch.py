@@ -443,8 +443,7 @@ def read_data_sets(nih_datapath=["./Data/Open/images/*.png"],
                    augment=True,
                    zca=True,
                    raw_img=False,
-                   model='xception',
-                   ds='normal'):
+                   model='xception'):
     class DataSets(object):
         pass
     data_sets = DataSets()
@@ -489,58 +488,34 @@ def read_data_sets(nih_datapath=["./Data/Open/images/*.png"],
     conf_labels = make_supevised_data_for_conf(conf_data,
                                                label_def,
                                                benchmark_supervised_datapath)
-    if ds == 'conf':
-        logger.debug("Training Full")
-        data_sets.train = DataSet(data=nih_data,
-                                  label=nih_labels,
-                                  size=img_size,
-                                  zca=zca,
-                                  augment=augment,
-                                  raw_img=raw_img,
-                                  model=model,
-                                  is_train=True,
-                                  counts=nih_count_train)
-        logger.debug("Test Conf")
-        data_sets.test = DataSet(data=conf_data,
-                                 label=conf_labels,
-                                 size=img_size,
-                                 zca=zca,
-                                 augment=augment,
-                                 raw_img=raw_img,
-                                 model=model,
-                                 is_train=False,
-                                 counts=None)
-    else:
-        logger.debug("Training")
-        data_sets.train = DataSet(data=nih_data_train,
-                                  label=nih_labels_train,
-                                  size=img_size,
-                                  zca=zca,
-                                  augment=augment,
-                                  raw_img=raw_img,
-                                  model=model,
-                                  is_train=True,
-                                  counts=nih_count_train)
-        logger.debug("Test")
-        data_sets.test = DataSet(data=nih_data_test,
-                                 label=nih_labels_test,
-                                 size=img_size,
-                                 zca=zca,
-                                 augment=augment,
-                                 raw_img=raw_img,
-                                 model=model,
-                                 is_train=False,
-                                 counts=None)
-        logger.debug("Test Conf")
-        data_sets.conf = DataSet(data=conf_data,
-                                 label=conf_labels,
-                                 size=img_size,
-                                 zca=zca,
-                                 augment=augment,
-                                 raw_img=raw_img,
-                                 model=model,
-                                 is_train=False,
-                                 counts=None)
+
+    data_sets.train = DataSet(data=nih_data_train,
+                              label=nih_labels_train,
+                              size=img_size,
+                              zca=zca,
+                              augment=augment,
+                              raw_img=raw_img,
+                              model=model,
+                              is_train=True,
+                              counts=nih_count_train)
+    data_sets.test = DataSet(data=nih_data_test,
+                             label=nih_labels_test,
+                             size=img_size,
+                             zca=zca,
+                             augment=augment,
+                             raw_img=raw_img,
+                             model=model,
+                             is_train=False,
+                             counts=None)
+    data_sets.conf = DataSet(data=conf_data,
+                             label=conf_labels,
+                             size=img_size,
+                             zca=zca,
+                             augment=augment,
+                             raw_img=raw_img,
+                             model=model,
+                             is_train=False,
+                             counts=None)
 
     data_sets.train_summary = nih_count
     return data_sets, label_def
