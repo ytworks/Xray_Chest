@@ -8,6 +8,7 @@ import csv
 import numpy as np
 import cv2
 import time
+import json
 from sklearn.model_selection import train_test_split
 import tensorflow as tf
 from DICOMReader.DICOMReader import dicom_to_np
@@ -518,6 +519,9 @@ def read_data_sets(nih_datapath=["./Data/Open/images/*.png"],
                              counts=None)
 
     data_sets.train_summary = nih_count
+    f = open('./Config/label_def.json', 'w')
+    dic = {'label_def' : label_def}
+    json.dump(dic, f)
     return data_sets, label_def
 
 
