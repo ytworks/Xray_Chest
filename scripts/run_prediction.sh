@@ -4,11 +4,12 @@ cd ../
 
 FLAG=""
 VM="1"
-while getopts d:v OPT
+while getopts i:d:v OPT
 do
   case $OPT in
     d) FLAG=$OPTARG;;
     v) VM="0";;
+    i) FILE=$OPTARG;;
   esac
 done
 if [[ $VM == "1" ]]; then
