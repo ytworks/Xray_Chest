@@ -178,7 +178,7 @@ class Detecter(Core2.Core):
     Todo: 予測時と訓練時で関数を共通化
     '''
 
-    def make_feed_dict(self, prob, batch, is_Train=True, is_update=False):
+    def make_feed_dict(self, prob, data, label=None, is_Train=True, is_update=False, is_label=False):
         if self.steps <= 5000:
             rmax, dmax = 1.0, 0.0
         else:
@@ -191,8 +191,9 @@ class Detecter(Core2.Core):
             logger.debug("After Learning Rate: %g" % self.learning_rate_value)
 
         feed_dict = {}
-        feed_dict.setdefault(self.x, batch[0])
-        feed_dict.setdefault(self.z_, batch[2])
+        feed_dict.setdefault(self.x, data)
+        if is_label:
+            feed_dict.setdefault(self.z_, label)
         feed_dict.setdefault(self.learning_rate, self.learning_rate_value)
         feed_dict.setdefault(self.istraining, is_Train)
         feed_dict.setdefault(self.rmax, rmax)
@@ -227,7 +228,7 @@ class Detecter(Core2.Core):
                 '''
                 # Train
                 feed_dict = self.make_feed_dict(
-                    prob=True, batch=batch, is_Train=True)
+                    prob=True, data=batch[0], label=batch[2], is_Train=False, is_label=True)
                 res = self.sess.run(
                     [self.accuracy_z, self.loss_function], feed_dict=feed_dict)
                 train_accuracy_z = res[0]
@@ -246,7 +247,7 @@ class Detecter(Core2.Core):
                 validation_batch = data.test.next_batch(
                     self.batch, augment=False, batch_ratio=batch_ratio[i % len(batch_ratio)])
                 feed_dict_val = self.make_feed_dict(
-                    prob=True, batch=validation_batch, is_Train=False)
+                    prob=True, data=validation_batch[0], label=validation_batch[2], is_Train=False, is_label=True)
                 res_val = self.sess.run(
                     [self.accuracy_z, self.loss_function], feed_dict=feed_dict_val)
                 val_accuracy_z = res_val[0]
@@ -282,7 +283,7 @@ class Detecter(Core2.Core):
             if self.network_mode == 'pretrain':
                 self.p.change_phase(True)
             feed_dict = self.make_feed_dict(
-                prob=False, batch=batch, is_Train=True, is_update=True)
+                prob=False, data=batch[0], label=batch[2], is_Train=True, is_update=True, is_label=True)
             if self.DP and i != 0:
                 self.dynamic_learning_rate(feed_dict)
             _, summary = self.sess.run(
@@ -304,33 +305,21 @@ class Detecter(Core2.Core):
         return self.sess.run([self.y51], feed_dict=feed_dict)
 
     # 予測器
-    '''
-    Todo: 予測時と訓練時で関数を共通化
-    '''
 
     def prediction(self, data, roi=False, label_def=None, save_dir=None,
                    filenames=None, findings=None, roi_force=False):
         # Make feed dict for prediction
         if self.network_mode == 'pretrain':
             self.p.change_phase(False)
-        if self.steps <= 5000:
-            rmax, dmax = 1.0, 0.0
-        else:
-            rmax = min(1.0 + 2.0 * float(self.steps - 5000.0) / 35000.0, 3.0)
-            dmax = min(5.0 * float(self.steps - 5000.0) / 20000.0, 5.0)
-        feed_dict = {self.x: data,
-                     self.istraining: False,
-                     self.rmax: rmax,
-                     self.dmax: dmax}
-
-        for keep_prob in self.keep_probs:
-            feed_dict.setdefault(keep_prob['var'], 1.0)
-
+        feed_dict = self.make_feed_dict(
+            prob=True, data=data, is_Train=False, is_label=False)
+        # Get logits
         if self.output_type.find('hinge') >= 0:
             result_z = self.sess.run(2.0 * self.z - 1.0, feed_dict=feed_dict)
         else:
             result_z = self.sess.run(self.logit, feed_dict=feed_dict)
         result_y = [[1, 0] for i in range(len(result_z))]
+        # Make ROI maps
         if not roi:
             return result_y, result_z
         else:
