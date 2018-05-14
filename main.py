@@ -18,6 +18,8 @@ logger.setLevel(10)
 '''
 Todo: main_predictionとの重複部分の共通化
 '''
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-config')
@@ -79,8 +81,8 @@ def main():
                    learning_rate=lr,
                    dynamic_learning_rate=dlr,
                    beta1=0.9, beta2=0.999,
-                   dumping_period = dumping_period,
-                   dumping_rate = dumping_rate,
+                   dumping_period=dumping_period,
+                   dumping_rate=dumping_rate,
                    regularization=rr,
                    regularization_type=rtype,
                    checkpoint=checkpoint,
@@ -104,7 +106,8 @@ def main():
     get_results(outfile.replace('result', 'nih_result'), testdata, batch, obj, roi, label_def,
                 img_reader=dataset.test.img_reader)
     # sensivity / specifity table
-    get_roc_curve(filename=outfile.replace('result', 'nih_result'), diags=label_def)
+    get_roc_curve(filename=outfile.replace(
+        'result', 'nih_result'), diags=label_def)
 
 
 if __name__ == '__main__':

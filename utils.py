@@ -4,6 +4,7 @@ import csv
 import numpy as np
 from sklearn.metrics import roc_curve, auc
 
+
 def show_config(ini):
     '''
     設定ファイルの全ての内容を表示する（コメントを除く）
@@ -27,6 +28,7 @@ def show_key(ini, section, key):
     '''
     print '%s.%s =%s' % (section, key, ini.get(section, key))
 
+
 def get_roc_curve(filename, diags):
     f = csv.reader(open(filename, 'r'), lineterminator='\n')
     test, prob = [], []
@@ -39,12 +41,11 @@ def get_roc_curve(filename, diags):
             test_diag[i].append(int(float(row[i + 15 + 4])))
             prob_diag[i].append(float(row[i + 4]))
     for i, n in enumerate(diags):
-        fpr, tpr, thresholds = roc_curve(test_diag[i], prob_diag[i], pos_label=1)
+        fpr, tpr, thresholds = roc_curve(
+            test_diag[i], prob_diag[i], pos_label=1)
         roc = [[fpr[j], tpr[j], thresholds[j]] for j in range(len(fpr))]
         roc = np.array(roc)
-        np.save('./Config/'+n+'.npy', roc)
-
-
+        np.save('./Config/' + n + '.npy', roc)
 
 
 def get_results(outfile, testdata, batch, obj, roi, label_def,
@@ -58,10 +59,10 @@ def get_results(outfile, testdata, batch, obj, roi, label_def,
             nums.append(i)
             if len(ts) == batch or len(testdata[0]) == i + 1:
                 findings = [testdata[4][num] for num in nums]
-                x, y = obj.prediction(data=ts, roi=roi,
-                                      label_def=label_def, save_dir='./Pic',
-                                      filenames=filenames,
-                                      suffixs=findings)
+                x, y, _ = obj.prediction(data=ts, roi=roi,
+                                         label_def=label_def, save_dir='./Pic',
+                                         filenames=filenames,
+                                         suffixs=findings)
                 for j, num in enumerate(nums):
                     print(i, j, num)
                     print("File name:", testdata[3][num])

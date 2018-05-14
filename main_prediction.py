@@ -75,8 +75,8 @@ def main():
                    learning_rate=lr,
                    dynamic_learning_rate=dlr,
                    beta1=0.9, beta2=0.999,
-                   dumping_period = dumping_period,
-                   dumping_rate = dumping_rate,
+                   dumping_period=dumping_period,
+                   dumping_rate=dumping_rate,
                    regularization=rr,
                    regularization_type=rtype,
                    checkpoint=checkpoint,
@@ -90,16 +90,24 @@ def main():
     root, ext = os.path.splitext(filename)
     img = dataset.test.img_process(filename, ext, augment=False)
     ts = [img]
-    x, y = obj.prediction(data=ts, roi=roi,
-                          label_def=label_list['label_def'], save_dir='./Pic',
-                          filenames=[filename],
-                          suffixs=['result'],
-                          roi_force=True)
+    x, y, z = obj.prediction(data=ts, roi=roi,
+                             label_def=label_list['label_def'], save_dir='./Pic',
+                             filenames=[filename],
+                             suffixs=['result'],
+                             roi_force=True)
     print("File name:", filename)
     '''
     Todo: 出力確率をAUCから感度ベースにする
     '''
     print(y[0])
+    s = [0 for j in range(len(y[0]))]
+    for i, diag in enumerate(label_list['label_def']):
+        roc_map = np.load('./Config/'+diag+'.npy')
+        for line in roc_map:
+            if y[0][i] <= float(line[2]):
+                s[i] = float(line[0])
+    print(s)
+    print(y.shape, z.shape)
 
 
 if __name__ == '__main__':

@@ -217,7 +217,6 @@ class Detecter(Core2.Core):
             aucs_list += "%03.2f / " % auc_value
         return accuracy_z, losses, aucs_list
 
-
     def learning(self, data, save_at_log=False, validation_batch_num=1, batch_ratio=[0.2, 0.3, 0.4]):
         s = time.time()
         for i in range(self.epoch):
@@ -230,14 +229,16 @@ class Detecter(Core2.Core):
                 # Train
                 feed_dict = self.make_feed_dict(
                     prob=True, data=batch[0], label=batch[2], is_Train=False, is_label=True)
-                train_accuracy_z, losses, aucs_t = self.get_auc_list(feed_dict, batch)
+                train_accuracy_z, losses, aucs_t = self.get_auc_list(
+                    feed_dict, batch)
                 # Test
                 val_accuracy_y, val_accuracy_z, val_losses, test, prob = [], [], [], [], []
                 validation_batch = data.test.next_batch(
                     self.batch, augment=False, batch_ratio=batch_ratio[i % len(batch_ratio)])
                 feed_dict_val = self.make_feed_dict(
                     prob=True, data=validation_batch[0], label=validation_batch[2], is_Train=False, is_label=True)
-                val_accuracy_z, val_losses, aucs_v = self.get_auc_list(feed_dict_val, validation_batch)
+                val_accuracy_z, val_losses, aucs_v = self.get_auc_list(
+                    feed_dict_val, validation_batch)
                 # Output
                 logger.debug(
                     "step %d =================================================================================" % i)
@@ -293,20 +294,22 @@ class Detecter(Core2.Core):
         result_y = [[1, 0] for i in range(len(result_z))]
         # Make ROI maps
         if not roi:
-            return result_y, result_z
+            return result_y, result_z, None
         else:
             weights = self.get_output_weights(feed_dict=feed_dict)
             roi_base = self.get_roi_map_base(feed_dict=feed_dict)
+            result_roi = []
             for i in range(len(filenames)):
-                self.make_roi(weights=weights[0],
+                roi_map = self.make_roi(weights=weights[0],
                               roi_base=roi_base[0][i, :, :, :],
                               save_dir=save_dir,
                               filename=filenames[i],
                               label_def=label_def,
                               suffix=suffixs[i],
                               roi_force=roi_force)
+                result_roi.append(roi_map)
 
-            return result_y, result_z
+            return result_y, result_z, np.array(result_roi)
 
     def make_roi(self, weights, roi_base, save_dir, filename, label_def, suffix,
                  roi_force):
@@ -321,6 +324,7 @@ class Detecter(Core2.Core):
         img = cv2.resize(img, (self.SIZE, self.SIZE),
                          interpolation=cv2.INTER_AREA)
         img = np.stack((img, img, img), axis=-1)
+        roi_maps = []
         for x, finding in enumerate(label_def):
             # sum channels
             images = np.zeros((roi_base.shape[0], roi_base.shape[1], 3))
@@ -333,6 +337,9 @@ class Detecter(Core2.Core):
             images = np.maximum(images - np.mean(images), 0)
             images = 255.0 * (images - np.min(images)) / \
                 (np.max(images) - np.min(images))
+            roi_map = cv2.resize(images.astype(np.uint8),
+                                 (self.SIZE, self.SIZE))
+            roi_maps.append(roi_map)
             # overlay original image
             images = cv2.applyColorMap(
                 images.astype(np.uint8), cv2.COLORMAP_JET)
@@ -358,3 +365,4 @@ class Detecter(Core2.Core):
                         if finding in ['Nodule', 'Mass', 'Pneumonia']:
                             cv2.imwrite(save_dir + '/' + str(ftitle) +
                                         '_' + str(finding) + '.png', roi_img)
+        return np.array(roi_maps)
