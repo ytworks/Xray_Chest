@@ -61,30 +61,21 @@ class Detecter(Core2.Core):
                                        checkpoint=checkpoint,
                                        init=init
                                        )
-        '''
-        Todo: いらない変数の削除
-        '''
         self.SIZE = size
         self.l1_norm = tf.placeholder(tf.float32)
         self.regularization = tf.placeholder(tf.float32)
         self.rmax = tf.placeholder(tf.float32, shape=())
         self.dmax = tf.placeholder(tf.float32, shape=())
         self.steps = step
-        self.val_losses = []
-        self.current_loss = 0.0
         self.l1_norm_value = 0.0
         self.regularization_value = 0.0
-        self.eval_l1_loss = 0.0
         self.dumping_rate = dumping_rate
         self.dumping_period = dumping_period
-        '''
-        Todo: dumping rateの引数化
-        '''
         self.network_mode = network_mode
         for i in range(self.steps):
-            if i != 0 and i % self.dumping_rate_period == 0:
+            if i != 0 and i % self.dumping_period == 0:
                 self.learning_rate_value = max(
-                    0.000001, self.learning_rate_value * 0.9)
+                    0.000001, self.learning_rate_value * self.dumping_rate)
 
         logger.info("start step %g, learning_rate %g" %
                     (self.steps, self.learning_rate_value))
@@ -174,9 +165,6 @@ class Detecter(Core2.Core):
         self.grad_op = self.optimizer.compute_gradients(self.loss_function)
 
     # 入出力ベクトルの配置
-    '''
-    Todo: 予測時と訓練時で関数を共通化
-    '''
 
     def make_feed_dict(self, prob, data, label=None, is_Train=True, is_update=False, is_label=False):
         if self.steps <= 5000:
@@ -262,8 +250,6 @@ class Detecter(Core2.Core):
                             for j in range(len(val_prediction[1]))]
                     val_auc = self.get_auc(test=test, prob=prob)
                     aucs_v += "%03.2f / " % val_auc
-                self.val_losses.append(val_losses)
-                self.current_loss = val_losses
 
                 # Output
                 logger.debug(
