@@ -202,6 +202,22 @@ class Detecter(Core2.Core):
         roc_auc = auc(fpr, tpr)
         return roc_auc
 
+    def get_auc_list(self, feed_dict, batch):
+        res = self.sess.run(
+            [self.accuracy_z, self.loss_function], feed_dict=feed_dict)
+        accuracy_z = res[0]
+        losses = res[1]
+        prediction = self.prediction(data=batch[0], roi=False)
+        aucs_list = ''
+        for d in range(len(prediction[1][0])):
+            test = [batch[2][j][d] for j in range(len(batch[2]))]
+            prob = [prediction[1][j][d]
+                    for j in range(len(prediction[1]))]
+            auc_value = self.get_auc(test=test, prob=prob)
+            aucs_list += "%03.2f / " % auc_value
+        return accuracy_z, losses, aucs_list
+
+
     def learning(self, data, save_at_log=False, validation_batch_num=1, batch_ratio=[0.2, 0.3, 0.4]):
         s = time.time()
         for i in range(self.epoch):
@@ -211,46 +227,17 @@ class Detecter(Core2.Core):
             if i % self.log == 0 and i != 0:
                 if self.network_mode == 'pretrain':
                     self.p.change_phase(False)
-                '''
-                Todo: 重複部分の共通化
-                '''
                 # Train
                 feed_dict = self.make_feed_dict(
                     prob=True, data=batch[0], label=batch[2], is_Train=False, is_label=True)
-                res = self.sess.run(
-                    [self.accuracy_z, self.loss_function], feed_dict=feed_dict)
-                train_accuracy_z = res[0]
-                losses = res[1]
-                train_prediction = self.prediction(data=batch[0], roi=False)
-                aucs_t = ''
-                for d in range(len(train_prediction[1][0])):
-                    test = [batch[2][j][d] for j in range(len(batch[2]))]
-                    prob = [train_prediction[1][j][d]
-                            for j in range(len(train_prediction[1]))]
-                    train_auc = self.get_auc(test=test, prob=prob)
-                    aucs_t += "%03.2f / " % train_auc
-
+                train_accuracy_z, losses, aucs_t = self.get_auc_list(feed_dict, batch)
                 # Test
                 val_accuracy_y, val_accuracy_z, val_losses, test, prob = [], [], [], [], []
                 validation_batch = data.test.next_batch(
                     self.batch, augment=False, batch_ratio=batch_ratio[i % len(batch_ratio)])
                 feed_dict_val = self.make_feed_dict(
                     prob=True, data=validation_batch[0], label=validation_batch[2], is_Train=False, is_label=True)
-                res_val = self.sess.run(
-                    [self.accuracy_z, self.loss_function], feed_dict=feed_dict_val)
-                val_accuracy_z = res_val[0]
-                val_losses = res_val[1]
-                val_prediction = self.prediction(
-                    data=validation_batch[0], roi=False)
-                aucs_v = ''
-                for d in range(len(train_prediction[1][0])):
-                    test = [validation_batch[2][j][d]
-                            for j in range(len(validation_batch[2]))]
-                    prob = [val_prediction[1][j][d]
-                            for j in range(len(val_prediction[1]))]
-                    val_auc = self.get_auc(test=test, prob=prob)
-                    aucs_v += "%03.2f / " % val_auc
-
+                val_accuracy_z, val_losses, aucs_v = self.get_auc_list(feed_dict_val, validation_batch)
                 # Output
                 logger.debug(
                     "step %d =================================================================================" % i)
@@ -258,7 +245,6 @@ class Detecter(Core2.Core):
                     train_accuracy_z, losses, aucs_t))
                 logger.debug("Validation: (diagnosis, loss, aucs) = (%g, %g, %s)" % (
                     val_accuracy_z, val_losses, aucs_v))
-
                 if save_at_log:
                     self.save_checkpoint()
                 e = time.time()
@@ -324,30 +310,36 @@ class Detecter(Core2.Core):
 
     def make_roi(self, weights, roi_base, save_dir, filename, label_def, findings,
                  roi_force):
+        # Read files
         if filename.find('.png') >= 0:
             img = cv2.imread(filename, cv2.IMREAD_GRAYSCALE)
         else:
             img, bits = dicom_to_np(filename)
             img = img / bits * 255
             img = img.astype(np.uint8)
+        # Preprocessing
         img = cv2.resize(img, (self.SIZE, self.SIZE),
                          interpolation=cv2.INTER_AREA)
         img = np.stack((img, img, img), axis=-1)
         for x, finding in enumerate(label_def):
+            # sum channels
             images = np.zeros((roi_base.shape[0], roi_base.shape[1], 3))
             for channel in range(roi_base.shape[2]):
                 c = roi_base[:, :, channel]
                 c0 = np.zeros((roi_base.shape[0], roi_base.shape[1]))
                 image = np.stack((c, c, c), axis=-1)
                 images += image * weights[channel][x]
+            # process image
             images = np.maximum(images - np.mean(images), 0)
             images = 255.0 * (images - np.min(images)) / \
                 (np.max(images) - np.min(images))
+            # overlay original image
             images = cv2.applyColorMap(
                 images.astype(np.uint8), cv2.COLORMAP_JET)
             images = cv2.resize(images.astype(np.uint8),
                                 (self.SIZE, self.SIZE))
             roi_img = cv2.addWeighted(img, 0.8, images, 0.2, 0)
+            # save image
             basename = os.path.basename(filename)
             ftitle, _ = os.path.splitext(basename)
             if roi_force:
