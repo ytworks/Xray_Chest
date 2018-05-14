@@ -84,7 +84,9 @@ def main():
                    size=size,
                    l1_norm=l1_norm)
     obj.construct()
-
+    '''
+    Todo: label_def, findingsのjsonデータの読み込み
+    '''
     testdata = dataset.test.get_all_files()
     findings = [testdata[4][0]]
     root, ext = os.path.splitext(filename)

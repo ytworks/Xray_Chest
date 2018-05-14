@@ -73,6 +73,9 @@ def main():
                                         ds=ds)
     print("label definitions:")
     print(label_def)
+    '''
+    Todo: label_def, findingsのjson化
+    '''
 
     obj = Detecter(output_type=output_type,
                    epoch=epoch, batch=batch, log=log,
