@@ -90,6 +90,9 @@ def main():
     testdata = dataset.test.get_all_files()
     findings = [testdata[4][0]]
     root, ext = os.path.splitext(filename)
+    '''
+    Todo: 前処理の共通関数化
+    '''
     img = dataset.test.img_process(filename, ext, augment=False)
     print(img.shape)
     print(label_def)
@@ -98,7 +101,7 @@ def main():
     x, y = obj.prediction(data=ts, roi=roi,
                           label_def=label_def, save_dir='./Pic',
                           filenames=[filename],
-                          findings=findings,
+                          suffixs=findings,
                           roi_force=True)
     print("File name:", filename)
     '''

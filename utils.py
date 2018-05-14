@@ -39,7 +39,7 @@ def get_results(outfile, testdata, batch, obj, roi, label_def,
                 x, y = obj.prediction(data=ts, roi=roi,
                                       label_def=label_def, save_dir='./Pic',
                                       filenames=filenames,
-                                      findings=findings)
+                                      suffixs=findings)
                 for j, num in enumerate(nums):
                     print(i, j, num)
                     print("File name:", testdata[3][num])

@@ -277,11 +277,9 @@ class Detecter(Core2.Core):
         return self.sess.run([self.y51], feed_dict=feed_dict)
 
     # 予測器
-    '''
-    Todo: findingsの廃止、出力ファイル名の定義の疎結合化
-    '''
+
     def prediction(self, data, roi=False, label_def=None, save_dir=None,
-                   filenames=None, findings=None, roi_force=False):
+                   filenames=None, suffixs=None, roi_force=False):
         # Make feed dict for prediction
         if self.network_mode == 'pretrain':
             self.p.change_phase(False)
@@ -305,12 +303,12 @@ class Detecter(Core2.Core):
                               save_dir=save_dir,
                               filename=filenames[i],
                               label_def=label_def,
-                              findings=findings[i],
+                              suffix=suffixs[i],
                               roi_force=roi_force)
 
             return result_y, result_z
 
-    def make_roi(self, weights, roi_base, save_dir, filename, label_def, findings,
+    def make_roi(self, weights, roi_base, save_dir, filename, label_def, suffix,
                  roi_force):
         # Read files
         if filename.find('.png') >= 0:
@@ -347,7 +345,7 @@ class Detecter(Core2.Core):
             if roi_force:
                 if filename.find('.png') >= 0:
                     cv2.imwrite(save_dir + '/' + str(ftitle) + '_' +
-                                str(finding) + '_' + findings + '.png', roi_img)
+                                str(finding) + '_' + suffix + '.png', roi_img)
                 else:
                     cv2.imwrite(save_dir + '/' + str(ftitle) +
                                 '_' + str(finding) + '.png', roi_img)
@@ -355,7 +353,7 @@ class Detecter(Core2.Core):
                 if findings.find(finding) >= 0 or filename.find('.dcm') >= 0:
                     if filename.find('.png') >= 0:
                         cv2.imwrite(save_dir + '/' + str(ftitle) + '_' +
-                                    str(finding) + '_' + findings + '.png', roi_img)
+                                    str(finding) + '_' + suffix + '.png', roi_img)
                     else:
                         if finding in ['Nodule', 'Mass', 'Pneumonia']:
                             cv2.imwrite(save_dir + '/' + str(ftitle) +
