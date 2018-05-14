@@ -34,6 +34,8 @@ def main():
     rtype = config.get('DLParams', 'regularization_type')
     rr = config.getfloat('DLParams', 'regularization_rate')
     l1_norm = config.getfloat('DLParams', 'l1_normalization')
+    dumping_rate = config.getfloat('DLParams', 'dumping_rate')
+    dumping_period = config.getint('DLParams', 'dumping_period')
     epoch = config.getint('DLParams', 'epoch')
     batch = config.getint('DLParams', 'batch')
     log = config.getint('LogParams', 'log_period')
@@ -78,6 +80,8 @@ def main():
                    learning_rate=lr,
                    dynamic_learning_rate=dlr,
                    beta1=0.9, beta2=0.999,
+                   dumping_period = dumping_period,
+                   dumping_rate = dumping_rate,
                    regularization=rr,
                    regularization_type=rtype,
                    checkpoint=checkpoint,

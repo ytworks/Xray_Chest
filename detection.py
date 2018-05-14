@@ -37,6 +37,8 @@ class Detecter(Core2.Core):
                  learning_rate=0.0001,
                  dynamic_learning_rate=0.000001,
                  beta1=0.9, beta2=0.999,
+                 dumping_period=9000,
+                 dumping_rate=0.9,
                  regularization=0.0,
                  regularization_type='L2',
                  checkpoint='./Storages/Core.ckpt',
@@ -73,10 +75,11 @@ class Detecter(Core2.Core):
         self.l1_norm_value = 0.0
         self.regularization_value = 0.0
         self.eval_l1_loss = 0.0
+        self.dumping_rate = dumping_rate
+        self.dumping_period = dumping_period
         '''
         Todo: dumping rateの引数化
         '''
-        self.dumping_rate_period = 9000
         self.network_mode = network_mode
         for i in range(self.steps):
             if i != 0 and i % self.dumping_rate_period == 0:
@@ -174,16 +177,17 @@ class Detecter(Core2.Core):
     '''
     Todo: 予測時と訓練時で関数を共通化
     '''
+
     def make_feed_dict(self, prob, batch, is_Train=True, is_update=False):
         if self.steps <= 5000:
             rmax, dmax = 1.0, 0.0
         else:
             rmax = min(1.0 + 2.0 * float(self.steps - 5000.0) / 35000.0, 3.0)
             dmax = min(5.0 * float(self.steps - 5000.0) / 20000.0, 5.0)
-        if self.steps % self.dumping_rate_period == 0 and self.steps != 0 and is_update:
+        if self.steps % self.dumping_period == 0 and self.steps != 0 and is_update:
             logger.debug("Before Learning Rate: %g" % self.learning_rate_value)
             self.learning_rate_value = max(
-                0.000001, self.learning_rate_value * 0.9)
+                0.000001, self.learning_rate_value * self.dumping_rate)
             logger.debug("After Learning Rate: %g" % self.learning_rate_value)
 
         feed_dict = {}
@@ -303,6 +307,7 @@ class Detecter(Core2.Core):
     '''
     Todo: 予測時と訓練時で関数を共通化
     '''
+
     def prediction(self, data, roi=False, label_def=None, save_dir=None,
                    filenames=None, findings=None, roi_force=False):
         # Make feed dict for prediction

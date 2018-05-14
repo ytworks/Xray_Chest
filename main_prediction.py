@@ -37,6 +37,8 @@ def main():
     rtype = config.get('DLParams', 'regularization_type')
     rr = config.getfloat('DLParams', 'regularization_rate')
     l1_norm = config.getfloat('DLParams', 'l1_normalization')
+    dumping_rate = config.getfloat('DLParams', 'dumping_rate')
+    dumping_period = config.getint('DLParams', 'dumping_period')
     epoch = config.getint('DLParams', 'epoch')
     batch = config.getint('DLParams', 'batch')
     log = config.getint('LogParams', 'log_period')
