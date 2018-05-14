@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import csv
+import numpy as np
+from sklearn.metrics import roc_curve, auc
 
 def show_config(ini):
     '''
@@ -24,6 +26,26 @@ def show_key(ini, section, key):
     設定ファイルの特定セクションの特定のキー項目（プロパティ）の内容を表示する
     '''
     print '%s.%s =%s' % (section, key, ini.get(section, key))
+
+def get_roc_curve(filename, diags):
+    f = csv.reader(open(filename, 'r'), lineterminator='\n')
+    test, prob = [], []
+    test_diag, prob_diag = [[] for i in range(len(diags))], [
+        [] for i in range(len(diags))]
+    for row in f:
+        test.append(int(float(row[2])))
+        prob.append(float(row[0]))
+        for i in range(len(diags)):
+            test_diag[i].append(int(float(row[i + 15 + 4])))
+            prob_diag[i].append(float(row[i + 4]))
+    for i, n in enumerate(diags):
+        fpr, tpr, thresholds = roc_curve(test_diag[i], prob_diag[i], pos_label=1)
+        roc = [[fpr[j], tpr[j], thresholds[j]] for j in range(len(fpr))]
+        roc = np.array(roc)
+        np.save('./Config/'+n+'.npy', roc)
+
+
+
 
 def get_results(outfile, testdata, batch, obj, roi, label_def,
                 img_reader):

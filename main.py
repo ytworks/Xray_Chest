@@ -103,9 +103,9 @@ def main():
     testdata = dataset.test.get_all_files()
     get_results(outfile.replace('result', 'nih_result'), testdata, batch, obj, roi, label_def,
                 img_reader=dataset.test.img_reader)
-    '''
-    Todo: 感度テーブルを作成する
-    '''
+    # sensivity / specifity table
+    get_roc_curve(filename=outfile.replace('result', 'nih_result'), diags=label_def)
+
 
 if __name__ == '__main__':
     main()
