@@ -50,6 +50,7 @@ def main():
     split_mode = config.get('Mode', 'split_mode')
     network_mode = config.get('Mode', 'network_mode')
     auc_file = config.get('OutputParams', 'auc_file')
+    validation_set = config.getboolean('Mode', 'validation_set')
 
     if mode in ['learning']:
         init = True
@@ -71,7 +72,8 @@ def main():
                                         augment=augment,
                                         raw_img=True,
                                         model='densenet',
-                                        zca=False)
+                                        zca=False,
+                                        validation_set=validation_set)
     print("label definitions:")
     print(label_def)
 
@@ -95,7 +97,7 @@ def main():
     if mode != 'prediction':
         logger.debug("Start learning")
         obj.learning(data=dataset,
-                     validation_batch_num=int(250 / batch) + 1 if ds == 'conf' else 1)
+                     validation_batch_num=int(len(dataset.val.get_all_files()[0]) / batch) + 1)
         logger.debug("Finish learning")
     else:
         logger.debug("Skipped learning")

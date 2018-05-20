@@ -231,9 +231,9 @@ class Detecter(Core2.Core):
                     prob=True, data=batch[0], label=batch[2], is_Train=False, is_label=True)
                 train_accuracy_z, losses, aucs_t = self.get_auc_list(
                     feed_dict, batch)
-                # Test
+                # Validation sample
                 val_accuracy_y, val_accuracy_z, val_losses, test, prob = [], [], [], [], []
-                validation_batch = data.test.next_batch(
+                validation_batch = data.val.next_batch(
                     self.batch, augment=False, batch_ratio=batch_ratio[i % len(batch_ratio)])
                 feed_dict_val = self.make_feed_dict(
                     prob=True, data=validation_batch[0], label=validation_batch[2], is_Train=False, is_label=True)
@@ -262,6 +262,13 @@ class Detecter(Core2.Core):
             _, summary = self.sess.run(
                 [self.train_op, self.summary], feed_dict=feed_dict)
             vs.add_log(writer=self.train_writer, summary=summary, step=i)
+            validation_batch = data.val.next_batch(
+                self.batch, augment=False, batch_ratio=batch_ratio[i % len(batch_ratio)])
+            feed_dict_val = self.make_feed_dict(
+                prob=True, data=validation_batch[0], label=validation_batch[2], is_Train=False, is_label=True)
+            summary = self.sess.run(self.summary, feed_dict=feed_dict_val
+                                    )
+            vs.add_log(writer=self.test_writer, summary=summary, step=i)
             self.steps += 1
         self.save_checkpoint()
 

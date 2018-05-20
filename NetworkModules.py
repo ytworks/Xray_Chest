@@ -79,7 +79,6 @@ def scratch_model(x, SIZE, CH, istraining, rmax, dmax, keep_probs):
     # reshape
     y71 = Layers.reshape_tensor(
         x=y61, shape=[StemChannels + 12 + GrowthRate * 98])
-    vs.variable_summary(y71, 'Features')
     y71_d = Layers.dropout(x=y71,
                            keep_probs=keep_probs,
                            training_prob=prob,

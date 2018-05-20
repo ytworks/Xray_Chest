@@ -49,6 +49,7 @@ def main():
     split_mode = config.get('Mode', 'split_mode')
     network_mode = config.get('Mode', 'network_mode')
     auc_file = config.get('OutputParams', 'auc_file')
+    validation_set = config.getboolean('Mode', 'validation_set')
 
     dataset, _ = read_data_sets(nih_datapath=["./Data/Open/images/*.png"],
                                 nih_supervised_datapath="./Data/Open/Data_Entry_2017_v2.csv",
@@ -60,7 +61,8 @@ def main():
                                 augment=augment,
                                 raw_img=True,
                                 model='densenet',
-                                zca=False)
+                                zca=False,
+                                validation_set=validation_set)
 
     if mode in ['learning']:
         init = True
