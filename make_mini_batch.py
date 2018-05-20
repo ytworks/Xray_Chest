@@ -8,6 +8,7 @@ import csv
 import numpy as np
 import cv2
 import time
+import json
 from sklearn.model_selection import train_test_split
 import tensorflow as tf
 from DICOMReader.DICOMReader import dicom_to_np
@@ -53,7 +54,6 @@ class DataSet(object):
         else:
             self.pi = tf.keras.applications.vgg19.preprocess_input
 
-
         # 正常/異常のファイルの分類
         self.normal, self.abnormal = [], []
         for filename in self.files:
@@ -63,13 +63,12 @@ class DataSet(object):
             else:
                 self.abnormal.append(filename)
 
-
         # ファイル配列のIDのリストを作成
         self.start_normal, self.start_abnormal = 0, 0
-        imgs_normal, imgs_abnormal= [], []
-        logger.debug("File num: %g"%len(self.files))
-        logger.debug("Normal File num: %g"%len(self.normal))
-        logger.debug("Abnormal File num: %g"%len(self.abnormal))
+        imgs_normal, imgs_abnormal = [], []
+        logger.debug("File num: %g" % len(self.files))
+        logger.debug("Normal File num: %g" % len(self.normal))
+        logger.debug("Abnormal File num: %g" % len(self.abnormal))
         for i in range(len(self.normal)):
             imgs_normal.append(i)
         for i in range(len(self.abnormal)):
@@ -93,16 +92,16 @@ class DataSet(object):
         # zoom
         img = self.zoom(img)
         # flip
-        img = self.flip(img = img)
+        img = self.flip(img=img)
         # rotation
         if np.random.rand() >= 0.9:
-            img = self.rotation(img, rot = random.choice([0, 90, 180, 270]))
+            img = self.rotation(img, rot=random.choice([0, 90, 180, 270]))
             img = img.reshape((img.shape[0], img.shape[1], 1))
         # Shift
-        img = self.shift(img = img, move_x = 0.05, move_y = 0.05)
+        img = self.shift(img=img, move_x=0.05, move_y=0.05)
         # small rotation
         if np.random.rand() >= 0.7:
-            img = self.rotation(img, rot = 15.0 * (2.0 * random.random() - 1.0))
+            img = self.rotation(img, rot=15.0 * (2.0 * random.random() - 1.0))
             img = img.reshape((img.shape[0], img.shape[1], 1))
         return img
 
@@ -120,9 +119,7 @@ class DataSet(object):
             img = img[start_w:end_w, start_h:end_h]
             return img
 
-
-
-    def flip(self,img):
+    def flip(self, img):
         if np.random.rand() >= 0.9:
             img = cv2.flip(img, 0)
             img = img.reshape((img.shape[0], img.shape[1], 1))
@@ -131,23 +128,25 @@ class DataSet(object):
             img = img.reshape((img.shape[0], img.shape[1], 1))
         return img
 
-    def rotation(self, img, rot = 45):
+    def rotation(self, img, rot=45):
         size = tuple(np.array([img.shape[1], img.shape[0]]))
-        matrix = cv2.getRotationMatrix2D((img.shape[1]/2,img.shape[0]/2),rot,1)
+        matrix = cv2.getRotationMatrix2D(
+            (img.shape[1] / 2, img.shape[0] / 2), rot, 1)
         affine_matrix = np.float32(matrix)
         return cv2.warpAffine(img, affine_matrix, size, flags=cv2.INTER_LINEAR)
 
-    def shift(self, img, move_x = 0.1, move_y = 0.1):
+    def shift(self, img, move_x=0.1, move_y=0.1):
         if np.random.rand() >= 0.7:
             size = tuple(np.array([img.shape[0], img.shape[1]]))
             mx = int(img.shape[0] * move_x * random.random())
             my = int(img.shape[1] * move_y * random.random())
             matrix = [
-                        [1,  0, mx],
-                        [0,  1, my]
-                    ]
+                [1,  0, mx],
+                [0,  1, my]
+            ]
             affine_matrix = np.float32(matrix)
-            img = cv2.warpAffine(img, affine_matrix, size, flags=cv2.INTER_LINEAR)
+            img = cv2.warpAffine(img, affine_matrix, size,
+                                 flags=cv2.INTER_LINEAR)
             img = img.reshape((img.shape[0], img.shape[1], 1))
             return img
         else:
@@ -158,7 +157,8 @@ class DataSet(object):
         filenames, raw_data = [], []
         for i in tqdm(range(len(self.files))):
             # ファイルの読み込み
-            img, label0, label1, filename, raw = self.img_reader(self.files[i], augment = False)
+            img, label0, label1, filename, raw = self.img_reader(
+                self.files[i], augment=False)
             # 出力配列の作成
             imgs.append(img)
             labels0.append(label0)
@@ -172,7 +172,8 @@ class DataSet(object):
         filenames, raw_data = [], []
         for i in tqdm(range(len(self.files))):
             # ファイルの読み込み
-            img, label0, label1, filename, raw = self.img_reader(self.files[i], augment = False)
+            img, label0, label1, filename, raw = self.img_reader(
+                self.files[i], augment=False)
             # 出力配列の作成
             imgs.append(self.files[i])
             labels0.append(label0)
@@ -181,8 +182,7 @@ class DataSet(object):
             raw_data.append(raw)
         return [imgs, np.array(labels1), np.array(labels0), filenames, raw_data]
 
-
-    def img_process(self, f, ext, augment = True):
+    def img_process(self, f, ext, augment=True):
         # 画像の読み込み
         if ext == ".dcm":
             img, bits = dicom_to_np(f)
@@ -202,23 +202,24 @@ class DataSet(object):
                 img = self.augmentation(img)
 
         # 画像サイズの調整
-        img = cv2.resize(img,(self.size,self.size), interpolation = cv2.INTER_AREA)
+        img = cv2.resize(img, (self.size, self.size),
+                         interpolation=cv2.INTER_AREA)
 
         # ZCA whitening
         if not self.raw_img:
             if self.zca:
-                img = PP.PreProcessing(np.reshape(img, (self.size,self.size, self.channel)))
+                img = PP.PreProcessing(np.reshape(
+                    img, (self.size, self.size, self.channel)))
             else:
-                img = np.reshape(img, (self.size,self.size, self.channel))
+                img = np.reshape(img, (self.size, self.size, self.channel))
         else:
             img = (img.astype(np.int32)).astype(np.float32)
-            img = np.stack((img, img, img), axis = -1)
+            img = np.stack((img, img, img), axis=-1)
             #img = cv2.applyColorMap(img.astype(np.uint8), cv2.COLORMAP_JET)
             img = self.pi(img.astype(np.float32))
         return img
 
-
-    def img_reader(self, f, augment = True):
+    def img_reader(self, f, augment=True):
         root, ext = os.path.splitext(f)
         filename = os.path.basename(f)
         # 教師データの読み込み
@@ -227,7 +228,7 @@ class DataSet(object):
 
         return img, label[0], label[1], filename, self.labels[filename]['raw']
 
-    def next_batch(self, batch_size, augment = True, debug = True, batch_ratio = 0.5):
+    def next_batch(self, batch_size, augment=True, debug=True, batch_ratio=0.5):
         # 正常系の制御
         start_normal = self.start_normal
         if self.start_normal + int(batch_size * batch_ratio) >= len(self._images_normal):
@@ -235,7 +236,8 @@ class DataSet(object):
             shuffle_normal = True
         else:
             shuffle_normal = False
-        end_normal = min(self.start_normal + int(round((batch_size * batch_ratio))), len(self._images_normal) - 1)
+        end_normal = min(self.start_normal + int(round((batch_size *
+                                                        batch_ratio))), len(self._images_normal) - 1)
 
         # 異常系の制御
         start_abnormal = self.start_abnormal
@@ -244,8 +246,8 @@ class DataSet(object):
             shuffle_abnormal = True
         else:
             shuffle_abnormal = False
-        end_abnormal = min(self.start_abnormal + int(round((batch_size * (1.0 - batch_ratio)))), len(self._images_abnormal) - 1)
-
+        end_abnormal = min(self.start_abnormal + int(round((batch_size *
+                                                            (1.0 - batch_ratio)))), len(self._images_abnormal) - 1)
 
         imgs, labels0, labels1 = [], [], []
         filenames, raw_data = [], []
@@ -253,7 +255,7 @@ class DataSet(object):
         for i in range(start_normal, end_normal):
             # ファイルの読み込み
             img, label0, label1, filename, raw = self.img_reader(self.normal[self._images_normal[i]],
-                                                                 augment = augment)
+                                                                 augment=augment)
             # 出力配列の作成
             imgs.append(img)
             labels0.append(label0)
@@ -265,7 +267,7 @@ class DataSet(object):
         for i in range(start_abnormal, end_abnormal):
             # ファイルの読み込み
             img, label0, label1, filename, raw = self.img_reader(self.abnormal[self._images_abnormal[i]],
-                                                                 augment = augment)
+                                                                 augment=augment)
             # 出力配列の作成
             imgs.append(img)
             labels0.append(label0)
@@ -287,12 +289,10 @@ class DataSet(object):
         else:
             self.start_abnormal = end_abnormal
 
-
-
         return [np.array(imgs), np.array(labels1), np.array(labels0), filenames, raw_data]
 
 
-def get_filepath(datapaths, filter_list = None):
+def get_filepath(datapaths, filter_list=None):
     files = []
     for path in datapaths:
         files.extend(glob.glob(path))
@@ -308,7 +308,7 @@ def get_filepath(datapaths, filter_list = None):
         return filter_files
 
 
-def make_supevised_data_for_nih(path, filter_list = None):
+def make_supevised_data_for_nih(path, filter_list=None):
     # 有効ファイルの読み込み
     valid_files = {}
     if filter_list != None:
@@ -324,8 +324,8 @@ def make_supevised_data_for_nih(path, filter_list = None):
         lines.next()
         for line in lines:
             if filter_list == None or valid_files.has_key(line[0]):
-                findings.setdefault(line[0], {'raw' : line[1]})
-    logger.debug('NIH # of Data records: %d'%len(findings))
+                findings.setdefault(line[0], {'raw': line[1]})
+    logger.debug('NIH # of Data records: %d' % len(findings))
     # データ数のカウント
     finding_count = {}
     for file_name, finding in findings.items():
@@ -348,15 +348,17 @@ def make_supevised_data_for_nih(path, filter_list = None):
         findings[file_name].setdefault('label', np.array([label0, label1]))
     return findings, finding_count, binary_def
 
+
 def make_supevised_data_for_conf(path, labels, datapath):
-    reader = csv.reader(open(datapath, 'rU'), delimiter = '\t')
+    reader = csv.reader(open(datapath, 'rU'), delimiter='\t')
     img2diag = {}
     for row in reader:
         if row != []:
-            img2diag.setdefault(row[0].replace('.IMG', ''), row[10]+row[11])
+            img2diag.setdefault(row[0].replace('.IMG', ''), row[10] + row[11])
     diags = list(set([v for v in img2diag.values()]))
     mapper = diagnosis_map(diags, labels)
-    no_findings = [i for i, label in enumerate(labels) if label in 'No Finding']
+    no_findings = [i for i, label in enumerate(
+        labels) if label in 'No Finding']
     findings = {}
     for p in path:
         label0 = np.zeros(len(labels))
@@ -368,11 +370,12 @@ def make_supevised_data_for_conf(path, labels, datapath):
             label1[1] = 1
             file_name, _ = os.path.splitext(os.path.basename(p))
             for index in mapper[img2diag[file_name]]:
-                    label0[index] = 1
+                label0[index] = 1
         findings.setdefault(os.path.basename(p),
-                            {'label' : np.array([label0, label1]),
-                             'raw' : p})
+                            {'label': np.array([label0, label1]),
+                             'raw': p})
     return findings
+
 
 def diagnosis_map(diags, labels):
     mapper = {}
@@ -385,7 +388,8 @@ def diagnosis_map(diags, labels):
                 mapper[d].append(i)
     return mapper
 
-def split_data(path, split_file_dir, mode = 'patient-wise'):
+
+def split_data(path, split_file_dir, mode='patient-wise'):
     files, patients = [], {}
     # ファイルの読み込み
     with open(path, 'rU') as f:
@@ -393,7 +397,7 @@ def split_data(path, split_file_dir, mode = 'patient-wise'):
         lines.next()
         for line in lines:
             patient = line[0].split('_')[0]
-            files.append({'file' : line[0], 'patient' : patient})
+            files.append({'file': line[0], 'patient': patient})
             patients.setdefault(patient, True)
         patients = [k for k in patients.keys()]
     if mode == 'random':
@@ -424,34 +428,37 @@ def split_data(path, split_file_dir, mode = 'patient-wise'):
 
     return split_file_dir + '/train_list.csv', split_file_dir + '/test_list.csv'
 
-
-def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
-                   nih_supervised_datapath = "./Data/Open/Data_Entry_2017.csv",
-                   nih_boxlist = "./Data/Open/BBox_List_2017.csv",
-                   nih_train_list = "./Data/Open/train_val_list.txt",
-                   nih_test_list = "./Data/Open/test_list.txt",
-                   benchmark_datapath = ["./Data/CR_DATA/BenchMark/*/*.dcm"],
-                   benchmark_supervised_datapath = "./Data/CR_DATA/BenchMark/CLNDAT_EN.txt",
-                   split_file_dir = "./Data",
-                   split_mode = 'official',
-                   img_size = 512,
-                   augment = True,
-                   zca = True,
-                   raw_img = False,
-                   model = 'xception',
-                   ds = 'normal'):
+'''
+Todo: ds機能を削除
+'''
+def read_data_sets(nih_datapath=["./Data/Open/images/*.png"],
+                   nih_supervised_datapath="./Data/Open/Data_Entry_2017.csv",
+                   nih_boxlist="./Data/Open/BBox_List_2017.csv",
+                   nih_train_list="./Data/Open/train_val_list.txt",
+                   nih_test_list="./Data/Open/test_list.txt",
+                   benchmark_datapath=["./Data/CR_DATA/BenchMark/*/*.dcm"],
+                   benchmark_supervised_datapath="./Data/CR_DATA/BenchMark/CLNDAT_EN.txt",
+                   split_file_dir="./Data",
+                   split_mode='official',
+                   img_size=512,
+                   augment=True,
+                   zca=True,
+                   raw_img=False,
+                   model='xception'):
     class DataSets(object):
         pass
     data_sets = DataSets()
 
     # データセットの分割
-    train_set, test_set = split_data(nih_supervised_datapath, split_file_dir, split_mode)
+    train_set, test_set = split_data(
+        nih_supervised_datapath, split_file_dir, split_mode)
 
     # 学会データセットのファイルパスを読み込む
     conf_data = get_filepath(benchmark_datapath)
 
     # NIHの教師データを全て読み込む
-    nih_labels, nih_count, label_def = make_supevised_data_for_nih(nih_supervised_datapath)
+    nih_labels, nih_count, label_def = make_supevised_data_for_nih(
+        nih_supervised_datapath)
 
     # NIHのデータセットのファイルパスを読み込む
     nih_data = get_filepath(nih_datapath)
@@ -478,82 +485,62 @@ def read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
     # NIHのデータセットのファイルパスを読み込む
     nih_data_test = get_filepath(nih_datapath, nih_labels_test)
 
-
-
     # 学会データの教師データを読み込む
     conf_labels = make_supevised_data_for_conf(conf_data,
                                                label_def,
                                                benchmark_supervised_datapath)
-    if ds == 'conf':
-        logger.debug("Training Full")
-        data_sets.train = DataSet(data = nih_data,
-                                  label = nih_labels,
-                                  size = img_size,
-                                  zca = zca,
-                                  augment = augment,
-                                  raw_img = raw_img,
-                                  model = model,
-                                  is_train = True,
-                                  counts = nih_count_train)
-        logger.debug("Test Conf")
-        data_sets.test  = DataSet(data = conf_data,
-                                  label = conf_labels,
-                                  size = img_size,
-                                  zca = zca,
-                                  augment = augment,
-                                  raw_img = raw_img,
-                                  model = model,
-                                  is_train = False,
-                                  counts = None)
-    else:
-        logger.debug("Training")
-        data_sets.train = DataSet(data = nih_data_train,
-                                  label = nih_labels_train,
-                                  size = img_size,
-                                  zca = zca,
-                                  augment = augment,
-                                  raw_img = raw_img,
-                                  model = model,
-                                  is_train = True,
-                                  counts = nih_count_train)
-        logger.debug("Test")
-        data_sets.test = DataSet(data = nih_data_test,
-                                 label = nih_labels_test,
-                                 size = img_size,
-                                 zca = zca,
-                                 augment = augment,
-                                 raw_img = raw_img,
-                                 model = model,
-                                 is_train = False,
-                                 counts = None)
-        logger.debug("Test Conf")
-        data_sets.conf  = DataSet(data = conf_data,
-                                  label = conf_labels,
-                                  size = img_size,
-                                  zca = zca,
-                                  augment = augment,
-                                  raw_img = raw_img,
-                                  model = model,
-                                  is_train = False,
-                                  counts = None)
+
+    data_sets.train = DataSet(data=nih_data_train,
+                              label=nih_labels_train,
+                              size=img_size,
+                              zca=zca,
+                              augment=augment,
+                              raw_img=raw_img,
+                              model=model,
+                              is_train=True,
+                              counts=nih_count_train)
+    data_sets.test = DataSet(data=nih_data_test,
+                             label=nih_labels_test,
+                             size=img_size,
+                             zca=zca,
+                             augment=augment,
+                             raw_img=raw_img,
+                             model=model,
+                             is_train=False,
+                             counts=None)
+    data_sets.conf = DataSet(data=conf_data,
+                             label=conf_labels,
+                             size=img_size,
+                             zca=zca,
+                             augment=augment,
+                             raw_img=raw_img,
+                             model=model,
+                             is_train=False,
+                             counts=None)
 
     data_sets.train_summary = nih_count
+    f = open('./Config/label_def.json', 'w')
+    dic = {'label_def' : label_def}
+    json.dump(dic, f)
     return data_sets, label_def
+
 
 if __name__ == '__main__':
     # raw_img
-    dataset, _ = read_data_sets(nih_datapath = ["./Data/Open/images/*.png"],
-                             nih_supervised_datapath = "./Data/Open/Data_Entry_2017.csv",
-                             nih_boxlist = "./Data/Open/BBox_List_2017.csv",
-                             benchmark_datapath = ["./Data/CR_DATA/BenchMark/*/*.dcm"],
-                             benchmark_supervised_datapath = "./Data/CR_DATA/BenchMark/CLNDAT_EN.txt",
-                             split_mode = 'random',
-                             img_size = 512,
-                             augment = True,
-                             zca = True,
-                             raw_img = True,
-                             model = 'densenet')
-    print(len(dataset.test.get_all_data()), len(dataset.test.get_all_data()[2]))
+    dataset, _ = read_data_sets(nih_datapath=["./Data/Open/images/*.png"],
+                                nih_supervised_datapath="./Data/Open/Data_Entry_2017.csv",
+                                nih_boxlist="./Data/Open/BBox_List_2017.csv",
+                                benchmark_datapath=[
+                                    "./Data/CR_DATA/BenchMark/*/*.dcm"],
+                                benchmark_supervised_datapath="./Data/CR_DATA/BenchMark/CLNDAT_EN.txt",
+                                split_mode='random',
+                                img_size=512,
+                                augment=True,
+                                zca=True,
+                                raw_img=True,
+                                model='densenet')
+    print(len(dataset.test.get_all_data()),
+          len(dataset.test.get_all_data()[2]))
     for i in range(2):
         x = dataset.train.next_batch(4)
         print(x[1], x[2], x[3], x[4])

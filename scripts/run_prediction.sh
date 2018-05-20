@@ -1,16 +1,20 @@
 #! /usr/bin/bash
 cd `dirname $0`
 cd ../
-#source activate tensorflow_p27
 
 FLAG=""
-while getopts d:f: OPT
+VM="1"
+while getopts i:d:v OPT
 do
   case $OPT in
     d) FLAG=$OPTARG;;
-    f) FILE=$OPTARG;;
+    v) VM="0";;
+    i) FILE=$OPTARG;;
   esac
 done
+if [[ $VM == "1" ]]; then
+  source activate tensorflow_p27
+fi
 
 config="./settings/prediction.ini"
 echo $FLAG
