@@ -21,5 +21,5 @@ python main.py -config $config
 if [[ $FLAG == "debug" ]]; then
   echo "Not Stop"
 else
-  bash /home/ec2-user/git/mgmt/stop.sh
+  bash /home/ubuntu/git/mgmt/stop.sh
 fi
