@@ -135,6 +135,13 @@ class Detecter(Core2.Core):
                                                          keep_probs=self.keep_probs)
         elif self.network_mode == 'pretrain':
             self.z, self.logit, self.y51, self.p = pretrain_model(x=self.x)
+        elif self.network_mode == 'synplectic':
+            self.z, self.logit, self.y51 = synplectic_scratch_model(x=self.x, SIZE=self.SIZE,
+                                                                    CH=self.CH,
+                                                                    istraining=self.istraining,
+                                                                    rmax=self.rmax,
+                                                                    dmax=self.dmax,
+                                                                    keep_probs=self.keep_probs)
         else:
             self.z, self.logit, self.y51 = scratch_model(x=self.x,
                                                          SIZE=self.SIZE,
@@ -308,12 +315,12 @@ class Detecter(Core2.Core):
             result_roi = []
             for i in range(len(filenames)):
                 roi_map = self.make_roi(weights=weights[0],
-                              roi_base=roi_base[0][i, :, :, :],
-                              save_dir=save_dir,
-                              filename=filenames[i],
-                              label_def=label_def,
-                              suffix=suffixs[i],
-                              roi_force=roi_force)
+                                        roi_base=roi_base[0][i, :, :, :],
+                                        save_dir=save_dir,
+                                        filename=filenames[i],
+                                        label_def=label_def,
+                                        suffix=suffixs[i],
+                                        roi_force=roi_force)
                 result_roi.append(roi_map)
 
             return result_y, result_z, np.array(result_roi)
