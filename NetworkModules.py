@@ -22,10 +22,11 @@ def synplectic_scratch_model(x, SIZE, CH, istraining, rmax, dmax, keep_probs):
     SE = False
     BottleNeck = 2
     StemChannels = 32
+    GrowthRate = 8
     prob = 1.0
     GroupNum = 8
     GroupNorm = False
-    Nums = [6, 12, 48, 32]
+    Nums = [12, 24, 96, 64]
     # dense net
     # Stem
     # Batch Normalization
@@ -44,12 +45,12 @@ def synplectic_scratch_model(x, SIZE, CH, istraining, rmax, dmax, keep_probs):
                            vname='Stem',
                            regularization=Regularization,
                            Training=istraining)
-
     # Dense
     densenet_output = synplectic_densenet_template(x=dense_stem,
                                                    Nums=Nums,
                                                    Act=Activation,
                                                    BottleNeck=BottleNeck,
+                                                   GrowthRate=GrowthRate,
                                                    InputNode=[SIZE / 4,
                                                               SIZE / 4, StemChannels],
                                                    Strides=[1, 1, 1, 1],
@@ -66,7 +67,7 @@ def synplectic_scratch_model(x, SIZE, CH, istraining, rmax, dmax, keep_probs):
     y50 = densenet_output
     y51 = SE_module(x=y50,
                     InputNode=[SIZE / 64, SIZE / 64,
-                               StemChannels * (sum(Nums)+1)],
+                               StemChannels + GrowthRate * (sum(Nums))],
                     Act=Activation,
                     Rate=0.5,
                     vname='TOP_SE')
@@ -79,14 +80,14 @@ def synplectic_scratch_model(x, SIZE, CH, istraining, rmax, dmax, keep_probs):
 
     # reshape
     y71 = Layers.reshape_tensor(
-        x=y61, shape=[StemChannels * (sum(Nums)+1)])
+        x=y61, shape=[StemChannels + GrowthRate * (sum(Nums))])
     y71_d = Layers.dropout(x=y71,
                            keep_probs=keep_probs,
                            training_prob=prob,
                            vname='Dropout')
     # fnn
     y72 = Outputs.output(x=y71_d,
-                         InputSize=StemChannels * (sum(Nums)+1),
+                         InputSize=StemChannels + GrowthRate* (sum(Nums)),
                          OutputSize=15,
                          Initializer='Xavier',
                          BatchNormalization=False,
