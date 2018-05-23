@@ -26,7 +26,7 @@ def synplectic_scratch_model(x, SIZE, CH, istraining, rmax, dmax, keep_probs):
     prob = 1.0
     GroupNum = 8
     GroupNorm = False
-    Nums = [12, 24, 96, 64]
+    Nums = [8, 14, 56, 36]
     # dense net
     # Stem
     # Batch Normalization

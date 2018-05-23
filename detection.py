@@ -46,7 +46,8 @@ class Detecter(Core2.Core):
                  size=256,
                  l1_norm=0.1,
                  step=0,
-                 network_mode='scratch'):
+                 network_mode='scratch',
+                 tflog=10):
         super(Detecter, self).__init__(output_type=output_type,
                                        epoch=epoch,
                                        batch=batch,
@@ -72,6 +73,7 @@ class Detecter(Core2.Core):
         self.dumping_rate = dumping_rate
         self.dumping_period = dumping_period
         self.network_mode = network_mode
+        self.tflog = tflog
         for i in range(self.steps):
             if i != 0 and i % self.dumping_period == 0:
                 self.learning_rate_value = max(
@@ -109,7 +111,7 @@ class Detecter(Core2.Core):
         # tensor board
         now = datetime.now()
         now = now.strftime("%Y-%m-%d")
-        self.summary, self.train_writer, self.test_writer = vs.file_writer(
+        self.summary, self.train_writer, self.val_writer, self.test_writer = vs.file_writer(
             sess=self.sess, file_name='./Result/' + now)
         # チェックポイントの呼び出し
         self.saver = tf.train.Saver()
@@ -269,13 +271,21 @@ class Detecter(Core2.Core):
             _, summary = self.sess.run(
                 [self.train_op, self.summary], feed_dict=feed_dict)
             vs.add_log(writer=self.train_writer, summary=summary, step=i)
-            validation_batch = data.val.next_batch(
-                self.batch, augment=False, batch_ratio=batch_ratio[i % len(batch_ratio)])
-            feed_dict_val = self.make_feed_dict(
-                prob=True, data=validation_batch[0], label=validation_batch[2], is_Train=False, is_label=True)
-            summary = self.sess.run(self.summary, feed_dict=feed_dict_val
-                                    )
-            vs.add_log(writer=self.test_writer, summary=summary, step=i)
+            if i % self.tflog == 0:
+                validation_batch = data.val.next_batch(
+                    self.batch, augment=False, batch_ratio=batch_ratio[i % len(batch_ratio)])
+                feed_dict_val = self.make_feed_dict(
+                    prob=True, data=validation_batch[0], label=validation_batch[2], is_Train=False, is_label=True)
+                summary = self.sess.run(self.summary, feed_dict=feed_dict_val
+                                        )
+                vs.add_log(writer=self.val_writer, summary=summary, step=i)
+                test_batch = data.test.next_batch(
+                    self.batch, augment=False, batch_ratio=batch_ratio[i % len(batch_ratio)])
+                feed_dict_test = self.make_feed_dict(
+                    prob=True, data=test_batch[0], label=test_batch[2], is_Train=False, is_label=True)
+                summary = self.sess.run(self.summary, feed_dict=feed_dict_test
+                                        )
+                vs.add_log(writer=self.test_writer, summary=summary, step=i)
             self.steps += 1
         self.save_checkpoint()
 

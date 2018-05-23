@@ -40,6 +40,7 @@ def main():
     epoch = config.getint('DLParams', 'epoch')
     batch = config.getint('DLParams', 'batch')
     log = config.getint('LogParams', 'log_period')
+    tflog = config.getint('LogParams', 'tflog_period')
     ds = config.get('InputParams', 'dataset')
     roi = config.getboolean('Mode', 'roi_prediction')
     output_type = config.get('DLParams', 'output_type')
@@ -86,7 +87,8 @@ def main():
                    size=size,
                    l1_norm=l1_norm,
                    step=step,
-                   network_mode=network_mode)
+                   network_mode=network_mode,
+                   tflog=tflog)
     obj.construct()
     label_list = json.load(open('./Config/label_def.json'))
     root, ext = os.path.splitext(filename)
