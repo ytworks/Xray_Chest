@@ -98,8 +98,9 @@ def main():
     obj.construct()
     if mode != 'prediction':
         logger.debug("Start learning")
+        num = int(len(dataset.val.files) / batch) + 1
         obj.learning(data=dataset,
-                     validation_batch_num=int(len(dataset.val.get_all_files()[0]) / batch) + 1)
+                     validation_batch_num=num)
         logger.debug("Finish learning")
     else:
         logger.debug("Skipped learning")
