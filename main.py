@@ -15,10 +15,6 @@ sh = StreamHandler()
 logger.addHandler(sh)
 logger.setLevel(10)
 
-'''
-Todo: main_predictionとの重複部分の共通化
-'''
-
 
 def main():
     parser = argparse.ArgumentParser()

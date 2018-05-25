@@ -103,7 +103,7 @@ def main():
     print(y[0])
     s = [0 for j in range(len(y[0]))]
     for i, diag in enumerate(label_list['label_def']):
-        roc_map = np.load('./Config/'+diag+'.npy')
+        roc_map = np.load('./Config/' + diag + '.npy')
         for line in roc_map:
             if y[0][i] <= float(line[2]):
                 s[i] = float(line[0])
