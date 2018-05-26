@@ -87,7 +87,7 @@ def synplectic_scratch_model(x, SIZE, CH, istraining, rmax, dmax, keep_probs):
                            vname='Dropout')
     # fnn
     y72 = Outputs.output(x=y71_d,
-                         InputSize=StemChannels + GrowthRate* (sum(Nums)),
+                         InputSize=StemChannels + GrowthRate * (sum(Nums)),
                          OutputSize=15,
                          Initializer='Xavier',
                          BatchNormalization=False,
