@@ -40,6 +40,7 @@ def main():
     epoch = config.getint('DLParams', 'epoch')
     batch = config.getint('DLParams', 'batch')
     log = config.getint('LogParams', 'log_period')
+    tflog = config.getint('LogParams', 'tflog_period')
     ds = config.get('InputParams', 'dataset')
     roi = config.getboolean('Mode', 'roi_prediction')
     output_type = config.get('DLParams', 'output_type')
@@ -49,6 +50,7 @@ def main():
     split_mode = config.get('Mode', 'split_mode')
     network_mode = config.get('Mode', 'network_mode')
     auc_file = config.get('OutputParams', 'auc_file')
+    validation_set = config.getboolean('Mode', 'validation_set')
 
     dataset, _ = read_data_sets(nih_datapath=["./Data/Open/images/*.png"],
                                 nih_supervised_datapath="./Data/Open/Data_Entry_2017_v2.csv",
@@ -60,7 +62,8 @@ def main():
                                 augment=augment,
                                 raw_img=True,
                                 model='densenet',
-                                zca=False)
+                                zca=False,
+                                validation_set=validation_set)
 
     if mode in ['learning']:
         init = True
@@ -84,7 +87,8 @@ def main():
                    size=size,
                    l1_norm=l1_norm,
                    step=step,
-                   network_mode=network_mode)
+                   network_mode=network_mode,
+                   tflog=tflog)
     obj.construct()
     label_list = json.load(open('./Config/label_def.json'))
     root, ext = os.path.splitext(filename)
@@ -99,7 +103,7 @@ def main():
     print(y[0])
     s = [0 for j in range(len(y[0]))]
     for i, diag in enumerate(label_list['label_def']):
-        roc_map = np.load('./Config/'+diag+'.npy')
+        roc_map = np.load('./Config/' + diag + '.npy')
         for line in roc_map:
             if y[0][i] <= float(line[2]):
                 s[i] = float(line[0])

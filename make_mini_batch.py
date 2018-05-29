@@ -428,9 +428,7 @@ def split_data(path, split_file_dir, mode='patient-wise'):
 
     return split_file_dir + '/train_list.csv', split_file_dir + '/test_list.csv'
 
-'''
-Todo: ds機能を削除
-'''
+
 def read_data_sets(nih_datapath=["./Data/Open/images/*.png"],
                    nih_supervised_datapath="./Data/Open/Data_Entry_2017.csv",
                    nih_boxlist="./Data/Open/BBox_List_2017.csv",
@@ -444,7 +442,8 @@ def read_data_sets(nih_datapath=["./Data/Open/images/*.png"],
                    augment=True,
                    zca=True,
                    raw_img=False,
-                   model='xception'):
+                   model='xception',
+                   validation_set=True):
     class DataSets(object):
         pass
     data_sets = DataSets()
@@ -489,8 +488,10 @@ def read_data_sets(nih_datapath=["./Data/Open/images/*.png"],
     conf_labels = make_supevised_data_for_conf(conf_data,
                                                label_def,
                                                benchmark_supervised_datapath)
+    nih_data_train_train, nih_data_train_val = train_test_split(
+        nih_data_train, test_size=0.1)
 
-    data_sets.train = DataSet(data=nih_data_train,
+    data_sets.train = DataSet(data=nih_data_train_train if validation_set else nih_data_train,
                               label=nih_labels_train,
                               size=img_size,
                               zca=zca,
@@ -499,6 +500,15 @@ def read_data_sets(nih_datapath=["./Data/Open/images/*.png"],
                               model=model,
                               is_train=True,
                               counts=nih_count_train)
+    data_sets.val = DataSet(data=nih_data_train_val,
+                            label=nih_labels_train,
+                            size=img_size,
+                            zca=zca,
+                            augment=augment,
+                            raw_img=raw_img,
+                            model=model,
+                            is_train=True,
+                            counts=nih_count_train)
     data_sets.test = DataSet(data=nih_data_test,
                              label=nih_labels_test,
                              size=img_size,
@@ -520,7 +530,7 @@ def read_data_sets(nih_datapath=["./Data/Open/images/*.png"],
 
     data_sets.train_summary = nih_count
     f = open('./Config/label_def.json', 'w')
-    dic = {'label_def' : label_def}
+    dic = {'label_def': label_def}
     json.dump(dic, f)
     return data_sets, label_def
 
@@ -557,4 +567,5 @@ if __name__ == '__main__':
             cv2.waitKey(1000)
             cv2.destroyAllWindows()
     for i in tqdm(range(100)):
+        y = dataset.val.next_batch(20)
         y = dataset.test.next_batch(20)

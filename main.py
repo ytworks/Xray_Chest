@@ -15,10 +15,6 @@ sh = StreamHandler()
 logger.addHandler(sh)
 logger.setLevel(10)
 
-'''
-Todo: main_predictionとの重複部分の共通化
-'''
-
 
 def main():
     parser = argparse.ArgumentParser()
@@ -41,6 +37,7 @@ def main():
     epoch = config.getint('DLParams', 'epoch')
     batch = config.getint('DLParams', 'batch')
     log = config.getint('LogParams', 'log_period')
+    tflog = config.getint('LogParams', 'tflog_period')
     ds = config.get('InputParams', 'dataset')
     roi = config.getboolean('Mode', 'roi_prediction')
     output_type = config.get('DLParams', 'output_type')
@@ -50,6 +47,7 @@ def main():
     split_mode = config.get('Mode', 'split_mode')
     network_mode = config.get('Mode', 'network_mode')
     auc_file = config.get('OutputParams', 'auc_file')
+    validation_set = config.getboolean('Mode', 'validation_set')
 
     if mode in ['learning']:
         init = True
@@ -71,7 +69,8 @@ def main():
                                         augment=augment,
                                         raw_img=True,
                                         model='densenet',
-                                        zca=False)
+                                        zca=False,
+                                        validation_set=validation_set)
     print("label definitions:")
     print(label_def)
 
@@ -90,12 +89,14 @@ def main():
                    size=size,
                    l1_norm=l1_norm,
                    step=step,
-                   network_mode=network_mode)
+                   network_mode=network_mode,
+                   tflog=tflog)
     obj.construct()
     if mode != 'prediction':
         logger.debug("Start learning")
+        num = int(len(dataset.val.files) / batch) + 1
         obj.learning(data=dataset,
-                     validation_batch_num=int(250 / batch) + 1 if ds == 'conf' else 1)
+                     validation_batch_num=num)
         logger.debug("Finish learning")
     else:
         logger.debug("Skipped learning")

@@ -46,7 +46,8 @@ class Detecter(Core2.Core):
                  size=256,
                  l1_norm=0.1,
                  step=0,
-                 network_mode='scratch'):
+                 network_mode='scratch',
+                 tflog=10):
         super(Detecter, self).__init__(output_type=output_type,
                                        epoch=epoch,
                                        batch=batch,
@@ -72,6 +73,7 @@ class Detecter(Core2.Core):
         self.dumping_rate = dumping_rate
         self.dumping_period = dumping_period
         self.network_mode = network_mode
+        self.tflog = tflog
         for i in range(self.steps):
             if i != 0 and i % self.dumping_period == 0:
                 self.learning_rate_value = max(
@@ -109,7 +111,7 @@ class Detecter(Core2.Core):
         # tensor board
         now = datetime.now()
         now = now.strftime("%Y-%m-%d")
-        self.summary, self.train_writer, self.test_writer = vs.file_writer(
+        self.summary, self.train_writer, self.val_writer, self.test_writer = vs.file_writer(
             sess=self.sess, file_name='./Result/' + now)
         # チェックポイントの呼び出し
         self.saver = tf.train.Saver()
@@ -135,6 +137,13 @@ class Detecter(Core2.Core):
                                                          keep_probs=self.keep_probs)
         elif self.network_mode == 'pretrain':
             self.z, self.logit, self.y51, self.p = pretrain_model(x=self.x)
+        elif self.network_mode == 'synplectic':
+            self.z, self.logit, self.y51 = synplectic_scratch_model(x=self.x, SIZE=self.SIZE,
+                                                                    CH=self.CH,
+                                                                    istraining=self.istraining,
+                                                                    rmax=self.rmax,
+                                                                    dmax=self.dmax,
+                                                                    keep_probs=self.keep_probs)
         else:
             self.z, self.logit, self.y51 = scratch_model(x=self.x,
                                                          SIZE=self.SIZE,
@@ -231,9 +240,9 @@ class Detecter(Core2.Core):
                     prob=True, data=batch[0], label=batch[2], is_Train=False, is_label=True)
                 train_accuracy_z, losses, aucs_t = self.get_auc_list(
                     feed_dict, batch)
-                # Test
+                # Validation sample
                 val_accuracy_y, val_accuracy_z, val_losses, test, prob = [], [], [], [], []
-                validation_batch = data.test.next_batch(
+                validation_batch = data.val.next_batch(
                     self.batch, augment=False, batch_ratio=batch_ratio[i % len(batch_ratio)])
                 feed_dict_val = self.make_feed_dict(
                     prob=True, data=validation_batch[0], label=validation_batch[2], is_Train=False, is_label=True)
@@ -262,6 +271,21 @@ class Detecter(Core2.Core):
             _, summary = self.sess.run(
                 [self.train_op, self.summary], feed_dict=feed_dict)
             vs.add_log(writer=self.train_writer, summary=summary, step=i)
+            if i % self.tflog == 0:
+                validation_batch = data.val.next_batch(
+                    self.batch, augment=False, batch_ratio=batch_ratio[i % len(batch_ratio)])
+                feed_dict_val = self.make_feed_dict(
+                    prob=True, data=validation_batch[0], label=validation_batch[2], is_Train=False, is_label=True)
+                summary = self.sess.run(self.summary, feed_dict=feed_dict_val
+                                        )
+                vs.add_log(writer=self.val_writer, summary=summary, step=i)
+                test_batch = data.test.next_batch(
+                    self.batch, augment=False, batch_ratio=batch_ratio[i % len(batch_ratio)])
+                feed_dict_test = self.make_feed_dict(
+                    prob=True, data=test_batch[0], label=test_batch[2], is_Train=False, is_label=True)
+                summary = self.sess.run(self.summary, feed_dict=feed_dict_test
+                                        )
+                vs.add_log(writer=self.test_writer, summary=summary, step=i)
             self.steps += 1
         self.save_checkpoint()
 
@@ -301,12 +325,12 @@ class Detecter(Core2.Core):
             result_roi = []
             for i in range(len(filenames)):
                 roi_map = self.make_roi(weights=weights[0],
-                              roi_base=roi_base[0][i, :, :, :],
-                              save_dir=save_dir,
-                              filename=filenames[i],
-                              label_def=label_def,
-                              suffix=suffixs[i],
-                              roi_force=roi_force)
+                                        roi_base=roi_base[0][i, :, :, :],
+                                        save_dir=save_dir,
+                                        filename=filenames[i],
+                                        label_def=label_def,
+                                        suffix=suffixs[i],
+                                        roi_force=roi_force)
                 result_roi.append(roi_map)
 
             return result_y, result_z, np.array(result_roi)

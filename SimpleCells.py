@@ -38,6 +38,178 @@ def stem_cell(x,
     return p_max
 
 
+def synplectic_densenet_template(x,
+                                 Nums=[4, 4, 4, 4],
+                                 Act='Relu',
+                                 BottleNeck=2,
+                                 GrowthRate=8,
+                                 InputNode=[64, 64, 32],
+                                 Initializer='He',
+                                 Strides=[1, 1, 1, 1],
+                                 Renormalization=False,
+                                 Regularization=False,
+                                 rmax=None,
+                                 dmax=None,
+                                 SE=True,
+                                 Training=True,
+                                 GroupNorm=True,
+                                 GroupNum=8,
+                                 vname='_SynDenseNet'):
+    x01 = synplectic_dense_cell(x=x,
+                                Act=Act,
+                                Num=Nums[0],
+                                BottleNeck=BottleNeck,
+                                GrowthRate=GrowthRate,
+                                InputNode=[InputNode[0], InputNode[1],
+                                           InputNode[2]],
+                                Initializer=Initializer,
+                                Strides=Strides,
+                                Renormalization=Renormalization,
+                                Regularization=Regularization,
+                                rmax=rmax,
+                                dmax=dmax,
+                                SE=SE,
+                                Training=Training,
+                                GroupNorm=GroupNorm,
+                                GroupNum=GroupNum,
+                                vname=vname + '_Dense01')
+    x02 = transition_cell(x=x01,
+                          Act=Act,
+                          InputNode=[InputNode[0], InputNode[1],
+                                     InputNode[2] + GrowthRate * (Nums[0])],
+                          Initializer=Initializer,
+                          Strides=Strides,
+                          Renormalization=Renormalization,
+                          Regularization=Regularization,
+                          rmax=rmax,
+                          dmax=dmax,
+                          SE=SE,
+                          Training=Training,
+                          GroupNorm=GroupNorm,
+                          GroupNum=GroupNum,
+                          vname=vname + '_Transition01')
+
+    x03 = synplectic_dense_cell(x=x02,
+                                Act=Act,
+                                Num=Nums[1],
+                                BottleNeck=BottleNeck,
+                                InputNode=[InputNode[0] / 2, InputNode[1] / 2,
+                                           InputNode[2] + GrowthRate * (Nums[0])],
+                                GrowthRate=GrowthRate,
+                                Initializer=Initializer,
+                                Strides=Strides,
+                                Renormalization=Renormalization,
+                                Regularization=Regularization,
+                                rmax=rmax,
+                                dmax=dmax,
+                                SE=SE,
+                                Training=Training,
+                                GroupNorm=GroupNorm,
+                                GroupNum=GroupNum,
+                                vname=vname + '_Dense02')
+    x04 = transition_cell(x=x03,
+                          Act=Act,
+                          InputNode=[InputNode[0] / 2, InputNode[1] /
+                                     2, InputNode[2] + GrowthRate * (Nums[0] + Nums[1])],
+                          Initializer=Initializer,
+                          Strides=Strides,
+                          Renormalization=Renormalization,
+                          Regularization=Regularization,
+                          rmax=rmax,
+                          dmax=dmax,
+                          SE=SE,
+                          Training=Training,
+                          GroupNorm=GroupNorm,
+                          GroupNum=GroupNum,
+                          vname=vname + '_Transition02')
+
+    x05 = synplectic_dense_cell(x=x04,
+                                Act=Act,
+                                Num=Nums[2],
+                                BottleNeck=BottleNeck,
+                                GrowthRate=GrowthRate,
+                                InputNode=[InputNode[0] / 4, InputNode[1] / 4,
+                                           InputNode[2] + GrowthRate * (Nums[0] + Nums[1])],
+                                Initializer=Initializer,
+                                Strides=Strides,
+                                Renormalization=Renormalization,
+                                Regularization=Regularization,
+                                rmax=rmax,
+                                dmax=dmax,
+                                SE=SE,
+                                Training=Training,
+                                GroupNorm=GroupNorm,
+                                GroupNum=GroupNum,
+                                vname=vname + '_Dense03')
+    x06 = transition_cell(x=x05,
+                          Act=Act,
+                          InputNode=[InputNode[0] / 4, InputNode[1] / 4,
+                                     InputNode[2] + GrowthRate * (Nums[0] + Nums[1] + Nums[2])],
+                          Initializer=Initializer,
+                          Strides=Strides,
+                          Renormalization=Renormalization,
+                          Regularization=Regularization,
+                          rmax=rmax,
+                          dmax=dmax,
+                          SE=SE,
+                          Training=Training,
+                          GroupNorm=GroupNorm,
+                          GroupNum=GroupNum,
+                          vname=vname + '_Transition03')
+
+    x07 = synplectic_dense_cell(x=x06,
+                                Act=Act,
+                                Num=Nums[3],
+                                BottleNeck=BottleNeck,
+                                GrowthRate=GrowthRate,
+                                InputNode=[InputNode[0] / 8, InputNode[1] / 8,
+                                           InputNode[2] + GrowthRate * (Nums[0] + Nums[1] + Nums[2])],
+                                Initializer=Initializer,
+                                Strides=Strides,
+                                Renormalization=Renormalization,
+                                Regularization=Regularization,
+                                rmax=rmax,
+                                dmax=dmax,
+                                SE=SE,
+                                Training=Training,
+                                GroupNorm=GroupNorm,
+                                GroupNum=GroupNum,
+                                vname=vname + '_Dense04')
+    x08 = transition_cell(x=x07,
+                          Act=Act,
+                          InputNode=[InputNode[0] / 8, InputNode[1] / 8, InputNode[2]
+                                     + GrowthRate * (Nums[0] + Nums[1] + Nums[2] + Nums[3])],
+                          Initializer=Initializer,
+                          Strides=Strides,
+                          Renormalization=Renormalization,
+                          Regularization=Regularization,
+                          rmax=rmax,
+                          dmax=dmax,
+                          SE=SE,
+                          Training=Training,
+                          GroupNorm=GroupNorm,
+                          GroupNum=GroupNum,
+                          vname=vname + '_Transition04')
+    # Batch Normalization
+    if not GroupNorm:
+        x_bn1 = Layers.batch_normalization(x=x08,
+                                           shape=InputNode[2] + GrowthRate * (
+                                               Nums[0] + Nums[1] + Nums[2] + Nums[3]),
+                                           vname=vname + '_BN01',
+                                           dim=[0, 1, 2],
+                                           Renormalization=Renormalization,
+                                           Training=Training,
+                                           rmax=rmax,
+                                           dmax=dmax)
+    else:
+        x_bn1 = Layers.group_normalization(x=x08, G=GroupNum,
+                                           eps=1e-5, vname=vname + '_GN01')
+    # Activation Function
+    with tf.variable_scope(vname + '_Act01') as scope:
+        x_act1 = AF.select_activation(Act)(x_bn1)
+    return x_act1
+
+
 def densenet_template(x,
                       root,
                       Nums=[4, 4, 4, 4],
@@ -592,7 +764,189 @@ def dense_cell(x,
     '''
 
 
+def synplectic_dense_cell(x,
+                          Num=6,
+                          Act='Relu',
+                          BottleNeck=2,
+                          GrowthRate=8,
+                          InputNode=[64, 64, 32],
+                          Initializer='He',
+                          Strides=[1, 1, 1, 1],
+                          Renormalization=False,
+                          Regularization=False,
+                          rmax=None,
+                          dmax=None,
+                          SE=True,
+                          Training=True,
+                          GroupNorm=True,
+                          GroupNum=8,
+                          vname='_SynDense'):
+    outputs = [x]
+    input = x
+    for i in range(Num):
+        outputs.append(synplectic_conv(x=input,
+                                       Act=Act,
+                                       BottleNeck=BottleNeck,
+                                       GrowthRate=GrowthRate,
+                                       InputNode=[InputNode[0], InputNode[1],
+                                                  InputNode[2] + GrowthRate * i],
+                                       Initializer=Initializer,
+                                       Strides=[1, 1, 1, 1],
+                                       Renormalization=Renormalization,
+                                       Regularization=Regularization,
+                                       rmax=rmax,
+                                       dmax=dmax,
+                                       SE=SE,
+                                       Training=Training,
+                                       GroupNorm=GroupNorm,
+                                       GroupNum=GroupNum,
+                                       vname=vname + '_SynConvBlock' + str(i)))
+        input = Layers.concat(xs=outputs, concat_type='Channel')
+        if SE:
+            input = SE_module(x=input,
+                              InputNode=[InputNode[0], InputNode[1],
+                                         InputNode[2] + GrowthRate * (i + 1)],
+                              Act=Act, vname=vname + '_SE' + str(i))
+    return input
+
+
+def synplectic_conv(x,
+                    Act='Relu',
+                    InputNode=[64, 64, 32],
+                    BottleNeck=16,
+                    GrowthRate=8,
+                    Initializer='He',
+                    Strides=[1, 1, 1, 1],
+                    Renormalization=False,
+                    Regularization=False,
+                    rmax=None,
+                    dmax=None,
+                    SE=True,
+                    Training=True,
+                    GroupNorm=True,
+                    GroupNum=8,
+                    vname='_SynConvBlock'):
+    # Batch Normalization
+    if not GroupNorm:
+        x_bn0 = Layers.batch_normalization(x=x,
+                                           shape=InputNode[2],
+                                           vname=vname + '_BN00',
+                                           dim=[0, 1, 2],
+                                           Renormalization=Renormalization,
+                                           Training=Training,
+                                           rmax=rmax,
+                                           dmax=dmax)
+    else:
+        x_bn0 = Layers.group_normalization(x=x, G=GroupNum,
+                                           eps=1e-5, vname=vname + '_GN00')
+    # Activation Function
+    with tf.variable_scope(vname + '_Act01') as scope:
+        x_act0 = AF.select_activation(Act)(x_bn0)
+
+    x_0 = Layers.convolution2d(x=x_act0,
+                               FilterSize=[1, 1, InputNode[2],
+                                           GrowthRate],
+                               Initializer=Initializer,
+                               Strides=[Strides[1], Strides[2]],
+                               Padding='SAME',
+                               ActivationFunction='Equal',
+                               BatchNormalization=False,
+                               Renormalization=False,
+                               Training=Training,
+                               Regularization=Regularization,
+                               vname=vname + '_Conv_00')
+    # Batch Normalization
+    if not GroupNorm:
+        x_bn1 = Layers.batch_normalization(x=x_0,
+                                           shape=GrowthRate * 4,
+                                           vname=vname + '_BN01',
+                                           dim=[0, 1, 2],
+                                           Renormalization=Renormalization,
+                                           Training=Training,
+                                           rmax=rmax,
+                                           dmax=dmax)
+    else:
+        x_bn1 = Layers.group_normalization(x=x_0, G=GroupNum,
+                                           eps=1e-5, vname=vname + '_GN01')
+    # Activation Function
+    with tf.variable_scope(vname + '_Act01') as scope:
+        x_act1 = AF.select_activation(Act)(x_bn1)
+
+    x0 = Layers.convolution2d(x=x_act1,
+                              FilterSize=[1, 1, GrowthRate,
+                                          GrowthRate * 4],
+                              Initializer=Initializer,
+                              Strides=[Strides[1], Strides[2]],
+                              Padding='SAME',
+                              ActivationFunction='Equal',
+                              BatchNormalization=False,
+                              Renormalization=False,
+                              Training=Training,
+                              Regularization=Regularization,
+                              vname=vname + '_Conv_01')
+    # Batch Normalization
+    if not GroupNorm:
+        x_bn2 = Layers.batch_normalization(x=x0,
+                                           shape=GrowthRate * 4,
+                                           vname=vname + '_BN02',
+                                           dim=[0, 1, 2],
+                                           Renormalization=Renormalization,
+                                           Training=Training,
+                                           rmax=rmax,
+                                           dmax=dmax)
+    else:
+        x_bn2 = Layers.group_normalization(x=x0, G=GroupNum,
+                                           eps=1e-5, vname=vname + '_GN02')
+    # Activation Function
+    with tf.variable_scope(vname + '_Act02') as scope:
+        x_act2 = AF.select_activation(Act)(x_bn2)
+
+    x2 = Layers.depthwise_convolution2d(x=x_act2,
+                                        FilterSize=[
+                                            3, 3, GrowthRate * 4, 1],
+                                        Rate=[1, 1],
+                                        Initializer=Initializer,
+                                        Strides=[Strides[1], Strides[2]],
+                                        Padding='SAME',
+                                        ActivationFunction='Equal',
+                                        BatchNormalization=False,
+                                        Renormalization=False,
+                                        Training=Training,
+                                        Regularization=Regularization,
+                                        vname=vname + '_Conv_02')
+    # Batch Normalization
+    if not GroupNorm:
+        x_bn3 = Layers.batch_normalization(x=x2,
+                                           shape=GrowthRate * 4,
+                                           vname=vname + '_BN03',
+                                           dim=[0, 1, 2],
+                                           Renormalization=Renormalization,
+                                           Training=Training,
+                                           rmax=rmax,
+                                           dmax=dmax)
+    else:
+        x_bn3 = Layers.group_normalization(x=x2, G=GroupNum,
+                                           eps=1e-5, vname=vname + '_GN03')
+    # Activation Function
+    with tf.variable_scope(vname + '_Act03') as scope:
+        x_act3 = AF.select_activation(Act)(x_bn3)
+
+    x3 = Layers.convolution2d(x=x_act3,
+                              FilterSize=[1, 1, GrowthRate * 4, GrowthRate],
+                              Initializer=Initializer,
+                              Strides=[Strides[1], Strides[2]],
+                              Padding='SAME',
+                              ActivationFunction='Equal',
+                              BatchNormalization=False,
+                              Renormalization=False,
+                              Training=Training,
+                              Regularization=Regularization,
+                              vname=vname + '_Conv_03')
+    return x3 + x_0
+
 # Conv Block
+
+
 def conv_block(x,
                Act='Relu',
                InputNode=[64, 64, 32],
