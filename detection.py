@@ -173,8 +173,6 @@ class Detecter(Core2.Core):
                                                        clipping_norm=clipping_norm)
         self.grad_op = self.optimizer.compute_gradients(self.loss_function)
 
-    # 入出力ベクトルの配置
-
     def make_feed_dict(self, prob, data, label=None, is_Train=True, is_update=False, is_label=False):
         if self.steps <= 5000:
             rmax, dmax = 1.0, 0.0
@@ -228,7 +226,8 @@ class Detecter(Core2.Core):
 
     def learning(self, data, save_at_log=False, validation_batch_num=1, batch_ratio=[0.2, 0.3, 0.4]):
         s = time.time()
-        epoch = int(float(len(data.train.files)) * float(self.epoch) / float(self.batch))
+        epoch = int(float(len(data.train.files)) *
+                    float(self.epoch) / float(self.batch))
         logger.debug("Step num: %d", epoch)
         for i in range(epoch):
             batch = data.train.next_batch(
@@ -302,8 +301,6 @@ class Detecter(Core2.Core):
 
     def get_roi_map_base(self, feed_dict):
         return self.sess.run([self.y51], feed_dict=feed_dict)
-
-    # 予測器
 
     def prediction(self, data, roi=False, label_def=None, save_dir=None,
                    filenames=None, suffixs=None, roi_force=False):
