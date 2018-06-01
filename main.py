@@ -19,7 +19,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-config')
     args = parser.parse_args()
-    size, augment, checkpoint, lr, dlr, rtype, rr, l1_norm, dumping_rate, dumping_period, epoch, batch, log, tflog, ds, roi, output_type, outfile, mode, step, split_mode, network_mode, auc_file, validation_set = config_list(
+    size, augment, checkpoint, lr, dlr, rtype, rr, l1_norm, dumping_rate, dumping_period, epoch, batch, log, tflog, ds, roi, output_type, outfile, mode, step, split_mode, network_mode, auc_file, validation_set, optimizer_type = config_list(
         args)
 
     if mode in ['learning']:
@@ -49,7 +49,7 @@ def main():
 
     obj = Detecter(output_type=output_type,
                    epoch=epoch, batch=batch, log=log,
-                   optimizer_type='Adam',
+                   optimizer_type=optimizer_type,
                    learning_rate=lr,
                    dynamic_learning_rate=dlr,
                    beta1=0.9, beta2=0.999,
