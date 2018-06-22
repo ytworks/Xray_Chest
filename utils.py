@@ -2,12 +2,16 @@
 # -*- coding: utf-8 -*-
 import csv
 import numpy as np
-import ConfigParser as cp
+from six.moves import configparser as cp
+import six
 from sklearn.metrics import roc_curve, auc
 
 
 def config_list(args):
-    config = cp.SafeConfigParser()
+    if six.PY2:
+        config = cp.SafeConfigParser()
+    else:
+        config = cp.ConfigParser()
     config.read(args.config)
     show_config(config)
     size = config.getint('DLParams', 'size')
