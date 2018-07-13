@@ -380,7 +380,7 @@ class Detecter(Core2.Core):
                     cv2.imwrite(save_dir + '/' + str(ftitle) +
                                 '_' + str(finding) + '.png', roi_img)
             else:
-                if findings.find(finding) >= 0 or filename.find('.dcm') >= 0:
+                if suffix.find(finding) >= 0 or filename.find('.dcm') >= 0:
                     if filename.find('.png') >= 0:
                         cv2.imwrite(save_dir + '/' + str(ftitle) + '_' +
                                     str(finding) + '_' + suffix + '.png', roi_img)
