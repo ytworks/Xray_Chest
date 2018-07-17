@@ -15,6 +15,7 @@ from DICOMReader.DICOMReader import dicom_to_np
 from preprocessing_tool import preprocessing as PP
 from tqdm import tqdm
 from logging import getLogger, StreamHandler
+import six
 logger = getLogger(__name__)
 sh = StreamHandler()
 logger.addHandler(sh)
@@ -303,8 +304,12 @@ def get_filepath(datapaths, filter_list=None):
         filter_files = []
         for filename in files:
             base_filename = os.path.basename(filename)
-            if filter_list.has_key(base_filename):
-                filter_files.append(filename)
+            if six.PY2:
+                if filter_list.has_key(base_filename):
+                    filter_files.append(filename)
+            else:
+                if base_filename in filter_list:
+                    filter_files.append(filename)
         return filter_files
 
 
@@ -321,10 +326,17 @@ def make_supevised_data_for_nih(path, filter_list=None):
     # ファイルの読み込み
     with open(path, 'rU') as f:
         lines = csv.reader(f)
-        lines.next()
+        if six.PY2:
+            lines.next()
+        else:
+            lines.__next__()
         for line in lines:
-            if filter_list == None or valid_files.has_key(line[0]):
-                findings.setdefault(line[0], {'raw': line[1]})
+            if six.PY2:
+                if filter_list == None or valid_files.has_key(line[0]):
+                    findings.setdefault(line[0], {'raw': line[1]})
+            else:
+                if filter_list == None or line[0] in valid_files:
+                    findings.setdefault(line[0], {'raw': line[1]})
     logger.debug('NIH # of Data records: %d' % len(findings))
     # データ数のカウント
     finding_count = {}
@@ -394,7 +406,10 @@ def split_data(path, split_file_dir, mode='patient-wise'):
     # ファイルの読み込み
     with open(path, 'rU') as f:
         lines = csv.reader(f)
-        lines.next()
+        if six.PY2:
+            lines.next()
+        else:
+            lines.__next__()
         for line in lines:
             patient = line[0].split('_')[0]
             files.append({'file': line[0], 'patient': patient})
