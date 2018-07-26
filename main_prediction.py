@@ -9,7 +9,11 @@ import csv
 import argparse
 import cv2
 from utils import *
+import numpy as np
 import json
+import tensorflow as tf
+from DICOMReader.DICOMReader import dicom_to_np
+from preprocessing_tool import preprocessing as PP
 logger = getLogger(__name__)
 sh = StreamHandler()
 logger.addHandler(sh)
@@ -23,22 +27,9 @@ def main():
     args = parser.parse_args()
     filename = args.file
 
-    size, augment, checkpoint, lr, dlr, rtype, rr, l1_norm, dumping_rate, dumping_period, epoch, batch, log, tflog, ds, roi, output_type, outfile, mode, step, split_mode, network_mode, auc_file, validation_set = config_list(
+    size, augment, checkpoint, lr, dlr, rtype, rr, l1_norm, dumping_rate, dumping_period, epoch, batch, log, tflog, ds, roi, output_type, outfile, mode, step, split_mode, network_mode, auc_file, validation_set, optimizer_type = config_list(
         args)
 
-
-    dataset, _ = read_data_sets(nih_datapath=["./Data/Open/images/*.png"],
-                                nih_supervised_datapath="./Data/Open/Data_Entry_2017_v2.csv",
-                                nih_boxlist="./Data/Open/BBox_List_2017.csv",
-                                benchmark_datapath=[
-                                            "./Data/CR_DATA/BenchMark/*/*.dcm"],
-                                benchmark_supervised_datapath="./Data/CR_DATA/BenchMark/CLNDAT_EN.txt",
-                                img_size=size,
-                                augment=augment,
-                                raw_img=True,
-                                model='densenet',
-                                zca=False,
-                                validation_set=validation_set)
 
     if mode in ['learning']:
         init = True
@@ -67,7 +58,7 @@ def main():
     obj.construct()
     label_list = json.load(open('./Config/label_def.json'))
     root, ext = os.path.splitext(filename)
-    img = dataset.test.img_process(filename, ext, augment=False)
+    img = img_process(f=filename, ext=ext, size=size, model='densenet')
     ts = [img]
     x, y, z = obj.prediction(data=ts, roi=roi,
                              label_def=label_list['label_def'], save_dir='./Pic',
@@ -84,6 +75,38 @@ def main():
                 s[i] = float(line[0])
     print(s)
     print(y.shape, z.shape)
+
+
+def img_process(f, ext, size, model):
+    # 画像の読み込み
+    if ext == ".dcm":
+        img, bits = dicom_to_np(f)
+        img = 255.0 * img / bits
+        img = img.astype(np.uint8)
+    elif ext == ".png":
+        img = cv2.imread(f, cv2.IMREAD_GRAYSCALE)
+    else:
+        img = []
+
+    if model == 'xception':
+        pi = tf.keras.applications.xception.preprocess_input
+    elif model == 'resnet':
+        pi = tf.keras.applications.resnet50.preprocess_input
+    elif model == 'inception':
+        pi = tf.keras.applications.inception_v3.preprocess_input
+    elif model == 'densenet':
+        pi = tf.keras.applications.densenet.preprocess_input
+    else:
+        pi = tf.keras.applications.vgg19.preprocess_input
+
+    # 画像サイズの調整
+    img = cv2.resize(img, (size, size),
+                     interpolation=cv2.INTER_AREA)
+
+    img = (img.astype(np.int32)).astype(np.float32)
+    img = np.stack((img, img, img), axis=-1)
+    img = pi(img.astype(np.float32))
+    return img
 
 
 if __name__ == '__main__':
