@@ -73,9 +73,6 @@ def main():
         logger.debug("Finish learning")
     else:
         logger.debug("Skipped learning")
-    confdata = dataset.conf.get_all_files()
-    get_results(outfile.replace('result', 'conf_result'), confdata, batch, obj, roi, label_def,
-                img_reader=dataset.conf.img_reader)
     testdata = dataset.test.get_all_files()
     get_results(outfile.replace('result', 'nih_result'), testdata, batch, obj, roi, label_def,
                 img_reader=dataset.test.img_reader)
