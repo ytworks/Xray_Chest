@@ -153,7 +153,7 @@ class Detecter(Core2.Core):
 
     def loss(self):
         diag_output_type = self.output_type if self.output_type.find(
-            'hinge') >= 0 else 'classified-sigmoid'
+            'hinge') >= 0 else 'classified-softmax'
         self.loss_function = Loss.loss_func(y=self.z,
                                             y_=self.z_,
                                             regularization=0.0,
@@ -215,7 +215,7 @@ class Detecter(Core2.Core):
         prediction = self.prediction(data=batch[0], roi=False)
         aucs_list = ''
         for d in range(len(prediction[1][0])):
-            test = [batch[2][j][d] for j in range(len(batch[2]))]
+            test = [batch[1][j][d] for j in range(len(batch[1]))]
             prob = [prediction[1][j][d]
                     for j in range(len(prediction[1]))]
             auc_value = self.get_auc(test=test, prob=prob)
@@ -274,7 +274,7 @@ class Detecter(Core2.Core):
                 validation_batch = data.val.next_batch(
                     self.batch, augment=False, batch_ratio=batch_ratio[i % len(batch_ratio)])
                 feed_dict_val = self.make_feed_dict(
-                    prob=True, data=validation_batch[0], label=validation_batch[2], is_Train=False, is_label=True)
+                    prob=True, data=validation_batch[0], label=validation_batch[1], is_Train=False, is_label=True)
                 summary = self.sess.run(self.summary, feed_dict=feed_dict_val
                                         )
                 vs.add_log(writer=self.val_writer, summary=summary, step=i)
