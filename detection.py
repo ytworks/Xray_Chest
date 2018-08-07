@@ -123,7 +123,7 @@ class Detecter(Core2.Core):
         self.x = tf.placeholder(
             "float", shape=[None, self.SIZE, self.SIZE, self.CH], name="Input")
         self.z_ = tf.placeholder(
-            "float", shape=[None, 15], name="Label_Diagnosis")
+            "float", shape=[None, 2], name="Label_Diagnosis")
         self.keep_probs = []
 
     def network(self):
@@ -238,7 +238,7 @@ class Detecter(Core2.Core):
                     self.p.change_phase(False)
                 # Train
                 feed_dict = self.make_feed_dict(
-                    prob=True, data=batch[0], label=batch[2], is_Train=False, is_label=True)
+                    prob=True, data=batch[0], label=batch[1], is_Train=False, is_label=True)
                 train_accuracy_z, losses, aucs_t = self.get_auc_list(
                     feed_dict, batch)
                 # Validation sample
@@ -246,7 +246,7 @@ class Detecter(Core2.Core):
                 validation_batch = data.val.next_batch(
                     self.batch, augment=False, batch_ratio=batch_ratio[i % len(batch_ratio)])
                 feed_dict_val = self.make_feed_dict(
-                    prob=True, data=validation_batch[0], label=validation_batch[2], is_Train=False, is_label=True)
+                    prob=True, data=validation_batch[0], label=validation_batch[1], is_Train=False, is_label=True)
                 val_accuracy_z, val_losses, aucs_v = self.get_auc_list(
                     feed_dict_val, validation_batch)
                 # Output
@@ -266,7 +266,7 @@ class Detecter(Core2.Core):
             if self.network_mode == 'pretrain':
                 self.p.change_phase(True)
             feed_dict = self.make_feed_dict(
-                prob=False, data=batch[0], label=batch[2], is_Train=True, is_update=True, is_label=True)
+                prob=False, data=batch[0], label=batch[1], is_Train=True, is_update=True, is_label=True)
             if self.DP and i != 0:
                 self.dynamic_learning_rate(feed_dict)
             _, summary = self.sess.run(
@@ -283,7 +283,7 @@ class Detecter(Core2.Core):
                 test_batch = data.test.next_batch(
                     self.batch, augment=False, batch_ratio=batch_ratio[i % len(batch_ratio)])
                 feed_dict_test = self.make_feed_dict(
-                    prob=True, data=test_batch[0], label=test_batch[2], is_Train=False, is_label=True)
+                    prob=True, data=test_batch[0], label=test_batch[1], is_Train=False, is_label=True)
                 summary = self.sess.run(self.summary, feed_dict=feed_dict_test
                                         )
                 vs.add_log(writer=self.test_writer, summary=summary, step=i)
