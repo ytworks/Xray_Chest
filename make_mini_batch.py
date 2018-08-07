@@ -62,14 +62,15 @@ class DataSet(object):
             if self.labels[base_filename]['label'][1][0] == 1:
                 self.normal.append(filename)
             else:
-                self.abnormal.append(filename)
+                if self.labels[base_filename]['label'][1][1] == 1:
+                    self.abnormal.append(filename)
 
         # ファイル配列のIDのリストを作成
         self.start_normal, self.start_abnormal = 0, 0
         imgs_normal, imgs_abnormal = [], []
-        logger.debug("File num: %g" % len(self.files))
-        logger.debug("Normal File num: %g" % len(self.normal))
-        logger.debug("Abnormal File num: %g" % len(self.abnormal))
+        logger.debug("All File num: %g" % len(self.files))
+        logger.debug("Not Fibrosis File num: %g" % len(self.normal))
+        logger.debug("Fibrosis File num: %g" % len(self.abnormal))
         for i in range(len(self.normal)):
             imgs_normal.append(i)
         for i in range(len(self.abnormal)):
@@ -356,7 +357,8 @@ def make_supevised_data_for_nih(path, filter_list=None):
             if finding['raw'].find('No Finding') >= 0:
                 label1[0] = 1
             else:
-                label1[1] = 1
+                if finding['raw'].find('Fibrosis') >= 0:
+                    label1[1] = 1
         findings[file_name].setdefault('label', np.array([label0, label1]))
     return findings, finding_count, binary_def
 
