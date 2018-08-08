@@ -346,8 +346,7 @@ def make_supevised_data_for_nih(path, filter_list=None):
             finding_count.setdefault(f, 0)
             finding_count[f] += 1
     # バイナライズ
-    #binary_def = [l for l in sorted(finding_count.keys()) if not l in 'No Finding']
-    binary_def = [l for l in sorted(finding_count.keys())]
+    binary_def = ['No-Fibrosis', 'Fibrosis']
     for file_name, finding in findings.items():
         label0 = np.zeros(len(binary_def))
         label1 = np.zeros(2)
@@ -359,6 +358,8 @@ def make_supevised_data_for_nih(path, filter_list=None):
             else:
                 if finding['raw'].find('Fibrosis') >= 0:
                     label1[1] = 1
+                else:
+                    label1[0] = 1
         findings[file_name].setdefault('label', np.array([label0, label1]))
     return findings, finding_count, binary_def
 
@@ -501,10 +502,6 @@ def read_data_sets(nih_datapath=["./Data/Open/images/*.png"],
     # NIHのデータセットのファイルパスを読み込む
     nih_data_test = get_filepath(nih_datapath, nih_labels_test)
 
-    # 学会データの教師データを読み込む
-    conf_labels = make_supevised_data_for_conf(conf_data,
-                                               label_def,
-                                               benchmark_supervised_datapath)
     nih_data_train_train, nih_data_train_val = train_test_split(
         nih_data_train, test_size=0.1)
 
@@ -528,15 +525,6 @@ def read_data_sets(nih_datapath=["./Data/Open/images/*.png"],
                             counts=nih_count_train)
     data_sets.test = DataSet(data=nih_data_test,
                              label=nih_labels_test,
-                             size=img_size,
-                             zca=zca,
-                             augment=augment,
-                             raw_img=raw_img,
-                             model=model,
-                             is_train=False,
-                             counts=None)
-    data_sets.conf = DataSet(data=conf_data,
-                             label=conf_labels,
                              size=img_size,
                              zca=zca,
                              augment=augment,

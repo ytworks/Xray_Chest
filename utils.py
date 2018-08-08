@@ -107,19 +107,7 @@ def get_results(outfile, testdata, batch, obj, roi, label_def,
                     print(y[j])
                     record = [x[j][0], x[j][1], testdata[1][num][0], testdata[1][num][1],
                               y[j][0], y[j][1],
-                              y[j][2], y[j][3],
-                              y[j][4], y[j][5],
-                              y[j][6], y[j][7],
-                              y[j][8], y[j][9],
-                              y[j][10], y[j][11],
-                              y[j][12], y[j][13], y[j][14],
-                              testdata[2][num][0], testdata[2][num][1],
-                              testdata[2][num][2], testdata[2][num][3],
-                              testdata[2][num][4], testdata[2][num][5],
-                              testdata[2][num][6], testdata[2][num][7],
-                              testdata[2][num][8], testdata[2][num][9],
-                              testdata[2][num][10], testdata[2][num][11],
-                              testdata[2][num][12], testdata[2][num][13], testdata[2][num][14]
+                              testdata[2][num][0], testdata[2][num][1]
                               ]
                     writer.writerow(record)
                 ts, nums, filenames = [], [], []
