@@ -75,8 +75,8 @@ def get_roc_curve(filename, diags):
         test.append(int(float(row[2])))
         prob.append(float(row[0]))
         for i in range(len(diags)):
-            test_diag[i].append(int(float(row[i + 15 + 4])))
-            prob_diag[i].append(float(row[i + 4]))
+            test_diag[i].append(int(float(row[i + 2])))
+            prob_diag[i].append(float(row[i + 2]))
     for i, n in enumerate(diags):
         fpr, tpr, thresholds = roc_curve(
             test_diag[i], prob_diag[i], pos_label=1)
@@ -96,18 +96,15 @@ def get_results(outfile, testdata, batch, obj, roi, label_def,
             nums.append(i)
             if len(ts) == batch or len(testdata[0]) == i + 1:
                 findings = [testdata[4][num] for num in nums]
-                x, y, _ = obj.prediction(data=ts, roi=roi,
+                y, _ = obj.prediction(data=ts, roi=roi,
                                          label_def=label_def, save_dir='./Pic',
                                          filenames=filenames,
                                          suffixs=findings)
                 for j, num in enumerate(nums):
-                    print(i, j, num)
+                    print('Progress:', i, j, num)
                     print("File name:", testdata[3][num])
-                    print(testdata[2][num])
-                    print(y[j])
-                    record = [x[j][0], x[j][1], testdata[1][num][0], testdata[1][num][1],
-                              y[j][0], y[j][1],
-                              testdata[2][num][0], testdata[2][num][1]
-                              ]
+                    print("Label:", testdata[1][num])
+                    print('Predicted', y[j])
+                    record = [y[j][0], y[j][1], testdata[1][num][0], testdata[1][num][1]]
                     writer.writerow(record)
                 ts, nums, filenames = [], [], []
