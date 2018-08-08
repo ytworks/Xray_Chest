@@ -88,13 +88,13 @@ def synplectic_scratch_model(x, SIZE, CH, istraining, rmax, dmax, keep_probs):
     # fnn
     y72 = Outputs.output(x=y71_d,
                          InputSize=StemChannels + GrowthRate * (sum(Nums)),
-                         OutputSize=15,
+                         OutputSize=2,
                          Initializer='Xavier',
                          BatchNormalization=False,
                          Regularization=True,
                          vname='Output_z')
     z = y72
-    logit = tf.sigmoid(z)
+    logit = tf.nn.softmax(z)
     return z, logit, y51
 
 
@@ -170,13 +170,13 @@ def scratch_model(x, SIZE, CH, istraining, rmax, dmax, keep_probs):
     # fnn
     y72 = Outputs.output(x=y71_d,
                          InputSize=StemChannels + 12 + GrowthRate * 98,
-                         OutputSize=15,
+                         OutputSize=2,
                          Initializer='Xavier',
                          BatchNormalization=False,
                          Regularization=True,
                          vname='Output_z')
     z = y72
-    logit = tf.sigmoid(z)
+    logit = tf.nn.softmax(z)
     return z, logit, y51
 
 
@@ -195,12 +195,12 @@ def pretrain_model(x):
     # fnn
     y72 = Outputs.output(x=y71,
                          InputSize=1920,
-                         OutputSize=15,
+                         OutputSize=2,
                          Initializer='Xavier_normal',
                          BatchNormalization=False,
                          Regularization=True,
                          vname='Output_z',
                          Is_bias=True)
     z = y72
-    logit = tf.sigmoid(z)
+    logit = tf.nn.softmax(z)
     return z, logit, y51, p

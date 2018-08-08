@@ -30,7 +30,6 @@ def main():
     size, augment, checkpoint, lr, dlr, rtype, rr, l1_norm, dumping_rate, dumping_period, epoch, batch, log, tflog, ds, roi, output_type, outfile, mode, step, split_mode, network_mode, auc_file, validation_set, optimizer_type = config_list(
         args)
 
-
     if mode in ['learning']:
         init = True
     elif mode in ['update', 'prediction']:
@@ -60,11 +59,11 @@ def main():
     root, ext = os.path.splitext(filename)
     img = img_process(f=filename, ext=ext, size=size, model='densenet')
     ts = [img]
-    x, y, z = obj.prediction(data=ts, roi=roi,
-                             label_def=label_list['label_def'], save_dir='./Pic',
-                             filenames=[filename],
-                             suffixs=['result'],
-                             roi_force=True)
+    y, z = obj.prediction(data=ts, roi=roi,
+                          label_def=label_list['label_def'], save_dir='./Pic',
+                          filenames=[filename],
+                          suffixs=['result'],
+                          roi_force=True)
     print("File name:", filename)
     print(y[0])
     s = [0 for j in range(len(y[0]))]

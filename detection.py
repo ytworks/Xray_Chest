@@ -98,11 +98,9 @@ class Detecter(Core2.Core):
         logger.debug("05: TF Training operation done")
         # 精度の定義
         if self.output_type.find('hinge') >= 0:
-            self.accuracy_z = tf.sqrt(tf.reduce_mean(
-                tf.multiply(self.z - self.z_, self.z - self.z_)))
+            self.accuracy_z = UT.correct_rate(self.z, self.z_)
         else:
-            self.accuracy_z = tf.sqrt(tf.reduce_mean(tf.multiply(
-                tf.sigmoid(self.z) - self.z_, tf.sigmoid(self.z) - self.z_)))
+            self.accuracy_z = UT.correct_rate(self.z, self.z_)
         vs.variable_summary(self.accuracy_z, 'Accuracy', is_scalar=True)
 
         logger.debug("06: TF Accuracy measure definition done")
@@ -123,7 +121,7 @@ class Detecter(Core2.Core):
         self.x = tf.placeholder(
             "float", shape=[None, self.SIZE, self.SIZE, self.CH], name="Input")
         self.z_ = tf.placeholder(
-            "float", shape=[None, 15], name="Label_Diagnosis")
+            "float", shape=[None, 2], name="Label_Diagnosis")
         self.keep_probs = []
 
     def network(self):
@@ -155,7 +153,7 @@ class Detecter(Core2.Core):
 
     def loss(self):
         diag_output_type = self.output_type if self.output_type.find(
-            'hinge') >= 0 else 'classified-sigmoid'
+            'hinge') >= 0 else 'classified-softmax'
         self.loss_function = Loss.loss_func(y=self.z,
                                             y_=self.z_,
                                             regularization=0.0,
@@ -216,10 +214,10 @@ class Detecter(Core2.Core):
         losses = res[1]
         prediction = self.prediction(data=batch[0], roi=False)
         aucs_list = ''
-        for d in range(len(prediction[1][0])):
-            test = [batch[2][j][d] for j in range(len(batch[2]))]
-            prob = [prediction[1][j][d]
-                    for j in range(len(prediction[1]))]
+        for d in range(len(prediction[0][0])):
+            test = [batch[1][j][d] for j in range(len(batch[1]))]
+            prob = [prediction[0][j][d]
+                    for j in range(len(prediction[0]))]
             auc_value = self.get_auc(test=test, prob=prob)
             aucs_list += "%03.2f / " % auc_value
         return accuracy_z, losses, aucs_list
@@ -238,7 +236,7 @@ class Detecter(Core2.Core):
                     self.p.change_phase(False)
                 # Train
                 feed_dict = self.make_feed_dict(
-                    prob=True, data=batch[0], label=batch[2], is_Train=False, is_label=True)
+                    prob=True, data=batch[0], label=batch[1], is_Train=False, is_label=True)
                 train_accuracy_z, losses, aucs_t = self.get_auc_list(
                     feed_dict, batch)
                 # Validation sample
@@ -246,7 +244,7 @@ class Detecter(Core2.Core):
                 validation_batch = data.val.next_batch(
                     self.batch, augment=False, batch_ratio=batch_ratio[i % len(batch_ratio)])
                 feed_dict_val = self.make_feed_dict(
-                    prob=True, data=validation_batch[0], label=validation_batch[2], is_Train=False, is_label=True)
+                    prob=True, data=validation_batch[0], label=validation_batch[1], is_Train=False, is_label=True)
                 val_accuracy_z, val_losses, aucs_v = self.get_auc_list(
                     feed_dict_val, validation_batch)
                 # Output
@@ -266,7 +264,7 @@ class Detecter(Core2.Core):
             if self.network_mode == 'pretrain':
                 self.p.change_phase(True)
             feed_dict = self.make_feed_dict(
-                prob=False, data=batch[0], label=batch[2], is_Train=True, is_update=True, is_label=True)
+                prob=False, data=batch[0], label=batch[1], is_Train=True, is_update=True, is_label=True)
             if self.DP and i != 0:
                 self.dynamic_learning_rate(feed_dict)
             _, summary = self.sess.run(
@@ -276,14 +274,14 @@ class Detecter(Core2.Core):
                 validation_batch = data.val.next_batch(
                     self.batch, augment=False, batch_ratio=batch_ratio[i % len(batch_ratio)])
                 feed_dict_val = self.make_feed_dict(
-                    prob=True, data=validation_batch[0], label=validation_batch[2], is_Train=False, is_label=True)
+                    prob=True, data=validation_batch[0], label=validation_batch[1], is_Train=False, is_label=True)
                 summary = self.sess.run(self.summary, feed_dict=feed_dict_val
                                         )
                 vs.add_log(writer=self.val_writer, summary=summary, step=i)
                 test_batch = data.test.next_batch(
                     self.batch, augment=False, batch_ratio=batch_ratio[i % len(batch_ratio)])
                 feed_dict_test = self.make_feed_dict(
-                    prob=True, data=test_batch[0], label=test_batch[2], is_Train=False, is_label=True)
+                    prob=True, data=test_batch[0], label=test_batch[1], is_Train=False, is_label=True)
                 summary = self.sess.run(self.summary, feed_dict=feed_dict_test
                                         )
                 vs.add_log(writer=self.test_writer, summary=summary, step=i)
@@ -314,10 +312,9 @@ class Detecter(Core2.Core):
             result_z = self.sess.run(2.0 * self.z - 1.0, feed_dict=feed_dict)
         else:
             result_z = self.sess.run(self.logit, feed_dict=feed_dict)
-        result_y = [[1, 0] for i in range(len(result_z))]
         # Make ROI maps
         if not roi:
-            return result_y, result_z, None
+            return result_z, None
         else:
             weights = self.get_output_weights(feed_dict=feed_dict)
             roi_base = self.get_roi_map_base(feed_dict=feed_dict)
@@ -332,7 +329,7 @@ class Detecter(Core2.Core):
                                         roi_force=roi_force)
                 result_roi.append(roi_map)
 
-            return result_y, result_z, np.array(result_roi)
+            return result_z, np.array(result_roi)
 
     def make_roi(self, weights, roi_base, save_dir, filename, label_def, suffix,
                  roi_force):
