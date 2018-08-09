@@ -30,8 +30,7 @@ def write_fig(test, prob, figname):
 
 p = sys.argv
 
-diags = ['Atelectasis', 'Cardiomegaly', 'Consolidation', 'Edema', 'Effusion', 'Emphysema', 'Fibrosis',
-         'Hernia', 'Infiltration', 'Mass', 'No Findings', 'Nodule', 'Pleural_Thickening', 'Pneumonia', 'Pneumothorax', ]
+diags = ['Non-Fibrosis', 'Fibrosis']
 
 f = csv.reader(open(p[1], 'r'), lineterminator='\n')
 test, prob = [], []
@@ -41,8 +40,8 @@ for row in f:
     test.append(int(float(row[2])))
     prob.append(float(row[0]))
     for i in range(len(diags)):
-        test_diag[i].append(int(float(row[i + 15 + 4])))
-        prob_diag[i].append(float(row[i + 4]))
+        test_diag[i].append(int(float(row[i + 2])))
+        prob_diag[i].append(float(row[i + 2]))
 rocs = []
 for i, n in enumerate(diags):
     try:
