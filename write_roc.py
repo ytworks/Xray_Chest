@@ -41,7 +41,7 @@ for row in f:
     prob.append(float(row[0]))
     for i in range(len(diags)):
         test_diag[i].append(int(float(row[i + 2])))
-        prob_diag[i].append(float(row[i + 2]))
+        prob_diag[i].append(float(row[i]))
 rocs = []
 for i, n in enumerate(diags):
     try:
