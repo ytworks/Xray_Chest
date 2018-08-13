@@ -76,7 +76,7 @@ def get_roc_curve(filename, diags):
         prob.append(float(row[0]))
         for i in range(len(diags)):
             test_diag[i].append(int(float(row[i + 2])))
-            prob_diag[i].append(float(row[i + 2]))
+            prob_diag[i].append(float(row[i]))
     for i, n in enumerate(diags):
         fpr, tpr, thresholds = roc_curve(
             test_diag[i], prob_diag[i], pos_label=1)
