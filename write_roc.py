@@ -45,12 +45,12 @@ for row in f:
 rocs = []
 for i, n in enumerate(diags):
     try:
-        print n,
+        print(n)
         roc = write_fig(test_diag[i], prob_diag[i], n + ".png")
         if not n == 'No Findings':
             rocs.append(roc)
     except:
-        print n, "error"
+        print(n, "error")
 print("average:", np.mean(rocs))
 
 #write_fig(test, prob, "judgement.png")
