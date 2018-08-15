@@ -59,7 +59,7 @@ class DataSet(object):
         self.normal, self.abnormal = [], []
         for filename in self.files:
             base_filename = os.path.basename(filename)
-            if self.labels[base_filename]['label'][0][10] == 1:
+            if self.labels[base_filename]['label'][0][0] == 1:
                 self.normal.append(filename)
             else:
                 self.abnormal.append(filename)
@@ -345,7 +345,7 @@ def make_supevised_data_for_nih(path, filter_list=None):
             finding_count.setdefault(f, 0)
             finding_count[f] += 1
     # バイナライズ
-    binary_def = ['No-Fibrosis', 'Fibrosis']
+    binary_def = ['No Finding', 'Fibrosis']
     for file_name, finding in findings.items():
         label0 = np.zeros(len(binary_def))
         label1 = np.zeros(2)
