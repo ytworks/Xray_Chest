@@ -59,7 +59,7 @@ class DataSet(object):
         self.normal, self.abnormal = [], []
         for filename in self.files:
             base_filename = os.path.basename(filename)
-            if self.labels[base_filename]['label'][2][10] == 1:
+            if self.labels[base_filename]['label'][0][10] == 1:
                 self.normal.append(filename)
             else:
                 self.abnormal.append(filename)
