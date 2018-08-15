@@ -59,11 +59,10 @@ class DataSet(object):
         self.normal, self.abnormal = [], []
         for filename in self.files:
             base_filename = os.path.basename(filename)
-            if self.labels[base_filename]['label'][1][0] == 1:
+            if self.labels[base_filename]['label'][2][10] == 1:
                 self.normal.append(filename)
             else:
-                if self.labels[base_filename]['label'][1][1] == 1:
-                    self.abnormal.append(filename)
+                self.abnormal.append(filename)
 
         # ファイル配列のIDのリストを作成
         self.start_normal, self.start_abnormal = 0, 0
