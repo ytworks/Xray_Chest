@@ -96,10 +96,10 @@ def get_results(outfile, testdata, batch, obj, roi, label_def,
             nums.append(i)
             if len(ts) == batch or len(testdata[0]) == i + 1:
                 findings = [testdata[4][num] for num in nums]
-                x, y, _ = obj.prediction(data=ts, roi=roi,
-                                         label_def=label_def, save_dir='./Pic',
-                                         filenames=filenames,
-                                         suffixs=findings)
+                x, y, _, _ = obj.prediction(data=ts, roi=roi,
+                                            label_def=label_def, save_dir='./Pic',
+                                            filenames=filenames,
+                                            suffixs=findings)
                 for j, num in enumerate(nums):
                     print(i, j, num)
                     print("File name:", testdata[3][num])

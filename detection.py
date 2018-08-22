@@ -317,22 +317,23 @@ class Detecter(Core2.Core):
         result_y = [[1, 0] for i in range(len(result_z))]
         # Make ROI maps
         if not roi:
-            return result_y, result_z, None
+            return result_y, result_z, None, None
         else:
             weights = self.get_output_weights(feed_dict=feed_dict)
             roi_base = self.get_roi_map_base(feed_dict=feed_dict)
             result_roi = []
             for i in range(len(filenames)):
-                roi_map = self.make_roi(weights=weights[0],
-                                        roi_base=roi_base[0][i, :, :, :],
-                                        save_dir=save_dir,
-                                        filename=filenames[i],
-                                        label_def=label_def,
-                                        suffix=suffixs[i],
-                                        roi_force=roi_force)
+                roi_map, filepath = self.make_roi(weights=weights[0],
+                                                  roi_base=roi_base[0][i,
+                                                                       :, :, :],
+                                                  save_dir=save_dir,
+                                                  filename=filenames[i],
+                                                  label_def=label_def,
+                                                  suffix=suffixs[i],
+                                                  roi_force=roi_force)
                 result_roi.append(roi_map)
 
-            return result_y, result_z, np.array(result_roi)
+            return result_y, result_z, np.array(result_roi), filepath
 
     def make_roi(self, weights, roi_base, save_dir, filename, label_def, suffix,
                  roi_force):
@@ -347,7 +348,7 @@ class Detecter(Core2.Core):
         img = cv2.resize(img, (self.SIZE, self.SIZE),
                          interpolation=cv2.INTER_AREA)
         img = np.stack((img, img, img), axis=-1)
-        roi_maps = []
+        roi_maps, filepath = [], []
         for x, finding in enumerate(label_def):
             # sum channels
             images = np.zeros((roi_base.shape[0], roi_base.shape[1], 3))
@@ -376,16 +377,24 @@ class Detecter(Core2.Core):
                 if filename.find('.png') >= 0:
                     cv2.imwrite(save_dir + '/' + str(ftitle) + '_' +
                                 str(finding) + '_' + suffix + '.png', roi_img)
+                    filepath.append(save_dir + '/' + str(ftitle) + '_' +
+                                    str(finding) + '_' + suffix + '.png')
                 else:
                     cv2.imwrite(save_dir + '/' + str(ftitle) +
                                 '_' + str(finding) + '.png', roi_img)
+                    filepath.append(save_dir + '/' + str(ftitle) +
+                                    '_' + str(finding) + '.png')
             else:
                 if suffix.find(finding) >= 0 or filename.find('.dcm') >= 0:
                     if filename.find('.png') >= 0:
                         cv2.imwrite(save_dir + '/' + str(ftitle) + '_' +
                                     str(finding) + '_' + suffix + '.png', roi_img)
+                        filepath.append(save_dir + '/' + str(ftitle) + '_' +
+                                        str(finding) + '_' + suffix + '.png')
                     else:
                         if finding in ['Nodule', 'Mass', 'Pneumonia']:
                             cv2.imwrite(save_dir + '/' + str(ftitle) +
                                         '_' + str(finding) + '.png', roi_img)
-        return np.array(roi_maps)
+                            filepath.append(save_dir + '/' + str(ftitle) +
+                                            '_' + str(finding) + '.png')
+        return np.array(roi_maps), filepath
