@@ -123,7 +123,7 @@ class Detecter(Core2.Core):
         self.x = tf.placeholder(
             "float", shape=[None, self.SIZE, self.SIZE, self.CH], name="Input")
         self.z_ = tf.placeholder(
-            "float", shape=[None, 15], name="Label_Diagnosis")
+            "float", shape=[None, 15, 2], name="Label_Diagnosis")
         self.keep_probs = []
 
     def network(self):
@@ -154,10 +154,11 @@ class Detecter(Core2.Core):
                                                          keep_probs=self.keep_probs)
 
     def loss(self):
-        diag_output_type = self.output_type if self.output_type.find(
-            'hinge') >= 0 else 'classified-sigmoid'
-        self.loss_function = Loss.loss_func(y=self.z,
-                                            y_=self.z_,
+        diag_output_type = self.output_type
+        flat_z = tf.reshape(self.z_, [-1, 2])
+        flat_z_ = tf.reshape(self.z, [-1, 2])
+        self.loss_function = Loss.loss_func(y=flat_z,
+                                            y_=flat_z_,
                                             regularization=0.0,
                                             regularization_type=self.regularization_type,
                                             output_type=diag_output_type)

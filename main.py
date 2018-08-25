@@ -19,7 +19,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-config')
     args = parser.parse_args()
-    size, augment, checkpoint, lr, dlr, rtype, rr, l1_norm, dumping_rate, dumping_period, epoch, batch, log, tflog, ds, roi, output_type, outfile, mode, step, split_mode, network_mode, auc_file, validation_set, optimizer_type = config_list(
+    size, augment, checkpoint, lr, dlr, rtype, rr, l1_norm, dumping_rate, dumping_period, epoch, batch, log, tflog, ds, roi, output_type, outfile, mode, step, split_mode, network_mode, auc_file, validation_set, optimizer_type, nih_data_path = config_list(
         args)
 
     if mode in ['learning']:
@@ -30,7 +30,7 @@ def main():
         init = False
 
     print("read dataset")
-    dataset, label_def = read_data_sets(nih_datapath=["./Data/Open/images/*.png"],
+    dataset, label_def = read_data_sets(nih_datapath=[nih_data_path],
                                         nih_supervised_datapath="./Data/Open/Data_Entry_2017_v2.csv",
                                         nih_boxlist="./Data/Open/BBox_List_2017.csv",
                                         benchmark_datapath=[

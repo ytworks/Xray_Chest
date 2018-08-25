@@ -348,11 +348,15 @@ def make_supevised_data_for_nih(path, filter_list=None):
     #binary_def = [l for l in sorted(finding_count.keys()) if not l in 'No Finding']
     binary_def = [l for l in sorted(finding_count.keys())]
     for file_name, finding in findings.items():
-        label0 = np.zeros(len(binary_def))
+        label0 = np.zeros((len(binary_def), 2))
         label1 = np.zeros(2)
         for i, b in enumerate(binary_def):
             if finding['raw'].find(b) >= 0:
-                label0[i] = 1
+                label0[i][0] = 1
+                label0[i][1] = 0
+            else:
+                label0[i][0] = 0
+                label0[i][1] = 1
             if finding['raw'].find('No Finding') >= 0:
                 label1[0] = 1
             else:
@@ -373,16 +377,19 @@ def make_supevised_data_for_conf(path, labels, datapath):
         labels) if label in 'No Finding']
     findings = {}
     for p in path:
-        label0 = np.zeros(len(labels))
+        label0 = np.zeros((len(labels), 2))
         label1 = np.zeros(2)
         if p.find('JPCNN') >= 0:
             label1[0] = 1
-            label0[no_findings[0]] = 1
+            label0[no_findings[0]][0] = 1
         else:
             label1[1] = 1
             file_name, _ = os.path.splitext(os.path.basename(p))
             for index in mapper[img2diag[file_name]]:
-                label0[index] = 1
+                label0[index][0] = 1
+        for i, vec in enumerate(label0):
+            if vec[0] == vec[1]:
+                label0[i][1] = 1
         findings.setdefault(os.path.basename(p),
                             {'label': np.array([label0, label1]),
                              'raw': p})
@@ -552,7 +559,7 @@ def read_data_sets(nih_datapath=["./Data/Open/images/*.png"],
 
 if __name__ == '__main__':
     # raw_img
-    dataset, _ = read_data_sets(nih_datapath=["./Data/Open/images/*.png"],
+    dataset, _ = read_data_sets(nih_datapath=["./Data/Open/images_small/*.png"],
                                 nih_supervised_datapath="./Data/Open/Data_Entry_2017.csv",
                                 nih_boxlist="./Data/Open/BBox_List_2017.csv",
                                 benchmark_datapath=[
@@ -577,6 +584,8 @@ if __name__ == '__main__':
         print(y[1], y[2], y[3], y[4])
         z = dataset.conf.next_batch(6)
         print(z[1], z[2], z[3], z[4])
+        print(x[1].shape, x[2].shape)
+        print(x[2])
         for j in range(6):
             cv2.imshow('window', z[0][j])
             cv2.waitKey(1000)
