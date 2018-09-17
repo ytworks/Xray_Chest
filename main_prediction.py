@@ -24,12 +24,13 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-config')
     parser.add_argument('-file')
+    parser.add_argument('-dir')
     args = parser.parse_args()
     filename = args.file
+    dirname = args.dir
 
     size, augment, checkpoint, lr, dlr, rtype, rr, l1_norm, dumping_rate, dumping_period, epoch, batch, log, tflog, ds, roi, output_type, outfile, mode, step, split_mode, network_mode, auc_file, validation_set, optimizer_type = config_list(
         args)
-
 
     if mode in ['learning']:
         init = True
@@ -60,11 +61,11 @@ def main():
     root, ext = os.path.splitext(filename)
     img = img_process(f=filename, ext=ext, size=size, model='densenet')
     ts = [img]
-    x, y, z = obj.prediction(data=ts, roi=roi,
-                             label_def=label_list['label_def'], save_dir='./Pic',
-                             filenames=[filename],
-                             suffixs=['result'],
-                             roi_force=True)
+    x, y, z, filepath = obj.prediction(data=ts, roi=roi,
+                                       label_def=label_list['label_def'], save_dir=dirname,
+                                       filenames=[filename],
+                                       suffixs=['result'],
+                                       roi_force=True)
     print("File name:", filename)
     print(y[0])
     s = [0 for j in range(len(y[0]))]
@@ -73,8 +74,9 @@ def main():
         for line in roc_map:
             if y[0][i] <= float(line[2]):
                 s[i] = float(line[0])
-    print(s)
-    print(y.shape, z.shape)
+    print("Fibrosis probability:", s[6])
+    print("Fibrosis filepath:", filepath[6])
+    return s[6], filepath[6]
 
 
 def img_process(f, ext, size, model):
