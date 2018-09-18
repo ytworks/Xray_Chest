@@ -40,7 +40,8 @@ def main():
                                         img_size=size,
                                         augment=augment,
                                         model=config.get('DLParams', 'preprocessing_type'),
-                                        validation_set=validation_set)
+                                        validation_set=validation_set,
+                                        config=config)
     print("label definitions:")
     print(label_def)
 

@@ -28,7 +28,7 @@ class DataSet(object):
                  augment,
                  model,
                  is_train,
-                 counts):
+                 config):
         self.size = size
         self.augment = augment
         self.files = data
@@ -412,7 +412,8 @@ def read_data_sets(nih_datapath=["./Data/Open/images/*.png"],
                    img_size=512,
                    augment=True,
                    model='xception',
-                   validation_set=True):
+                   validation_set=True,
+                   config=None):
     class DataSets(object):
         pass
     data_sets = DataSets()
@@ -459,21 +460,21 @@ def read_data_sets(nih_datapath=["./Data/Open/images/*.png"],
                               augment=augment,
                               model=model,
                               is_train=True,
-                              counts=nih_count_train)
+                              config=config)
     data_sets.val = DataSet(data=nih_data_train_val,
                             label=nih_labels_train,
                             size=img_size,
                             augment=augment,
                             model=model,
                             is_train=True,
-                            counts=nih_count_train)
+                            config=config)
     data_sets.test = DataSet(data=nih_data_test,
                              label=nih_labels_test,
                              size=img_size,
                              augment=augment,
                              model=model,
                              is_train=False,
-                             counts=None)
+                             config=config)
 
     data_sets.train_summary = nih_count
     f = open('./Config/label_def.json', 'w')
