@@ -34,6 +34,8 @@ def main():
                                         nih_supervised_datapath=config.get('Data', 'nih_supervised_datapath'),
                                         nih_boxlist=config.get('Data', 'nih_boxlist'),
                                         split_file_dir=config.get('Data', 'split_file_dir'),
+                                        nih_train_list=config.get('Data', 'nih_train_list'),
+                                        nih_test_list=config.get('Data', 'nih_test_list'),
                                         split_mode=split_mode,
                                         img_size=size,
                                         augment=augment,
