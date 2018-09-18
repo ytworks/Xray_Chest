@@ -44,6 +44,7 @@ class DataSet(object):
         logger.debug("Size %s" % str(self.size))
         logger.debug("ZCA Whitening %s" % str(self.zca))
         logger.debug("Augmentation %s" % str(self.augment))
+        logger.debug("Model %s" % str(model))
         if model == 'xception':
             self.pi = tf.keras.applications.xception.preprocess_input
         elif model == 'resnet':

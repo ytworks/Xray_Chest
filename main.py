@@ -38,7 +38,7 @@ def main():
                                         img_size=size,
                                         augment=augment,
                                         raw_img=True,
-                                        model='densenet',
+                                        model=config.get('DLParams', 'preprocessing_type'),
                                         zca=False,
                                         validation_set=validation_set)
     print("label definitions:")
