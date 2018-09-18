@@ -8,6 +8,7 @@ import os
 import csv
 import argparse
 import tensorflow as tf
+import json
 from utils import *
 logger = getLogger(__name__)
 sh = StreamHandler()
@@ -67,7 +68,8 @@ def main():
         logger.debug("Start learning")
         num = int(len(dataset.val.files) / batch) + 1
         obj.learning(data=dataset,
-                     validation_batch_num=num)
+                     validation_batch_num=num,
+                     batch_ratio=json.loads(config.get("DLParams", "normal_ratio")))
         logger.debug("Finish learning")
     else:
         logger.debug("Skipped learning")
