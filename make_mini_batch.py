@@ -533,15 +533,6 @@ def read_data_sets(nih_datapath=["./Data/Open/images/*.png"],
                              model=model,
                              is_train=False,
                              counts=None)
-    data_sets.conf = DataSet(data=conf_data,
-                             label=conf_labels,
-                             size=img_size,
-                             zca=zca,
-                             augment=augment,
-                             raw_img=raw_img,
-                             model=model,
-                             is_train=False,
-                             counts=None)
 
     data_sets.train_summary = nih_count
     f = open('./Config/label_def.json', 'w')
