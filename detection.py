@@ -179,12 +179,6 @@ class Detector(Core2.Core):
         else:
             rmax = min(1.0 + 2.0 * float(self.steps - 5000.0) / 35000.0, 3.0)
             dmax = min(5.0 * float(self.steps - 5000.0) / 20000.0, 5.0)
-        if self.steps % self.dumping_period == 0 and self.steps != 0 and is_update:
-            logger.debug("Before Learning Rate: %g" % self.learning_rate_value)
-            self.learning_rate_value = max(
-                0.000001, self.learning_rate_value * self.dumping_rate)
-            logger.debug("After Learning Rate: %g" % self.learning_rate_value)
-
         feed_dict = {}
         feed_dict.setdefault(self.x, data)
         if is_label:
@@ -267,6 +261,13 @@ class Detector(Core2.Core):
                 self.p.change_phase(True)
             feed_dict = self.make_feed_dict(
                 prob=False, data=batch[0], label=batch[2], is_Train=True, is_update=True, is_label=True)
+            # 学習係数の減衰
+            if self.steps % self.dumping_period == 0 and self.steps != 0:
+                # バリデーションを入れる
+                logger.debug("Before Learning Rate: %g" % self.learning_rate_value)
+                self.learning_rate_value = max(
+                    0.000001, self.learning_rate_value * self.dumping_rate)
+                logger.debug("After Learning Rate: %g" % self.learning_rate_value)
             if self.DP and i != 0:
                 self.dynamic_learning_rate(feed_dict)
             _, summary = self.sess.run(
