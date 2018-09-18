@@ -39,9 +39,7 @@ def main():
                                         split_mode=split_mode,
                                         img_size=size,
                                         augment=augment,
-                                        raw_img=True,
                                         model=config.get('DLParams', 'preprocessing_type'),
-                                        zca=False,
                                         validation_set=validation_set)
     print("label definitions:")
     print(label_def)

@@ -12,7 +12,6 @@ import json
 from sklearn.model_selection import train_test_split
 import tensorflow as tf
 from DICOMReader.DICOMReader import dicom_to_np
-from preprocessing_tool import preprocessing as PP
 from tqdm import tqdm
 from logging import getLogger, StreamHandler
 import six
@@ -26,23 +25,18 @@ class DataSet(object):
     def __init__(self,
                  data, label,
                  size,
-                 zca,
                  augment,
-                 raw_img,
                  model,
                  is_train,
                  counts):
         self.size = size
         self.augment = augment
-        self.zca = zca
         self.files = data
         self.labels = label
-        self.raw_img = raw_img
-        self.channel = 1 if not self.raw_img else 3
+        self.channel = 3
         self.is_train = is_train
         logger.debug("Channel %s" % str(self.channel))
         logger.debug("Size %s" % str(self.size))
-        logger.debug("ZCA Whitening %s" % str(self.zca))
         logger.debug("Augmentation %s" % str(self.augment))
         logger.debug("Model %s" % str(model))
         if model == 'xception':
@@ -207,18 +201,9 @@ class DataSet(object):
         img = cv2.resize(img, (self.size, self.size),
                          interpolation=cv2.INTER_AREA)
 
-        # ZCA whitening
-        if not self.raw_img:
-            if self.zca:
-                img = PP.PreProcessing(np.reshape(
-                    img, (self.size, self.size, self.channel)))
-            else:
-                img = np.reshape(img, (self.size, self.size, self.channel))
-        else:
-            img = (img.astype(np.int32)).astype(np.float32)
-            img = np.stack((img, img, img), axis=-1)
-            #img = cv2.applyColorMap(img.astype(np.uint8), cv2.COLORMAP_JET)
-            img = self.pi(img.astype(np.float32))
+        img = (img.astype(np.int32)).astype(np.float32)
+        img = np.stack((img, img, img), axis=-1)
+        img = self.pi(img.astype(np.float32))
         return img
 
     def img_reader(self, f, augment=True):
@@ -426,8 +411,6 @@ def read_data_sets(nih_datapath=["./Data/Open/images/*.png"],
                    split_mode='official',
                    img_size=512,
                    augment=True,
-                   zca=True,
-                   raw_img=False,
                    model='xception',
                    validation_set=True):
     class DataSets(object):
@@ -473,27 +456,21 @@ def read_data_sets(nih_datapath=["./Data/Open/images/*.png"],
     data_sets.train = DataSet(data=nih_data_train_train if validation_set else nih_data_train,
                               label=nih_labels_train,
                               size=img_size,
-                              zca=zca,
                               augment=augment,
-                              raw_img=raw_img,
                               model=model,
                               is_train=True,
                               counts=nih_count_train)
     data_sets.val = DataSet(data=nih_data_train_val,
                             label=nih_labels_train,
                             size=img_size,
-                            zca=zca,
                             augment=augment,
-                            raw_img=raw_img,
                             model=model,
                             is_train=True,
                             counts=nih_count_train)
     data_sets.test = DataSet(data=nih_data_test,
                              label=nih_labels_test,
                              size=img_size,
-                             zca=zca,
                              augment=augment,
-                             raw_img=raw_img,
                              model=model,
                              is_train=False,
                              counts=None)
