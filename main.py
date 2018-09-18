@@ -19,7 +19,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-config')
     args = parser.parse_args()
-    size, augment, checkpoint, lr, dlr, rtype, rr, l1_norm, dumping_rate, dumping_period, epoch, batch, log, tflog, ds, roi, output_type, outfile, mode, step, split_mode, network_mode, auc_file, validation_set, optimizer_type = config_list(
+    size, augment, checkpoint, lr, dlr, rtype, rr, l1_norm, dumping_rate, dumping_period, epoch, batch, log, tflog, ds, roi, output_type, outfile, mode, step, split_mode, network_mode, auc_file, validation_set, optimizer_type, config = config_list(
         args)
 
     if mode in ['learning']:
@@ -30,13 +30,10 @@ def main():
         init = False
 
     print("read dataset")
-    dataset, label_def = read_data_sets(nih_datapath=["./Data/Open/images/*.png"],
-                                        nih_supervised_datapath="./Data/Open/Data_Entry_2017_v2.csv",
-                                        nih_boxlist="./Data/Open/BBox_List_2017.csv",
-                                        benchmark_datapath=[
-                                            "./Data/CR_DATA/BenchMark/*/*.dcm"],
-                                        benchmark_supervised_datapath="./Data/CR_DATA/BenchMark/CLNDAT_EN.txt",
-                                        split_file_dir="./Data",
+    dataset, label_def = read_data_sets(nih_datapath=[config.get('Data', 'nih_datapath')],
+                                        nih_supervised_datapath=config.get('Data', 'nih_supervised_datapath'),
+                                        nih_boxlist=config.get('Data', 'nih_boxlist'),
+                                        split_file_dir=config.get('Data', 'split_file_dir'),
                                         split_mode=split_mode,
                                         img_size=size,
                                         augment=augment,

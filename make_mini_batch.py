@@ -361,34 +361,6 @@ def make_supevised_data_for_nih(path, filter_list=None):
     return findings, finding_count, binary_def
 
 
-def make_supevised_data_for_conf(path, labels, datapath):
-    reader = csv.reader(open(datapath, 'rU'), delimiter='\t')
-    img2diag = {}
-    for row in reader:
-        if row != []:
-            img2diag.setdefault(row[0].replace('.IMG', ''), row[10] + row[11])
-    diags = list(set([v for v in img2diag.values()]))
-    mapper = diagnosis_map(diags, labels)
-    no_findings = [i for i, label in enumerate(
-        labels) if label in 'No Finding']
-    findings = {}
-    for p in path:
-        label0 = np.zeros(len(labels))
-        label1 = np.zeros(2)
-        if p.find('JPCNN') >= 0:
-            label1[0] = 1
-            label0[no_findings[0]] = 1
-        else:
-            label1[1] = 1
-            file_name, _ = os.path.splitext(os.path.basename(p))
-            for index in mapper[img2diag[file_name]]:
-                label0[index] = 1
-        findings.setdefault(os.path.basename(p),
-                            {'label': np.array([label0, label1]),
-                             'raw': p})
-    return findings
-
-
 def diagnosis_map(diags, labels):
     mapper = {}
     for d in diags:
@@ -449,8 +421,6 @@ def read_data_sets(nih_datapath=["./Data/Open/images/*.png"],
                    nih_boxlist="./Data/Open/BBox_List_2017.csv",
                    nih_train_list="./Data/Open/train_val_list.txt",
                    nih_test_list="./Data/Open/test_list.txt",
-                   benchmark_datapath=["./Data/CR_DATA/BenchMark/*/*.dcm"],
-                   benchmark_supervised_datapath="./Data/CR_DATA/BenchMark/CLNDAT_EN.txt",
                    split_file_dir="./Data",
                    split_mode='official',
                    img_size=512,
@@ -466,9 +436,6 @@ def read_data_sets(nih_datapath=["./Data/Open/images/*.png"],
     # データセットの分割
     train_set, test_set = split_data(
         nih_supervised_datapath, split_file_dir, split_mode)
-
-    # 学会データセットのファイルパスを読み込む
-    conf_data = get_filepath(benchmark_datapath)
 
     # NIHの教師データを全て読み込む
     nih_labels, nih_count, label_def = make_supevised_data_for_nih(
@@ -499,10 +466,6 @@ def read_data_sets(nih_datapath=["./Data/Open/images/*.png"],
     # NIHのデータセットのファイルパスを読み込む
     nih_data_test = get_filepath(nih_datapath, nih_labels_test)
 
-    # 学会データの教師データを読み込む
-    conf_labels = make_supevised_data_for_conf(conf_data,
-                                               label_def,
-                                               benchmark_supervised_datapath)
     nih_data_train_train, nih_data_train_val = train_test_split(
         nih_data_train, test_size=0.1)
 
