@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from make_mini_batch import read_data_sets
-from detection import Detecter
+from detection import Detector
 from logging import getLogger, StreamHandler
 from tqdm import tqdm
 import os
@@ -39,7 +39,7 @@ def main():
     else:
         init = False
 
-    obj = Detecter(output_type=output_type,
+    obj = Detector(output_type=output_type,
                    epoch=epoch, batch=batch, log=log,
                    optimizer_type='Adam',
                    learning_rate=lr,

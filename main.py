@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from make_mini_batch import read_data_sets
-from detection import Detecter
+from detection import Detector
 from logging import getLogger, StreamHandler
 from tqdm import tqdm
 import os
@@ -44,7 +44,7 @@ def main():
     print("label definitions:")
     print(label_def)
 
-    obj = Detecter(output_type=output_type,
+    obj = Detector(output_type=output_type,
                    epoch=epoch, batch=batch, log=log,
                    optimizer_type=optimizer_type,
                    learning_rate=lr,

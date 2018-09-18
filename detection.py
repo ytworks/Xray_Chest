@@ -29,7 +29,7 @@ logger.addHandler(sh)
 logger.setLevel(10)
 
 
-class Detecter(Core2.Core):
+class Detector(Core2.Core):
     def __init__(self,
                  output_type,
                  epoch=100, batch=32, log=10,
@@ -48,7 +48,7 @@ class Detecter(Core2.Core):
                  step=0,
                  network_mode='scratch',
                  tflog=10):
-        super(Detecter, self).__init__(output_type=output_type,
+        super(Detector, self).__init__(output_type=output_type,
                                        epoch=epoch,
                                        batch=batch,
                                        log=log,
