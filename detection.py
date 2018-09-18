@@ -74,6 +74,7 @@ class Detector(Core2.Core):
         self.dumping_period = dumping_period
         self.network_mode = network_mode
         self.tflog = tflog
+        self.prev_val = 10000.0
         for i in range(self.steps):
             if i != 0 and i % self.dumping_period == 0:
                 self.learning_rate_value = max(
@@ -261,18 +262,36 @@ class Detector(Core2.Core):
                 self.p.change_phase(True)
             feed_dict = self.make_feed_dict(
                 prob=False, data=batch[0], label=batch[2], is_Train=True, is_update=True, is_label=True)
+
             # 学習係数の減衰
             if self.steps % self.dumping_period == 0 and self.steps != 0:
                 # バリデーションを入れる
-                logger.debug("Before Learning Rate: %g" % self.learning_rate_value)
-                self.learning_rate_value = max(
-                    0.000001, self.learning_rate_value * self.dumping_rate)
-                logger.debug("After Learning Rate: %g" % self.learning_rate_value)
+                validation_data = data.val.get_all_files()
+                validation_loss = 0.0
+                for vnum in range(0, len(validation_data[0]), self.batch):
+                    sp, ep = vnum, min(vnum+self.batch, len(validation_data[0]))
+                    imgs = []
+                    for f in validation_data[0][sp:ep]:
+                        imgs.append(data.val.img_reader(f, False)[0])
+                    l = [x for x in validation_data[2][sp:ep]]
+                    feed_dict_val = self.make_feed_dict(
+                        prob=True, data=np.array(imgs), label=np.array(l), is_Train=False, is_label=True)
+                    v = self.sess.run([self.loss_function], feed_dict=feed_dict_val)
+                    validation_loss += v[0] / float((len(validation_data[0]) // self.batch))
+                logger.debug("Before val: %g, After val: %g" % (self.prev_val, validation_loss))
+                if validation_loss > self.prev_val:
+                    logger.debug("Before Learning Rate: %g" % self.learning_rate_value)
+                    self.learning_rate_value = max(
+                        0.000001, self.learning_rate_value * self.dumping_rate)
+                    logger.debug("After Learning Rate: %g" % self.learning_rate_value)
+                self.prev_val = validation_loss
+
             if self.DP and i != 0:
                 self.dynamic_learning_rate(feed_dict)
             _, summary = self.sess.run(
                 [self.train_op, self.summary], feed_dict=feed_dict)
             vs.add_log(writer=self.train_writer, summary=summary, step=i)
+
             if i % self.tflog == 0:
                 validation_batch = data.val.next_batch(
                     self.batch, augment=False, batch_ratio=batch_ratio[i % len(batch_ratio)])
