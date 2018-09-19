@@ -62,6 +62,7 @@ def main():
                    l1_norm=l1_norm,
                    step=step,
                    network_mode=network_mode,
+                   transfer_save_mode=config.getboolean("OutputParams", "transfer_save_mode"),
                    tflog=tflog)
     obj.construct()
     if mode != 'prediction':

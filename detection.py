@@ -47,6 +47,7 @@ class Detector(Core2.Core):
                  l1_norm=0.1,
                  step=0,
                  network_mode='scratch',
+                 transfer_save_mode=True,
                  tflog=10):
         super(Detector, self).__init__(output_type=output_type,
                                        epoch=epoch,
@@ -73,6 +74,7 @@ class Detector(Core2.Core):
         self.dumping_rate = dumping_rate
         self.dumping_period = dumping_period
         self.network_mode = network_mode
+        self.transfer_save_mode = transfer_save_mode
         self.tflog = tflog
         self.prev_val = 10000.0
         for i in range(self.steps):
@@ -95,6 +97,8 @@ class Detector(Core2.Core):
         self.loss()
         logger.debug("04: TF Loss definition done")
         # 学習
+        if self.network_mode == 'pretrain':
+            p_vars = self.p.model_weights_tensors
         self.training(var_list=None)
         logger.debug("05: TF Training operation done")
         # 精度の定義
@@ -115,7 +119,10 @@ class Detector(Core2.Core):
         self.summary, self.train_writer, self.val_writer, self.test_writer = vs.file_writer(
             sess=self.sess, file_name='./Result/' + now)
         # チェックポイントの呼び出し
-        self.saver = tf.train.Saver()
+        if self.transfer_save_mode:
+            self.saver = tf.train.Saver(p_vars)
+        else:
+            self.saver = tf.train.Saver()
         self.restore()
         logger.debug("07: TF Model file definition done")
 
