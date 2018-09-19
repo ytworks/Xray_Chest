@@ -456,7 +456,7 @@ def read_data_sets(nih_datapath=["./Data/Open/images/*.png"],
     nih_data_test = get_filepath(nih_datapath, nih_labels_test)
 
     nih_data_train_train, nih_data_train_val = train_test_split(
-        nih_data_train, test_size=0.1)
+        nih_data_train, test_size=config.getfloat("DLParams", "validation_ratio"))
 
     data_sets.train = DataSet(data=nih_data_train_train if validation_set else nih_data_train,
                               label=nih_labels_train,
