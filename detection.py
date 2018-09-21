@@ -48,6 +48,7 @@ class Detector(Core2.Core):
                  step=0,
                  network_mode='scratch',
                  transfer_save_mode=True,
+                 transfer_checkpoint='./Strages/Core.ckpt',
                  tflog=10):
         super(Detector, self).__init__(output_type=output_type,
                                        epoch=epoch,
@@ -75,6 +76,7 @@ class Detector(Core2.Core):
         self.dumping_period = dumping_period
         self.network_mode = network_mode
         self.transfer_save_mode = transfer_save_mode
+        self.transfer_checkpoint = transfer_checkpoint
         self.tflog = tflog
         self.prev_val = 10000.0
         for i in range(self.steps):
@@ -119,12 +121,16 @@ class Detector(Core2.Core):
         self.summary, self.train_writer, self.val_writer, self.test_writer = vs.file_writer(
             sess=self.sess, file_name='./Result/' + now)
         # チェックポイントの呼び出し
-        if self.transfer_save_mode:
-            self.saver = tf.train.Saver(p_vars)
-        else:
-            self.saver = tf.train.Saver()
+        if self.network_mode == 'pretrain':
+            self.transfer_saver = tf.train.Saver(p_vars)
+        self.saver = tf.train.Saver()
         self.restore()
         logger.debug("07: TF Model file definition done")
+
+    def save_transfer_checkpoint(self):
+        UT.save_checkpoint(saver = self.transfer_saver,
+                           checkpoint = self.transfer_checkpoint,
+                           sess = self.sess)
 
     def io_def(self):
         self.CH = 3
@@ -316,6 +322,8 @@ class Detector(Core2.Core):
                 vs.add_log(writer=self.test_writer, summary=summary, step=i)
             self.steps += 1
         self.save_checkpoint()
+        if self.network_mode == 'pretrain':
+            self.save_transfer_checkpoint()
 
     def get_output_weights(self, feed_dict):
         tvar = self.get_trainable_var()

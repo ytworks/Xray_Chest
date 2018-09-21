@@ -63,6 +63,7 @@ def main():
                    step=step,
                    network_mode=network_mode,
                    transfer_save_mode=config.getboolean("OutputParams", "transfer_save_mode"),
+                   transfer_checkpoint=config.get("OutputParams", "transfer_checkpoint"),
                    tflog=tflog)
     obj.construct()
     if mode != 'prediction':
