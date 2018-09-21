@@ -60,9 +60,10 @@ def main():
     obj.construct()
     label_list = json.load(open('./Config/label_def.json'))
     root, ext = os.path.splitext(filename)
-    img = img_process(f=filename, ext=ext, size=size, model='densenet')
+    img, h, w = img_process(f=filename, ext=ext, size=size, model='densenet')
     ts = [img]
     x, y, z, filepath = obj.prediction(data=ts, roi=roi,
+                                       height=h, width=w,
                                        label_def=label_list['label_def'], save_dir=dirname,
                                        filenames=[filename],
                                        suffixs=['result'],
@@ -103,13 +104,14 @@ def img_process(f, ext, size, model):
         pi = tf.keras.applications.vgg19.preprocess_input
 
     # 画像サイズの調整
+    h, w = img.shape[0], img.shape[1]
     img = cv2.resize(img, (size, size),
                      interpolation=cv2.INTER_AREA)
 
     img = (img.astype(np.int32)).astype(np.float32)
     img = np.stack((img, img, img), axis=-1)
     img = pi(img.astype(np.float32))
-    return img
+    return img, h, w
 
 
 if __name__ == '__main__':

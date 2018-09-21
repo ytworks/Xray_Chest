@@ -329,7 +329,7 @@ class Detector(Core2.Core):
     def get_roi_map_base(self, feed_dict):
         return self.sess.run([self.y51], feed_dict=feed_dict)
 
-    def prediction(self, data, roi=False, label_def=None, save_dir=None,
+    def prediction(self, data, height=128, width=128, roi=False, label_def=None, save_dir=None,
                    filenames=None, suffixs=None, roi_force=False):
         # Make feed dict for prediction
         if self.network_mode == 'pretrain':
@@ -353,6 +353,8 @@ class Detector(Core2.Core):
                 roi_map, filepath = self.make_roi(weights=weights[0],
                                                   roi_base=roi_base[0][i,
                                                                        :, :, :],
+                                                  height=height,
+                                                  width=width,
                                                   save_dir=save_dir,
                                                   filename=filenames[i],
                                                   label_def=label_def,
@@ -362,7 +364,7 @@ class Detector(Core2.Core):
 
             return result_y, result_z, np.array(result_roi), filepath
 
-    def make_roi(self, weights, roi_base, save_dir, filename, label_def, suffix,
+    def make_roi(self, weights, roi_base, height, width, save_dir, filename, label_def, suffix,
                  roi_force):
         # Read files
         if filename.find('.png') >= 0:
@@ -397,6 +399,7 @@ class Detector(Core2.Core):
             images = cv2.resize(images.astype(np.uint8),
                                 (self.SIZE, self.SIZE))
             roi_img = cv2.addWeighted(img, 0.8, images, 0.2, 0)
+            roi_img = cv2.resize(roi_img, (height, width))
             # save image
             basename = os.path.basename(filename)
             ftitle, _ = os.path.splitext(basename)
