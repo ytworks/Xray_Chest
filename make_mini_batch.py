@@ -490,16 +490,21 @@ def read_data_sets(nih_datapath=["./Data/Open/images/*.png"],
 
 
 if __name__ == '__main__':
-    # raw_img
+    import six
+    from six.moves import configparser as cp
+    if six.PY2:
+        config = cp.SafeConfigParser()
+    else:
+        config = cp.ConfigParser()
+    config.read("./settings/dev.ini")
     dataset, _ = read_data_sets(nih_datapath=["./Data/Open/images/*.png"],
                                 nih_supervised_datapath="./Data/Open/Data_Entry_2017.csv",
                                 nih_boxlist="./Data/Open/BBox_List_2017.csv",
                                 split_mode='random',
                                 img_size=512,
                                 augment=True,
-                                model='densenet')
-    print(len(dataset.test.get_all_data()),
-          len(dataset.test.get_all_data()[2]))
+                                model='densenet',
+                                config=config)
     for i in range(2):
         x = dataset.train.next_batch(4)
         print(x[1], x[2], x[3], x[4])
