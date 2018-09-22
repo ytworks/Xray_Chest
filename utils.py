@@ -5,6 +5,15 @@ import numpy as np
 from six.moves import configparser as cp
 import six
 from sklearn.metrics import roc_curve, auc
+import scipy
+import cv2
+
+
+def image_process(img):
+    equ = cv2.equalizeHist(img)
+    LoG = scipy.ndimage.filters.gaussian_laplace(img, sigma=1.0)
+    img = np.stack((img, equ, LoG), axis=-1)
+    return img
 
 
 def config_list(args):

@@ -15,6 +15,7 @@ from DICOMReader.DICOMReader import dicom_to_np
 from tqdm import tqdm
 from logging import getLogger, StreamHandler
 import six
+import utils
 logger = getLogger(__name__)
 sh = StreamHandler()
 logger.addHandler(sh)
@@ -93,7 +94,7 @@ class DataSet(object):
         # rotation
         if np.random.rand() < self.config.getfloat("Augmentation", "rotation"):
             img = self.rotation(img, rot=random.choice(json.loads(self.config.get("Augmentation", "rotation_angle"))))
-            img = img.reshape((img.shape[0], img.shape[1], 1))
+            img = img.reshape((img.shape[0], img.shape[1], 3))
         # Shift
         shift_width = self.config.getfloat("Augmentation", "shift_width")
         img = self.shift(img=img, move_x=shift_width, move_y=shift_width)
@@ -101,7 +102,7 @@ class DataSet(object):
         if np.random.rand() < self.config.getfloat("Augmentation", "small_rotation"):
             angle = self.config.getfloat("Augmentation", "small_rotation_angle")
             img = self.rotation(img, rot=angle * (2.0 * random.random() - 1.0))
-            img = img.reshape((img.shape[0], img.shape[1], 1))
+            img = img.reshape((img.shape[0], img.shape[1], 3))
         return img
 
     def zoom(self, img):
@@ -122,10 +123,10 @@ class DataSet(object):
     def flip(self, img):
         if np.random.rand() < self.config.getfloat("Augmentation", "flip_v"):
             img = cv2.flip(img, 0)
-            img = img.reshape((img.shape[0], img.shape[1], 1))
+            img = img.reshape((img.shape[0], img.shape[1], 3))
         if np.random.rand() < self.config.getfloat("Augmentation", "flip_h"):
             img = cv2.flip(img, 1)
-            img = img.reshape((img.shape[0], img.shape[1], 1))
+            img = img.reshape((img.shape[0], img.shape[1], 3))
         return img
 
     def rotation(self, img, rot=45):
@@ -147,7 +148,7 @@ class DataSet(object):
             affine_matrix = np.float32(matrix)
             img = cv2.warpAffine(img, affine_matrix, size,
                                  flags=cv2.INTER_LINEAR)
-            img = img.reshape((img.shape[0], img.shape[1], 1))
+            img = img.reshape((img.shape[0], img.shape[1], 3))
             return img
         else:
             return img
@@ -194,6 +195,8 @@ class DataSet(object):
         else:
             img = []
 
+        img = utils.image_process(img)
+
         # データオーギュメンテーション
         if augment:
             img = self.augmentation(img)
@@ -205,8 +208,7 @@ class DataSet(object):
         img = cv2.resize(img, (self.size, self.size),
                          interpolation=cv2.INTER_AREA)
 
-        img = (img.astype(np.int32)).astype(np.float32)
-        img = np.stack((img, img, img), axis=-1)
+
         img = self.pi(img.astype(np.float32))
         return img
 

@@ -13,7 +13,7 @@ import numpy as np
 import json
 import tensorflow as tf
 from DICOMReader.DICOMReader import dicom_to_np
-from preprocessing_tool import preprocessing as PP
+import utils
 logger = getLogger(__name__)
 sh = StreamHandler()
 logger.addHandler(sh)
@@ -92,6 +92,7 @@ def img_process(f, ext, size, model):
         img = cv2.imread(f, cv2.IMREAD_GRAYSCALE)
     else:
         img = []
+    img = utils.image_process(img)
 
     if model == 'xception':
         pi = tf.keras.applications.xception.preprocess_input
@@ -109,8 +110,6 @@ def img_process(f, ext, size, model):
     img = cv2.resize(img, (size, size),
                      interpolation=cv2.INTER_AREA)
 
-    img = (img.astype(np.int32)).astype(np.float32)
-    img = np.stack((img, img, img), axis=-1)
     img = pi(img.astype(np.float32))
     return img, h, w
 
