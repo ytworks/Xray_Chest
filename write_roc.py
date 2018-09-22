@@ -12,7 +12,7 @@ import sys
 def write_fig(test, prob, figname):
     fpr, tpr, thresholds = roc_curve(test, prob, pos_label=1)
     roc_auc = auc(fpr, tpr)
-    print "Area under the ROC curve : %f" % roc_auc
+    print("Area under the ROC curve : %f" % roc_auc)
     pl.figure()
     pl.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % (roc_auc))
     for i in range(0, len(fpr), int(len(fpr) / 5)):
@@ -46,12 +46,12 @@ for row in f:
 rocs = []
 for i, n in enumerate(diags):
     try:
-        print n,
+        print(n)
         roc = write_fig(test_diag[i], prob_diag[i], n + ".png")
         if not n == 'No Findings':
             rocs.append(roc)
     except:
-        print n, "error"
+        print(n, "error")
 print("average:", np.mean(rocs))
 
 #write_fig(test, prob, "judgement.png")

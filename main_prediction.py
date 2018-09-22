@@ -66,9 +66,7 @@ def main():
     x, y, z, filepath = obj.prediction(data=ts, roi=roi,
                                        height=h, width=w,
                                        label_def=label_list['label_def'], save_dir=dirname,
-                                       filenames=[filename],
-                                       suffixs=['result'],
-                                       roi_force=True)
+                                       filenames=[filename])
     print("File name:", filename)
     print(y[0])
     s = [0 for j in range(len(y[0]))]

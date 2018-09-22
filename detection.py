@@ -338,7 +338,7 @@ class Detector(Core2.Core):
         return self.sess.run([self.y51], feed_dict=feed_dict)
 
     def prediction(self, data, height=128, width=128, roi=False, label_def=None, save_dir=None,
-                   filenames=None, suffixs=None, roi_force=False):
+                   filenames=None):
         # Make feed dict for prediction
         if self.network_mode == 'pretrain':
             self.p.change_phase(False)
@@ -365,15 +365,12 @@ class Detector(Core2.Core):
                                                   width=width,
                                                   save_dir=save_dir,
                                                   filename=filenames[i],
-                                                  label_def=label_def,
-                                                  suffix=suffixs[i],
-                                                  roi_force=roi_force)
+                                                  label_def=label_def)
                 result_roi.append(roi_map)
 
             return result_y, result_z, np.array(result_roi), filepath
 
-    def make_roi(self, weights, roi_base, height, width, save_dir, filename, label_def, suffix,
-                 roi_force):
+    def make_roi(self, weights, roi_base, height, width, save_dir, filename, label_def):
         # Read files
         if filename.find('.png') >= 0:
             img = cv2.imread(filename, cv2.IMREAD_GRAYSCALE)
@@ -411,28 +408,8 @@ class Detector(Core2.Core):
             # save image
             basename = os.path.basename(filename)
             ftitle, _ = os.path.splitext(basename)
-            if roi_force:
-                if filename.find('.png') >= 0:
-                    cv2.imwrite(save_dir + '/' + str(ftitle) + '_' +
-                                str(finding) + '_' + suffix + '.png', roi_img)
-                    filepath.append(save_dir + '/' + str(ftitle) + '_' +
-                                    str(finding) + '_' + suffix + '.png')
-                else:
-                    cv2.imwrite(save_dir + '/' + str(ftitle) +
-                                '_' + str(finding) + '.png', roi_img)
-                    filepath.append(save_dir + '/' + str(ftitle) +
-                                    '_' + str(finding) + '.png')
-            else:
-                if suffix.find(finding) >= 0 or filename.find('.dcm') >= 0:
-                    if filename.find('.png') >= 0:
-                        cv2.imwrite(save_dir + '/' + str(ftitle) + '_' +
-                                    str(finding) + '_' + suffix + '.png', roi_img)
-                        filepath.append(save_dir + '/' + str(ftitle) + '_' +
-                                        str(finding) + '_' + suffix + '.png')
-                    else:
-                        if finding in ['Nodule', 'Mass', 'Pneumonia']:
-                            cv2.imwrite(save_dir + '/' + str(ftitle) +
-                                        '_' + str(finding) + '.png', roi_img)
-                            filepath.append(save_dir + '/' + str(ftitle) +
-                                            '_' + str(finding) + '.png')
+            cv2.imwrite(save_dir + '/' + str(ftitle) +
+                        '_' + str(finding) + '.png', roi_img)
+            filepath.append(save_dir + '/' + str(ftitle) +
+                            '_' + str(finding) + '.png')
         return np.array(roi_maps), filepath
