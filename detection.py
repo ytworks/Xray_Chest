@@ -132,6 +132,21 @@ class Detector(Core2.Core):
                            checkpoint = self.transfer_checkpoint,
                            sess = self.sess)
 
+    def save_checkpoint(self):
+        UT.save_checkpoint(saver = self.saver,
+                           checkpoint = self.checkpoint,
+                           sess = self.sess)
+
+    def validation_save(self, vname):
+        ckpt = self.checkpoint.replace(".ckpt", vname+".ckpt")
+        t_ckpt = self.transfer_checkpoint.replace(".ckpt", vname+".ckpt")
+        UT.save_checkpoint(saver = self.transfer_saver,
+                           checkpoint = t_ckpt,
+                           sess = self.sess)
+        UT.save_checkpoint(saver = self.saver,
+                           checkpoint = ckpt,
+                           sess = self.sess)
+
     def io_def(self):
         self.CH = 3
         self.x = tf.placeholder(
@@ -298,6 +313,7 @@ class Detector(Core2.Core):
                         0.000001, self.learning_rate_value * self.dumping_rate)
                     logger.debug("After Learning Rate: %g" % self.learning_rate_value)
                 self.prev_val = validation_loss
+                self.validation_save(str(int(validation_loss*10000)))
 
             if self.DP and i != 0:
                 self.dynamic_learning_rate(feed_dict)
@@ -408,7 +424,8 @@ class Detector(Core2.Core):
             # save image
             basename = os.path.basename(filename)
             ftitle, _ = os.path.splitext(basename)
-            cv2.imwrite(save_dir + '/' + str(ftitle) +
+            unixtime = datetime.now().strftime('%s')
+            cv2.imwrite(save_dir + '/' + unixtime + '_' + str(ftitle) +
                         '_' + str(finding) + '.png', roi_img)
             filepath.append(save_dir + '/' + str(ftitle) +
                             '_' + str(finding) + '.png')
