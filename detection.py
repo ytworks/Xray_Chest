@@ -310,7 +310,7 @@ class Detector(Core2.Core):
                 if validation_loss > self.prev_val:
                     logger.debug("Before Learning Rate: %g" % self.learning_rate_value)
                     self.learning_rate_value = max(
-                        0.000001, self.learning_rate_value * self.dumping_rate)
+                        0.00000001, self.learning_rate_value * self.dumping_rate)
                     logger.debug("After Learning Rate: %g" % self.learning_rate_value)
                 self.prev_val = validation_loss
                 self.validation_save(str(int(validation_loss*10000)))

@@ -181,7 +181,7 @@ def scratch_model(x, SIZE, CH, istraining, rmax, dmax, keep_probs):
 
 
 def pretrain_model(x):
-    p = trans.Transfer(x, 'densenet201', pooling=None, vname='transfer_Weight_Regularization',
+    p = trans.Transfer(x, 'densenet121', pooling=None, vname='transfer_Weight_Regularization',
                        trainable=True)
     y51 = p.get_output_tensor()
     y61 = Layers.pooling(x=y51,
@@ -191,10 +191,10 @@ def pretrain_model(x):
                          algorithm='Avg')
 
     # reshape
-    y71 = Layers.reshape_tensor(x=y61, shape=[1 * 1 * 1920])
+    y71 = Layers.reshape_tensor(x=y61, shape=[1 * 1 * 1024])
     # fnn
     y72 = Outputs.output(x=y71,
-                         InputSize=1920,
+                         InputSize=1024,
                          OutputSize=15,
                          Initializer='Xavier_normal',
                          BatchNormalization=False,
