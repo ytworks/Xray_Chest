@@ -253,8 +253,9 @@ class Detector(Core2.Core):
                     float(self.epoch) / float(self.batch))
         logger.debug("Step num: %d", epoch)
         for i in range(epoch):
+            br = np.random.randint(len(batch_ratio))
             batch = data.train.next_batch(
-                self.batch, batch_ratio=batch_ratio[i % len(batch_ratio)])
+                self.batch, batch_ratio=batch_ratio[br % len(batch_ratio)])
             # 途中経過のチェック
             if i % self.log == 0 and i != 0:
                 if self.network_mode == 'pretrain':
@@ -267,7 +268,7 @@ class Detector(Core2.Core):
                 # Validation sample
                 val_accuracy_y, val_accuracy_z, val_losses, test, prob = [], [], [], [], []
                 validation_batch = data.val.next_batch(
-                    self.batch, augment=False, batch_ratio=batch_ratio[i % len(batch_ratio)])
+                    self.batch, augment=False, batch_ratio=batch_ratio[br % len(batch_ratio)])
                 feed_dict_val = self.make_feed_dict(
                     prob=True, data=validation_batch[0], label=validation_batch[2], is_Train=False, is_label=True)
                 val_accuracy_z, val_losses, aucs_v = self.get_auc_list(
@@ -327,14 +328,14 @@ class Detector(Core2.Core):
                 if self.network_mode == 'pretrain':
                     self.p.change_phase(False)
                 validation_batch = data.val.next_batch(
-                    self.batch, augment=False, batch_ratio=batch_ratio[i % len(batch_ratio)])
+                    self.batch, augment=False, batch_ratio=batch_ratio[br % len(batch_ratio)])
                 feed_dict_val = self.make_feed_dict(
                     prob=True, data=validation_batch[0], label=validation_batch[2], is_Train=False, is_label=True)
                 summary = self.sess.run(self.summary, feed_dict=feed_dict_val
                                         )
                 vs.add_log(writer=self.val_writer, summary=summary, step=i)
                 test_batch = data.test.next_batch(
-                    self.batch, augment=False, batch_ratio=batch_ratio[i % len(batch_ratio)])
+                    self.batch, augment=False, batch_ratio=batch_ratio[br % len(batch_ratio)])
                 feed_dict_test = self.make_feed_dict(
                     prob=True, data=test_batch[0], label=test_batch[2], is_Train=False, is_label=True)
                 summary = self.sess.run(self.summary, feed_dict=feed_dict_test
