@@ -285,15 +285,12 @@ class Detector(Core2.Core):
                 elasped = e - s
                 logger.debug("elasped time: %g" % elasped)
                 s = e
-            # 学習
-            if self.network_mode == 'pretrain':
-                self.p.change_phase(True)
-            feed_dict = self.make_feed_dict(
-                prob=False, data=batch[0], label=batch[2], is_Train=True, is_update=True, is_label=True)
 
             # 学習係数の減衰
             if self.steps % self.dumping_period == 0 and self.steps != 0:
                 # バリデーションを入れる
+                if self.network_mode == 'pretrain':
+                    self.p.change_phase(False)
                 validation_data = data.val.get_all_files()
                 validation_loss = 0.0
                 for vnum in range(0, len(validation_data[0]), self.batch):
@@ -315,13 +312,20 @@ class Detector(Core2.Core):
                 self.prev_val = validation_loss
                 self.validation_save(str(int(validation_loss*10000)))
 
+            # 学習
             if self.DP and i != 0:
                 self.dynamic_learning_rate(feed_dict)
+            if self.network_mode == 'pretrain':
+                self.p.change_phase(True)
+            feed_dict = self.make_feed_dict(
+                prob=False, data=batch[0], label=batch[2], is_Train=True, is_update=True, is_label=True)
             _, summary = self.sess.run(
                 [self.train_op, self.summary], feed_dict=feed_dict)
             vs.add_log(writer=self.train_writer, summary=summary, step=i)
 
             if i % self.tflog == 0:
+                if self.network_mode == 'pretrain':
+                    self.p.change_phase(False)
                 validation_batch = data.val.next_batch(
                     self.batch, augment=False, batch_ratio=batch_ratio[i % len(batch_ratio)])
                 feed_dict_val = self.make_feed_dict(
