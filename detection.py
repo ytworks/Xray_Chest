@@ -187,7 +187,7 @@ class Detector(Core2.Core):
             'hinge') >= 0 else 'classified-sigmoid'
         self.loss_ce = Loss.loss_func(y=self.z,
                                       y_=self.z_,
-                                      regularization=0.0,
+                                      regularization=self.regularization,
                                       regularization_type=self.regularization_type,
                                       output_type=diag_output_type)
         self.precision, self.recall, self.f_score = 0.0, 0.0, 0.0
