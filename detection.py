@@ -190,13 +190,14 @@ class Detector(Core2.Core):
                                             regularization=0.0,
                                             regularization_type=self.regularization_type,
                                             output_type=diag_output_type)
-        self.true_z = tf.cast(tf.greater(self.z_, 0.5), tf.float32)
-        self.pred_z = tf.cast(tf.greater(self.z, 0.5), tf.float32)
-        self.true_positive = tf.cast(tf.greater(self.z * self.z_, 0.5), tf.float32)
+        self.true_z = tf.reduce_sum(tf.cast(tf.greater(self.z_, 0.5), tf.float32))
+        self.pred_z = tf.reduce_sum(tf.cast(tf.greater(self.z, 0.5), tf.float32))
+        self.true_positive = tf.reduce_sum(tf.cast(tf.greater(self.z * self.z_, 0.5), tf.float32))
+
         self.precision = self.true_positive / (self.pred_z + 1.0e-6)
         self.recall = self.true_positive / (self.true_z + 1.0e-6)
         self.f_score = 2.0 * self.precision * self.recall / (self.precision + self.recall)
-        self.loss_function = self.loss_ce + self.f_score
+        self.loss_function = self.loss_ce - tf.log(self.f_score + 1.0e-6)
         vs.variable_summary(self.loss_function, 'Loss', is_scalar=True)
         vs.variable_summary(self.f_score, 'FScore', is_scalar=True)
         vs.variable_summary(self.loss_ce, 'CE', is_scalar=True)
