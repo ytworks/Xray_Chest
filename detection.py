@@ -190,15 +190,15 @@ class Detector(Core2.Core):
                                             regularization=0.0,
                                             regularization_type=self.regularization_type,
                                             output_type=diag_output_type)
-        z = Layers.concat([tf.sigmoid(self.z), 1.0 - tf.sigmoid(self.z)], concat_type='Vector')
-        z_ = Layers.concat([self.z_, 1.0 - self.z_], concat_type='Vector')
-        self.true_z = tf.reduce_sum(tf.cast(tf.greater(z_, 0.5), tf.float32))
-        self.pred_z = tf.reduce_sum(tf.cast(tf.greater(z, 0.5), tf.float32))
-        self.true_positive = tf.reduce_sum(tf.cast(tf.greater(z * z_, 0.5), tf.float32))
+        self.precision, self.recall, self.f_score = 0.0, 0.0, 0.0
+        for i in range(15):
+            self.true_z = tf.reduce_sum(tf.cast(tf.greater(self.z_[:, i], 0.5), tf.float32))
+            self.pred_z = tf.reduce_sum(tf.cast(tf.greater(self.z[:, i], 0.5), tf.float32))
+            self.true_positive = tf.reduce_sum(tf.cast(tf.greater(self.z[:, i] * self.z_[:, i], 0.5), tf.float32))
 
-        self.precision = self.true_positive / (self.pred_z + 1.0e-6)
-        self.recall = self.true_positive / (self.true_z + 1.0e-6)
-        self.f_score = 2.0 * self.precision * self.recall / (self.precision + self.recall + 1.0e-6)
+            self.precision += (self.true_positive / (self.pred_z + 1.0e-6)) / 16.0
+            self.recall += (self.true_positive / (self.true_z + 1.0e-6)) / 16.0
+            self.f_score += (2.0 * self.precision * self.recall / (self.precision + self.recall + 1.0e-6)) / 16.0
         self.loss_function = self.loss_ce - tf.log(self.f_score + 1.0e-6)
         vs.variable_summary(self.loss_function, 'Loss', is_scalar=True)
         vs.variable_summary(self.f_score, 'FScore', is_scalar=True)
