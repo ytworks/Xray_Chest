@@ -185,12 +185,24 @@ class Detector(Core2.Core):
     def loss(self):
         diag_output_type = self.output_type if self.output_type.find(
             'hinge') >= 0 else 'classified-sigmoid'
-        self.loss_function = Loss.loss_func(y=self.z,
+        self.loss_ce = Loss.loss_func(y=self.z,
                                             y_=self.z_,
                                             regularization=0.0,
                                             regularization_type=self.regularization_type,
                                             output_type=diag_output_type)
+        self.true_z = tf.cast(tf.greater(self.z_, 0.5), tf.float32)
+        self.pred_z = tf.cast(tf.greater(self.z, 0.5), tf.float32)
+        self.true_positive = tf.cast(tf.greater(self.z * self.z_, 0.5), tf.float32)
+        self.precision = self.true_positive / (self.pred_z + 1.0e-6)
+        self.recall = self.true_positive / (self.true_z + 1.0e-6)
+        self.f_score = 2.0 * self.precision * self.recall / (self.precision + self.recall)
+        self.loss_function = self.loss_ce + self.f_score
         vs.variable_summary(self.loss_function, 'Loss', is_scalar=True)
+        vs.variable_summary(self.f_score, 'FScore', is_scalar=True)
+        vs.variable_summary(self.loss_ce, 'CE', is_scalar=True)
+        vs.variable_summary(self.precision, 'Precision', is_scalar=True)
+        vs.variable_summary(self.recall, 'Recall', is_scalar=True)
+
 
     def training(self, var_list=None, gradient_cliiping=True, clipping_norm=0.1):
         self.train_op, self.optimizer = TO.select_algo(loss_function=self.loss_function,
