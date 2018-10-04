@@ -128,24 +128,24 @@ class Detector(Core2.Core):
         logger.debug("07: TF Model file definition done")
 
     def save_transfer_checkpoint(self):
-        UT.save_checkpoint(saver = self.transfer_saver,
-                           checkpoint = self.transfer_checkpoint,
-                           sess = self.sess)
+        UT.save_checkpoint(saver=self.transfer_saver,
+                           checkpoint=self.transfer_checkpoint,
+                           sess=self.sess)
 
     def save_checkpoint(self):
-        UT.save_checkpoint(saver = self.saver,
-                           checkpoint = self.checkpoint,
-                           sess = self.sess)
+        UT.save_checkpoint(saver=self.saver,
+                           checkpoint=self.checkpoint,
+                           sess=self.sess)
 
     def validation_save(self, vname):
-        ckpt = self.checkpoint.replace(".ckpt", vname+".ckpt")
-        t_ckpt = self.transfer_checkpoint.replace(".ckpt", vname+".ckpt")
-        UT.save_checkpoint(saver = self.transfer_saver,
-                           checkpoint = t_ckpt,
-                           sess = self.sess)
-        UT.save_checkpoint(saver = self.saver,
-                           checkpoint = ckpt,
-                           sess = self.sess)
+        ckpt = self.checkpoint.replace(".ckpt", vname + ".ckpt")
+        t_ckpt = self.transfer_checkpoint.replace(".ckpt", vname + ".ckpt")
+        UT.save_checkpoint(saver=self.transfer_saver,
+                           checkpoint=t_ckpt,
+                           sess=self.sess)
+        UT.save_checkpoint(saver=self.saver,
+                           checkpoint=ckpt,
+                           sess=self.sess)
 
     def io_def(self):
         self.CH = 3
@@ -184,34 +184,33 @@ class Detector(Core2.Core):
 
     def loss(self):
         diag_output_type = self.output_type if self.output_type.find(
-            'hinge') >= 0 else 'classified-softmax'
-        z = Layers.reshape_tensor(tf.sigmoid(self.z), (15, 1))
-        z = tf.concat(axis=2, values=[z, 1.0-z])
-        z_ = Layers.reshape_tensor(self.z_, (15, 1))
-        z_ = tf.concat(axis=2, values=[z_, 1.0-z_])
-        flat_z = tf.reshape(self.z, [-1, 2])
-        flat_z_ = tf.reshape(self.z_, [-1, 2])
-        self.loss_ce = Loss.loss_func(y=flat_z,
-                                            y_=flat_z_,
-                                            regularization=0.0,
-                                            regularization_type=self.regularization_type,
-                                            output_type=diag_output_type)
+            'hinge') >= 0 else 'classified-sigmoid'
+        self.loss_ce = Loss.loss_func(y=self.z,
+                                      y_=self.z_,
+                                      regularization=0.0,
+                                      regularization_type=self.regularization_type,
+                                      output_type=diag_output_type)
         self.precision, self.recall, self.f_score = 0.0, 0.0, 0.0
         for i in range(15):
-            self.true_z = tf.reduce_sum(tf.cast(tf.greater(self.z_[:, i], 0.5), tf.float32))
-            self.pred_z = tf.reduce_sum(tf.cast(tf.greater(tf.sigmoid(self.z[:, i]), 0.5), tf.float32))
-            self.true_positive = tf.reduce_sum(tf.cast(tf.greater(tf.sigmoid(self.z[:, i]) * self.z_[:, i], 0.5), tf.float32))
+            self.true_z = tf.reduce_sum(
+                tf.cast(tf.greater(self.z_[:, i], 0.5), tf.float32))
+            self.pred_z = tf.reduce_sum(
+                tf.cast(tf.greater(tf.sigmoid(self.z[:, i]), 0.5), tf.float32))
+            self.true_positive = tf.reduce_sum(
+                tf.cast(tf.greater(tf.sigmoid(self.z[:, i]) * self.z_[:, i], 0.5), tf.float32))
 
-            self.precision += (self.true_positive / (self.pred_z + 1.0e-6)) / 16.0
+            self.precision += (self.true_positive /
+                               (self.pred_z + 1.0e-6)) / 16.0
             self.recall += (self.true_positive / (self.true_z + 1.0e-6)) / 16.0
-            self.f_score += (2.0 * self.precision * self.recall / (self.precision + self.recall + 1.0e-6)) / 16.0
-        self.loss_function = self.loss_ce - tf.log(self.f_score + 1.0e-6) * 0.01
+            self.f_score += (2.0 * self.precision * self.recall /
+                             (self.precision + self.recall + 1.0e-6)) / 16.0
+        self.loss_function = self.loss_ce - \
+            tf.log(self.f_score + 1.0e-6) * 0.01
         vs.variable_summary(self.loss_function, 'Loss', is_scalar=True)
         vs.variable_summary(self.f_score, 'FScore', is_scalar=True)
         vs.variable_summary(self.loss_ce, 'CE', is_scalar=True)
         vs.variable_summary(self.precision, 'Precision', is_scalar=True)
         vs.variable_summary(self.recall, 'Recall', is_scalar=True)
-
 
     def training(self, var_list=None, gradient_cliiping=True, clipping_norm=0.1):
         self.train_op, self.optimizer = TO.select_algo(loss_function=self.loss_function,
@@ -316,23 +315,29 @@ class Detector(Core2.Core):
                 validation_data = data.val.get_all_files()
                 validation_loss = 0.0
                 for vnum in range(0, len(validation_data[0]), self.batch):
-                    sp, ep = vnum, min(vnum+self.batch, len(validation_data[0]))
+                    sp, ep = vnum, min(vnum + self.batch,
+                                       len(validation_data[0]))
                     imgs = []
                     for f in validation_data[0][sp:ep]:
                         imgs.append(data.val.img_reader(f, False)[0])
                     l = [x for x in validation_data[2][sp:ep]]
                     feed_dict_val = self.make_feed_dict(
                         prob=True, data=np.array(imgs), label=np.array(l), is_Train=False, is_label=True)
-                    v = self.sess.run([self.loss_function], feed_dict=feed_dict_val)
-                    validation_loss += v[0] / float((len(validation_data[0]) // self.batch))
-                logger.debug("Before val: %g, After val: %g" % (self.prev_val, validation_loss))
+                    v = self.sess.run([self.loss_function],
+                                      feed_dict=feed_dict_val)
+                    validation_loss += v[0] / \
+                        float((len(validation_data[0]) // self.batch))
+                logger.debug("Before val: %g, After val: %g" %
+                             (self.prev_val, validation_loss))
                 if validation_loss > self.prev_val:
-                    logger.debug("Before Learning Rate: %g" % self.learning_rate_value)
+                    logger.debug("Before Learning Rate: %g" %
+                                 self.learning_rate_value)
                     self.learning_rate_value = max(
                         0.00000001, self.learning_rate_value * self.dumping_rate)
-                    logger.debug("After Learning Rate: %g" % self.learning_rate_value)
+                    logger.debug("After Learning Rate: %g" %
+                                 self.learning_rate_value)
                 self.prev_val = validation_loss
-                self.validation_save(str(int(validation_loss*10000)))
+                self.validation_save(str(int(validation_loss * 10000)))
 
             # 学習
             if self.DP and i != 0:
