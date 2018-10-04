@@ -71,7 +71,7 @@ class Detector(Core2.Core):
         self.dmax = tf.placeholder(tf.float32, shape=())
         self.steps = step
         self.l1_norm_value = 0.0
-        self.regularization_value = 0.0
+        self.regularization_value = regularization
         self.dumping_rate = dumping_rate
         self.dumping_period = dumping_period
         self.network_mode = network_mode
