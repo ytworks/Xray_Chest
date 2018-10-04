@@ -190,7 +190,7 @@ class Detector(Core2.Core):
                                             regularization=0.0,
                                             regularization_type=self.regularization_type,
                                             output_type=diag_output_type)
-        z = Layers.concat([self.z, 1.0 - self.z], concat_type='Vector')
+        z = Layers.concat([tf.sigmoid(self.z), 1.0 - tf.sigmoid(self.z)], concat_type='Vector')
         z_ = Layers.concat([self.z_, 1.0 - self.z_], concat_type='Vector')
         self.true_z = tf.reduce_sum(tf.cast(tf.greater(z_, 0.5), tf.float32))
         self.pred_z = tf.reduce_sum(tf.cast(tf.greater(z, 0.5), tf.float32))
