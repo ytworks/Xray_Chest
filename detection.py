@@ -190,9 +190,11 @@ class Detector(Core2.Core):
                                             regularization=0.0,
                                             regularization_type=self.regularization_type,
                                             output_type=diag_output_type)
-        self.true_z = tf.reduce_sum(tf.cast(tf.greater(self.z_, 0.5), tf.float32))
-        self.pred_z = tf.reduce_sum(tf.cast(tf.greater(self.z, 0.5), tf.float32))
-        self.true_positive = tf.reduce_sum(tf.cast(tf.greater(self.z * self.z_, 0.5), tf.float32))
+        z = Layers.concat([self.z, 1.0 - self.z], concat_type='Vector')
+        z_ = Layers.concat([self.z_, 1.0 - self.z_], concat_type='Vector')
+        self.true_z = tf.reduce_sum(tf.cast(tf.greater(z_, 0.5), tf.float32))
+        self.pred_z = tf.reduce_sum(tf.cast(tf.greater(z, 0.5), tf.float32))
+        self.true_positive = tf.reduce_sum(tf.cast(tf.greater(z * z_, 0.5), tf.float32))
 
         self.precision = self.true_positive / (self.pred_z + 1.0e-6)
         self.recall = self.true_positive / (self.true_z + 1.0e-6)
