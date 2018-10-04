@@ -185,9 +185,9 @@ class Detector(Core2.Core):
     def loss(self):
         diag_output_type = self.output_type if self.output_type.find(
             'hinge') >= 0 else 'classified-sigmoid'
-        z = Layers.reshape_tensor(tf.sigmoid(self.z), (16, 1))
+        z = Layers.reshape_tensor(tf.sigmoid(self.z), (15, 1))
         z = tf.concat(axis=2, values=[z, 1.0-z])
-        z_ = Layers.reshape_tensor(self.z_, (16, 1))
+        z_ = Layers.reshape_tensor(self.z_, (15, 1))
         z_ = tf.concat(axis=2, values=[z_, 1.0-z_])
         flat_z = tf.reshape(self.z, [-1, 2])
         flat_z_ = tf.reshape(self.z_, [-1, 2])
