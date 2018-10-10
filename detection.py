@@ -204,8 +204,7 @@ class Detector(Core2.Core):
             self.recall += (self.true_positive / (self.true_z + 1.0e-6)) / 16.0
             self.f_score += (2.0 * self.precision * self.recall /
                              (self.precision + self.recall + 1.0e-6)) / 16.0
-        self.loss_function = self.loss_ce - \
-            tf.log(self.f_score + 1.0e-6) * 0.01
+        self.loss_function = self.loss_ce 
         vs.variable_summary(self.loss_function, 'Loss', is_scalar=True)
         vs.variable_summary(self.f_score, 'FScore', is_scalar=True)
         vs.variable_summary(self.loss_ce, 'CE', is_scalar=True)
