@@ -204,7 +204,7 @@ class Detector(Core2.Core):
             self.recall += (self.true_positive / (self.true_z + 1.0e-6)) / 16.0
             self.f_score += (2.0 * self.precision * self.recall /
                              (self.precision + self.recall + 1.0e-6)) / 16.0
-        self.loss_function = self.loss_ce 
+        self.loss_function = self.loss_ce
         vs.variable_summary(self.loss_function, 'Loss', is_scalar=True)
         vs.variable_summary(self.f_score, 'FScore', is_scalar=True)
         vs.variable_summary(self.loss_ce, 'CE', is_scalar=True)
@@ -328,7 +328,7 @@ class Detector(Core2.Core):
                         float((len(validation_data[0]) // self.batch))
                 logger.debug("Before val: %g, After val: %g" %
                              (self.prev_val, validation_loss))
-                if validation_loss > self.prev_val:
+                if validation_loss > 0.9 * self.prev_val:
                     logger.debug("Before Learning Rate: %g" %
                                  self.learning_rate_value)
                     self.learning_rate_value = max(
