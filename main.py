@@ -66,21 +66,22 @@ def main():
                    transfer_checkpoint=config.get("OutputParams", "transfer_checkpoint"),
                    tflog=tflog)
     obj.construct()
-    if mode != 'prediction':
-        logger.debug("Start learning")
-        num = int(len(dataset.val.files) / batch) + 1
-        obj.learning(data=dataset,
-                     validation_batch_num=num,
-                     batch_ratio=json.loads(config.get("DLParams", "normal_ratio")))
-        logger.debug("Finish learning")
-    else:
-        logger.debug("Skipped learning")
-    testdata = dataset.test.get_all_files()
-    get_results(outfile.replace('result', 'nih_result'), testdata, batch, obj, roi, label_def,
-                img_reader=dataset.test.img_reader)
-    # sensivity / specifity table
-    get_roc_curve(filename=outfile.replace(
-        'result', 'nih_result'), diags=label_def)
+    for n in range(20):
+        if mode != 'prediction':
+            logger.debug("Start learning")
+            num = int(len(dataset.val.files) / batch) + 1
+            obj.learning(data=dataset,
+                         validation_batch_num=num,
+                         batch_ratio=json.loads(config.get("DLParams", "normal_ratio")))
+            logger.debug("Finish learning")
+        else:
+            logger.debug("Skipped learning")
+        testdata = dataset.test.get_all_files()
+        get_results(outfile.replace('result', 'nih_result'+str(n)), testdata, batch, obj, roi, label_def,
+                    img_reader=dataset.test.img_reader)
+        # sensivity / specifity table
+        get_roc_curve(filename=outfile.replace(
+            'result', 'nih_result'+str(n)), diags=label_def)
 
 
 if __name__ == '__main__':

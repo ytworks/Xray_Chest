@@ -328,7 +328,7 @@ class Detector(Core2.Core):
                         float((len(validation_data[0]) // self.batch))
                 logger.debug("Before val: %g, After val: %g" %
                              (self.prev_val, validation_loss))
-                if validation_loss > 0.9 * self.prev_val:
+                if validation_loss > 0.99 * self.prev_val:
                     logger.debug("Before Learning Rate: %g" %
                                  self.learning_rate_value)
                     self.learning_rate_value = max(
