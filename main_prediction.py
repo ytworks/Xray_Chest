@@ -57,7 +57,9 @@ def main():
                    network_mode=network_mode,
                    transfer_save_mode=config.getboolean("OutputParams", "transfer_save_mode"),
                    transfer_checkpoint=config.get("OutputParams", "transfer_checkpoint"),
-                   tflog=tflog)
+                   tflog=tflog,
+                   gpu_num=config.getint("DLParams", "gpu_num"),
+                   distributed_batch=config.getint("DLParams", "distributed_batch"))
     obj.construct()
     label_list = json.load(open('./Config/label_def.json'))
     root, ext = os.path.splitext(filename)

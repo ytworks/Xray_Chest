@@ -64,7 +64,10 @@ def main():
                    network_mode=network_mode,
                    transfer_save_mode=config.getboolean("OutputParams", "transfer_save_mode"),
                    transfer_checkpoint=config.get("OutputParams", "transfer_checkpoint"),
-                   tflog=tflog)
+                   tflog=tflog,
+                   gpu_num=config.getint("DLParams", "gpu_num"),
+                   distributed_batch=config.getint("DLParams", "distributed_batch"),
+                   )
     obj.construct()
     for n in range(config.getint('DLParams', 'loop_num')):
         if mode != 'prediction':

@@ -49,7 +49,9 @@ class Detector(Core2.Core):
                  network_mode='scratch',
                  transfer_save_mode=True,
                  transfer_checkpoint='./Strages/Core.ckpt',
-                 tflog=10):
+                 tflog=10,
+                 gpu_num=0,
+                 distributed_batch=32):
         super(Detector, self).__init__(output_type=output_type,
                                        epoch=epoch,
                                        batch=batch,
@@ -78,6 +80,8 @@ class Detector(Core2.Core):
         self.transfer_save_mode = transfer_save_mode
         self.transfer_checkpoint = transfer_checkpoint
         self.tflog = tflog
+        self.gpu_num = gpu_num
+        self.distributed_batch = distributed_batch
         self.prev_val = 10000.0
         for i in range(self.steps):
             if i != 0 and i % self.dumping_period == 0:
@@ -190,26 +194,8 @@ class Detector(Core2.Core):
                                       regularization=self.regularization,
                                       regularization_type=self.regularization_type,
                                       output_type=diag_output_type)
-        self.precision, self.recall, self.f_score = 0.0, 0.0, 0.0
-        for i in range(15):
-            self.true_z = tf.reduce_sum(
-                tf.cast(tf.greater(self.z_[:, i], 0.5), tf.float32))
-            self.pred_z = tf.reduce_sum(
-                tf.cast(tf.greater(tf.sigmoid(self.z[:, i]), 0.5), tf.float32))
-            self.true_positive = tf.reduce_sum(
-                tf.cast(tf.greater(tf.sigmoid(self.z[:, i]) * self.z_[:, i], 0.5), tf.float32))
-
-            self.precision += (self.true_positive /
-                               (self.pred_z + 1.0e-6)) / 16.0
-            self.recall += (self.true_positive / (self.true_z + 1.0e-6)) / 16.0
-            self.f_score += (2.0 * self.precision * self.recall /
-                             (self.precision + self.recall + 1.0e-6)) / 16.0
         self.loss_function = self.loss_ce
         vs.variable_summary(self.loss_function, 'Loss', is_scalar=True)
-        vs.variable_summary(self.f_score, 'FScore', is_scalar=True)
-        vs.variable_summary(self.loss_ce, 'CE', is_scalar=True)
-        vs.variable_summary(self.precision, 'Precision', is_scalar=True)
-        vs.variable_summary(self.recall, 'Recall', is_scalar=True)
 
     def training(self, var_list=None, gradient_cliiping=True, clipping_norm=0.1):
         self.train_op, self.optimizer = TO.select_algo(loss_function=self.loss_function,
