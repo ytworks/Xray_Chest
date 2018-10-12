@@ -66,7 +66,7 @@ def main():
                    transfer_checkpoint=config.get("OutputParams", "transfer_checkpoint"),
                    tflog=tflog)
     obj.construct()
-    for n in range(20):
+    for n in range(config.getint('DLParams', 'loop_num')):
         if mode != 'prediction':
             logger.debug("Start learning")
             num = int(len(dataset.val.files) / batch) + 1

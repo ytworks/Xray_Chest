@@ -347,7 +347,7 @@ class Detector(Core2.Core):
                 prob=False, data=batch[0], label=batch[2], is_Train=True, is_update=True, is_label=True)
             _, summary = self.sess.run(
                 [self.train_op, self.summary], feed_dict=feed_dict)
-            vs.add_log(writer=self.train_writer, summary=summary, step=i)
+            vs.add_log(writer=self.train_writer, summary=summary, step=self.steps)
 
             if i % self.tflog == 0:
                 if self.network_mode == 'pretrain':
@@ -358,14 +358,14 @@ class Detector(Core2.Core):
                     prob=True, data=validation_batch[0], label=validation_batch[2], is_Train=False, is_label=True)
                 summary = self.sess.run(self.summary, feed_dict=feed_dict_val
                                         )
-                vs.add_log(writer=self.val_writer, summary=summary, step=i)
+                vs.add_log(writer=self.val_writer, summary=summary, step=self.steps)
                 test_batch = data.test.next_batch(
                     self.batch, augment=False, batch_ratio=batch_ratio[br % len(batch_ratio)])
                 feed_dict_test = self.make_feed_dict(
                     prob=True, data=test_batch[0], label=test_batch[2], is_Train=False, is_label=True)
                 summary = self.sess.run(self.summary, feed_dict=feed_dict_test
                                         )
-                vs.add_log(writer=self.test_writer, summary=summary, step=i)
+                vs.add_log(writer=self.test_writer, summary=summary, step=self.steps)
             self.steps += 1
         self.save_checkpoint()
         if self.network_mode == 'pretrain':
