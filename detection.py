@@ -127,7 +127,8 @@ class Detector(Core2.Core):
         # チェックポイントの呼び出し
         if self.network_mode == 'pretrain':
             self.transfer_saver = tf.train.Saver(p_vars)
-        self.saver = tf.train.Saver(list(set(tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES))))
+        self.saver = tf.train.Saver(
+            list(set(tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES))))
         self.restore()
         if self.init and self.network_mode == 'pretrain':
             self.p.load_weights()
@@ -172,18 +173,60 @@ class Detector(Core2.Core):
                                                          keep_probs=self.keep_probs)
         else:
             self.z, self.logit, self.y51, self.p = pretrain_model(x=self.x)
-
+        if self.gpu_num > 1:
+            with tf.device('/cpu:0'):
+                xs = tf.reshape(
+                    self.x, (self.gpu_num, self.distributed_batch, self.SIZE, self.SIZE, self.CH))
+                self.zs = []
+                if self.network_mode != 'scratch':
+                    self.ps = []
+                for i in range(self.gpu_num):
+                    x = xs[i, :, :, :, :]
+                    x = tf.reshape(x, (self.distributed_batch,
+                                       self.SIZE, self.SIZE, self.CH))
+                    with tf.device('/gpu:%d' % i):
+                        with tf.name_scope('%s_%d' % ('g', i)) as scope:
+                            tf.get_variable_scope().reuse_variables()
+                            if self.network_mode == 'scratch':
+                                z, _, _ = scratch_model(x=x,
+                                                        SIZE=self.SIZE,
+                                                        CH=self.CH,
+                                                        istraining=self.istraining,
+                                                        rmax=self.rmax,
+                                                        dmax=self.dmax,
+                                                        keep_probs=self.keep_probs)
+                            else:
+                                z, _, _, p = pretrain_model(x=x)
+                                self.ps.append(p)
+                            self.zs.append(z)
 
     def loss(self):
         diag_output_type = self.output_type if self.output_type.find(
             'hinge') >= 0 else 'classified-sigmoid'
-        self.loss_ce = Loss.loss_func(y=self.z,
-                                      y_=self.z_,
-                                      regularization=self.regularization,
-                                      regularization_type=self.regularization_type,
-                                      output_type=diag_output_type)
-        self.loss_function = self.loss_ce
-        vs.variable_summary(self.loss_function, 'Loss', is_scalar=True)
+        if self.gpu < 2:
+            self.loss_ce = Loss.loss_func(y=self.z,
+                                          y_=self.z_,
+                                          regularization=self.regularization,
+                                          regularization_type=self.regularization_type,
+                                          output_type=diag_output_type)
+            self.loss_function = self.loss_ce
+            vs.variable_summary(self.loss_function, 'Loss', is_scalar=True)
+        else:
+            with tf.device('/cpu:0'):
+                self.loss_functions = []
+                z_s = tf.reshape(
+                    self.z_, (self.gpu_num, self.distributed_batch, 15))
+                for i in range(self.gpu_num):
+                    z_ = z_s[i, :, :]
+                    z_ = tf.reshape(z_, (self.distributed_batch, 15))
+                    with tf.device('/gpu:%d' % i):
+                        with tf.name_scope('%s_%d' % ('g', i)) as scope:
+                            l = Loss.loss_func(y=self.zs[i],
+                                               y_=z_,
+                                               regularization=self.regularization,
+                                               regularization_type=self.regularization_type,
+                                               output_type=diag_output_type)
+                            self.loss_functions.append(l)
 
     def training(self, var_list=None, gradient_cliiping=True, clipping_norm=0.1):
         self.train_op, self.optimizer = TO.select_algo(loss_function=self.loss_function,
@@ -321,7 +364,8 @@ class Detector(Core2.Core):
                 prob=False, data=batch[0], label=batch[2], is_Train=True, is_update=True, is_label=True)
             _, summary = self.sess.run(
                 [self.train_op, self.summary], feed_dict=feed_dict)
-            vs.add_log(writer=self.train_writer, summary=summary, step=self.steps)
+            vs.add_log(writer=self.train_writer,
+                       summary=summary, step=self.steps)
 
             if i % self.tflog == 0:
                 if self.network_mode == 'pretrain':
@@ -332,14 +376,16 @@ class Detector(Core2.Core):
                     prob=True, data=validation_batch[0], label=validation_batch[2], is_Train=False, is_label=True)
                 summary = self.sess.run(self.summary, feed_dict=feed_dict_val
                                         )
-                vs.add_log(writer=self.val_writer, summary=summary, step=self.steps)
+                vs.add_log(writer=self.val_writer,
+                           summary=summary, step=self.steps)
                 test_batch = data.test.next_batch(
                     self.batch, augment=False, batch_ratio=batch_ratio[br % len(batch_ratio)])
                 feed_dict_test = self.make_feed_dict(
                     prob=True, data=test_batch[0], label=test_batch[2], is_Train=False, is_label=True)
                 summary = self.sess.run(self.summary, feed_dict=feed_dict_test
                                         )
-                vs.add_log(writer=self.test_writer, summary=summary, step=self.steps)
+                vs.add_log(writer=self.test_writer,
+                           summary=summary, step=self.steps)
             self.steps += 1
         self.save_checkpoint()
         if self.network_mode == 'pretrain':
