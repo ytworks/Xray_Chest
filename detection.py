@@ -129,6 +129,8 @@ class Detector(Core2.Core):
             self.transfer_saver = tf.train.Saver(p_vars)
         self.saver = tf.train.Saver(list(set(tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES))))
         self.restore()
+        if self.init and self.network_mode == 'pretrain':
+            self.p.load_weights()
         logger.debug("07: TF Model file definition done")
 
     def save_transfer_checkpoint(self):
@@ -168,23 +170,9 @@ class Detector(Core2.Core):
                                                          rmax=self.rmax,
                                                          dmax=self.dmax,
                                                          keep_probs=self.keep_probs)
-        elif self.network_mode == 'pretrain':
-            self.z, self.logit, self.y51, self.p = pretrain_model(x=self.x)
-        elif self.network_mode == 'synplectic':
-            self.z, self.logit, self.y51 = synplectic_scratch_model(x=self.x, SIZE=self.SIZE,
-                                                                    CH=self.CH,
-                                                                    istraining=self.istraining,
-                                                                    rmax=self.rmax,
-                                                                    dmax=self.dmax,
-                                                                    keep_probs=self.keep_probs)
         else:
-            self.z, self.logit, self.y51 = scratch_model(x=self.x,
-                                                         SIZE=self.SIZE,
-                                                         CH=self.CH,
-                                                         istraining=self.istraining,
-                                                         rmax=self.rmax,
-                                                         dmax=self.dmax,
-                                                         keep_probs=self.keep_probs)
+            self.z, self.logit, self.y51, self.p = pretrain_model(x=self.x)
+
 
     def loss(self):
         diag_output_type = self.output_type if self.output_type.find(
