@@ -123,7 +123,7 @@ class Detector(Core2.Core):
         # チェックポイントの呼び出し
         if self.network_mode == 'pretrain':
             self.transfer_saver = tf.train.Saver(p_vars)
-        self.saver = tf.train.Saver()
+        self.saver = tf.train.Saver(list(set(tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES))))
         self.restore()
         logger.debug("07: TF Model file definition done")
 
