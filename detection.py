@@ -229,14 +229,20 @@ class Detector(Core2.Core):
                             self.loss_functions.append(l)
 
     def training(self, var_list=None, gradient_cliiping=True, clipping_norm=0.1):
-        self.train_op, self.optimizer = TO.select_algo(loss_function=self.loss_function,
-                                                       algo=self.optimizer_type,
-                                                       learning_rate=self.learning_rate,
-                                                       b1=self.beta1, b2=self.beta2,
-                                                       var_list=var_list,
-                                                       gradient_cliiping=gradient_cliiping,
-                                                       clipping_norm=clipping_norm)
-        self.grad_op = self.optimizer.compute_gradients(self.loss_function)
+        if self.gpu < 2:
+            self.train_op, self.optimizer = TO.select_algo(loss_function=self.loss_function,
+                                                           algo=self.optimizer_type,
+                                                           learning_rate=self.learning_rate,
+                                                           b1=self.beta1, b2=self.beta2,
+                                                           var_list=var_list,
+                                                           gradient_cliiping=gradient_cliiping,
+                                                           clipping_norm=clipping_norm)
+            self.grad_op = self.optimizer.compute_gradients(self.loss_function)
+        else:
+            for i in range(self.gpu_num):
+                with tf.device('/gpu:%d' % i):
+                    with tf.name_scope('%s_%d' % ('g', i)) as scope:
+                        pass
 
     def make_feed_dict(self, prob, data, label=None, is_Train=True, is_update=False, is_label=False):
         if self.steps <= 5000:
