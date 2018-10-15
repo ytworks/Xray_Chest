@@ -170,9 +170,10 @@ class Detector(Core2.Core):
                                                          istraining=self.istraining,
                                                          rmax=self.rmax,
                                                          dmax=self.dmax,
-                                                         keep_probs=self.keep_probs)
+                                                         keep_probs=self.keep_probs,
+                                                         reuse=False)
         else:
-            self.z, self.logit, self.y51, self.p = pretrain_model(x=self.x)
+            self.z, self.logit, self.y51, self.p = pretrain_model(x=self.x, reuse=False)
         if self.gpu_num > 1:
             with tf.device('/cpu:0'):
                 xs = tf.reshape(
@@ -194,9 +195,10 @@ class Detector(Core2.Core):
                                                         istraining=self.istraining,
                                                         rmax=self.rmax,
                                                         dmax=self.dmax,
-                                                        keep_probs=self.keep_probs)
+                                                        keep_probs=self.keep_probs,
+                                                        reuse=True)
                             else:
-                                z, _, _, p = pretrain_model(x=x)
+                                z, _, _, p = pretrain_model(x=x, reuse=True)
                                 self.ps.append(p)
                             self.zs.append(z)
 
