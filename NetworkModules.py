@@ -28,95 +28,97 @@ def scratch_model(x, SIZE, CH, istraining, rmax, dmax, keep_probs, reuse=False):
     # dense net
     # Stem
     # Batch Normalization
-    stem_bn = Layers.batch_normalization(x=x,
-                                         shape=CH,
-                                         vname='STEM_TOP_BN01',
-                                         dim=[0, 1, 2],
-                                         Renormalization=Renormalization,
-                                         Training=istraining,
-                                         rmax=rmax,
-                                         dmax=dmax)
-    dense_stem = stem_cell(x=stem_bn,
-                           InputNode=[SIZE, SIZE, CH],
-                           Channels=StemChannels,
-                           Initializer=Initializer,
-                           vname='Stem',
-                           regularization=Regularization,
-                           Training=istraining)
+    with tf.variable_scope('Dsc', reuse = reuse):
+        stem_bn = Layers.batch_normalization(x=x,
+                                             shape=CH,
+                                             vname='STEM_TOP_BN01',
+                                             dim=[0, 1, 2],
+                                             Renormalization=Renormalization,
+                                             Training=istraining,
+                                             rmax=rmax,
+                                             dmax=dmax)
+        dense_stem = stem_cell(x=stem_bn,
+                               InputNode=[SIZE, SIZE, CH],
+                               Channels=StemChannels,
+                               Initializer=Initializer,
+                               vname='Stem',
+                               regularization=Regularization,
+                               Training=istraining)
 
-    # Dense
-    densenet_output = densenet(x=dense_stem,
-                               root=stem_bn,
-                               Act=Activation,
-                               GrowthRate=GrowthRate,
-                               InputNode=[SIZE / 4,
-                                          SIZE / 4, StemChannels],
-                               Strides=[1, 1, 1, 1],
-                               Renormalization=Renormalization,
-                               Regularization=Regularization,
-                               rmax=rmax,
-                               dmax=dmax,
-                               SE=SE,
-                               Training=istraining,
-                               GroupNorm=GroupNorm,
-                               GroupNum=GroupNum,
-                               vname='DenseNet')
+        # Dense
+        densenet_output = densenet(x=dense_stem,
+                                   root=stem_bn,
+                                   Act=Activation,
+                                   GrowthRate=GrowthRate,
+                                   InputNode=[SIZE / 4,
+                                              SIZE / 4, StemChannels],
+                                   Strides=[1, 1, 1, 1],
+                                   Renormalization=Renormalization,
+                                   Regularization=Regularization,
+                                   rmax=rmax,
+                                   dmax=dmax,
+                                   SE=SE,
+                                   Training=istraining,
+                                   GroupNorm=GroupNorm,
+                                   GroupNum=GroupNum,
+                                   vname='DenseNet')
 
-    y50 = densenet_output
-    y51 = SE_module(x=y50,
-                    InputNode=[SIZE / 64, SIZE / 64,
-                               StemChannels + 12 + GrowthRate * 98],
-                    Act=Activation,
-                    Rate=0.5,
-                    vname='TOP_SE')
+        y50 = densenet_output
+        y51 = SE_module(x=y50,
+                        InputNode=[SIZE / 64, SIZE / 64,
+                                   StemChannels + 12 + GrowthRate * 98],
+                        Act=Activation,
+                        Rate=0.5,
+                        vname='TOP_SE')
 
-    y61 = Layers.pooling(x=y51,
-                         ksize=[SIZE / 64, SIZE / 64],
-                         strides=[SIZE / 64, SIZE / 64],
-                         padding='SAME',
-                         algorithm='Avg')
+        y61 = Layers.pooling(x=y51,
+                             ksize=[SIZE / 64, SIZE / 64],
+                             strides=[SIZE / 64, SIZE / 64],
+                             padding='SAME',
+                             algorithm='Avg')
 
-    # reshape
-    y71 = Layers.reshape_tensor(
-        x=y61, shape=[StemChannels + 12 + GrowthRate * 98])
-    y71_d = Layers.dropout(x=y71,
-                           keep_probs=keep_probs,
-                           training_prob=prob,
-                           vname='Dropout')
-    # fnn
-    y72 = Outputs.output(x=y71_d,
-                         InputSize=StemChannels + 12 + GrowthRate * 98,
-                         OutputSize=15,
-                         Initializer='Xavier',
-                         BatchNormalization=False,
-                         Regularization=True,
-                         vname='Output_z')
-    z = y72
-    logit = tf.sigmoid(z)
+        # reshape
+        y71 = Layers.reshape_tensor(
+            x=y61, shape=[StemChannels + 12 + GrowthRate * 98])
+        y71_d = Layers.dropout(x=y71,
+                               keep_probs=keep_probs,
+                               training_prob=prob,
+                               vname='Dropout')
+        # fnn
+        y72 = Outputs.output(x=y71_d,
+                             InputSize=StemChannels + 12 + GrowthRate * 98,
+                             OutputSize=15,
+                             Initializer='Xavier',
+                             BatchNormalization=False,
+                             Regularization=True,
+                             vname='Output_z')
+        z = y72
+        logit = tf.sigmoid(z)
     return z, logit, y51
 
 
 def pretrain_model(x, reuse=False):
-    p = trans.Transfer(x, 'densenet121', pooling=None, vname='transfer_Weight_Regularization',
-                       trainable=True)
-    y51 = p.get_output_tensor()
-    y61 = Layers.pooling(x=y51,
-                         ksize=[7, 7],
-                         strides=[7, 7],
-                         padding='SAME',
-                         algorithm='Avg')
+    with tf.variable_scope('Model', reuse = reuse):
+        p = trans.Transfer(x, 'densenet121', pooling=None, vname='transfer_Weight_Regularization',
+                           trainable=True)
+        y51 = p.get_output_tensor()
+        y61 = Layers.pooling(x=y51,
+                             ksize=[7, 7],
+                             strides=[7, 7],
+                             padding='SAME',
+                             algorithm='Avg')
 
-    # reshape
-    y71 = Layers.reshape_tensor(x=y61, shape=[1 * 1 * 1024])
-    # fnn
-    y72 = Outputs.output(x=y71,
-                         InputSize=1024,
-                         OutputSize=15,
-                         Initializer='Xavier_normal',
-                         BatchNormalization=False,
-                         Regularization=True,
-                         vname='Output_z',
-                         Is_bias=True)
-    z = y72
-    logit = tf.sigmoid(z)
+        # reshape
+        y71 = Layers.reshape_tensor(x=y61, shape=[1 * 1 * 1024])
+        # fnn
+        y72 = Outputs.output(x=y71,
+                             InputSize=1024,
+                             OutputSize=15,
+                             Initializer='Xavier_normal',
+                             BatchNormalization=False,
+                             Regularization=True,
+                             vname='Output_z',
+                             Is_bias=True)
+        z = y72
+        logit = tf.sigmoid(z)
     return z, logit, y51, p
