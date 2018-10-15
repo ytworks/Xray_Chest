@@ -98,9 +98,9 @@ def scratch_model(x, SIZE, CH, istraining, rmax, dmax, keep_probs, reuse=False):
 
 
 def pretrain_model(x, reuse=False):
+    p = trans.Transfer(x, 'densenet121', pooling=None, vname='transfer_Weight_Regularization',
+                       trainable=True)
     with tf.variable_scope('Model', reuse = reuse):
-        p = trans.Transfer(x, 'densenet121', pooling=None, vname='transfer_Weight_Regularization',
-                           trainable=True)
         y51 = p.get_output_tensor()
         y61 = Layers.pooling(x=y51,
                              ksize=[7, 7],
