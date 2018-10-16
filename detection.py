@@ -162,16 +162,20 @@ class Detector(Core2.Core):
         self.keep_probs = []
 
     def network(self):
-        if self.network_mode == 'scratch':
-            self.z, self.logit, self.y51 = scratch_model(x=self.x,
-                                                         SIZE=self.SIZE,
-                                                         CH=self.CH,
-                                                         istraining=self.istraining,
-                                                         rmax=self.rmax,
-                                                         dmax=self.dmax,
-                                                         keep_probs=self.keep_probs)
-        else:
-            self.z, self.logit, self.y51, self.p = pretrain_model(x=self.x)
+        with tf.device('/cpu:0'):
+            if self.network_mode == 'scratch':
+                self.z, self.logit, self.y51 = scratch_model(x=self.x,
+                                                             SIZE=self.SIZE,
+                                                             CH=self.CH,
+                                                             istraining=self.istraining,
+                                                             rmax=self.rmax,
+                                                             dmax=self.dmax,
+                                                             keep_probs=self.keep_probs,
+                                                             vname='transfer_Weight_Regularization',
+                                                             reuse=False)
+            else:
+                self.z, self.logit, self.y51, self.p = pretrain_model(x=self.x, vname='transfer_Weight_Regularization',
+                                                                      is_save=True, reuse=False)
 
 
     def loss(self):
