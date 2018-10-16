@@ -66,7 +66,7 @@ def main():
                    transfer_checkpoint=config.get("OutputParams", "transfer_checkpoint"),
                    tflog=tflog,
                    gpu_num=config.getint("DLParams", "gpu_num"),
-                   distributed_batch=config.getint("DLParams", "distributed_batch"),
+                   distributed_batch=config.getint("DLParams", "distributed_batch")
                    )
     obj.construct()
     for n in range(config.getint('DLParams', 'loop_num')):
