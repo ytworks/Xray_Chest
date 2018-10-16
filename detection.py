@@ -127,7 +127,8 @@ class Detector(Core2.Core):
         # チェックポイントの呼び出し
         if self.network_mode == 'pretrain':
             self.transfer_saver = tf.train.Saver(p_vars)
-        self.saver = tf.train.Saver(list(set(tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES))))
+        self.saver = tf.train.Saver(
+            list(set(tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES))))
         self.restore()
         if self.init and self.network_mode == 'pretrain':
             self.p.load_weights()
@@ -176,28 +177,129 @@ class Detector(Core2.Core):
             else:
                 self.z, self.logit, self.y51, self.p = pretrain_model(x=self.x, vname='transfer_Weight_Regularization',
                                                                       is_save=True, reuse=False)
-
+            if self.gpu_num > 1:
+                xs = tf.reshape(
+                    self.x, (self.gpu_num, self.distributed_batch, self.SIZE, self.SIZE, self.CH))
+                self.zs = []
+                for i in range(self.gpu_num):
+                    x = xs[i, :, :, :, :]
+                    x = tf.reshape(x, (self.distributed_batch,
+                                       self.SIZE, self.SIZE, self.CH))
+                    with tf.device('/gpu:%d' % i):
+                        with tf.name_scope('%s_%d' % ('g', i)) as scope:
+                            tf.get_variable_scope().reuse_variables()
+                            if self.network_mode == 'scratch':
+                                z, _, _ = scratch_model(x=x,
+                                                        SIZE=self.SIZE,
+                                                        CH=self.CH,
+                                                        istraining=self.istraining,
+                                                        rmax=self.rmax,
+                                                        dmax=self.dmax,
+                                                        keep_probs=self.keep_probs,
+                                                        vname='transfer_Weight_Regularization',
+                                                        reuse=False)
+                            else:
+                                z, _, _, p = pretrain_model(x=x, vname='transfer_Weight_Regularization',
+                                                            is_save=True, reuse=False)
+                            self.zs.append(z)
 
     def loss(self):
         diag_output_type = self.output_type if self.output_type.find(
             'hinge') >= 0 else 'classified-sigmoid'
-        self.loss_ce = Loss.loss_func(y=self.z,
-                                      y_=self.z_,
-                                      regularization=self.regularization,
-                                      regularization_type=self.regularization_type,
-                                      output_type=diag_output_type)
-        self.loss_function = self.loss_ce
-        vs.variable_summary(self.loss_function, 'Loss', is_scalar=True)
+        if self.gpu < 2:
+            self.loss_ce = Loss.loss_func(y=self.z,
+                                          y_=self.z_,
+                                          regularization=self.regularization,
+                                          regularization_type=self.regularization_type,
+                                          output_type=diag_output_type)
+            self.loss_function = self.loss_ce
+            vs.variable_summary(self.loss_function, 'Loss', is_scalar=True)
+        else:
+            with tf.variable_scope('transfer_Weight_Regularization', reuse=True):
+                with tf.device('/cpu:0'):
+                    self.loss_functions = []
+                    z_s = tf.reshape(
+                        self.z_, (self.gpu_num, self.distributed_batch, 15))
+                    for i in range(self.gpu_num):
+                        z_ = z_s[i, :, :]
+                        z_ = tf.reshape(z_, (self.distributed_batch, 15))
+                        with tf.device('/gpu:%d' % i):
+                            with tf.name_scope('%s_%d' % ('g', i)) as scope:
+                                l = Loss.loss_func(y=self.zs[i],
+                                                   y_=z_,
+                                                   regularization=self.regularization,
+                                                   regularization_type=self.regularization_type,
+                                                   output_type=diag_output_type)
+                                self.loss_functions.append(l)
 
     def training(self, var_list=None, gradient_cliiping=True, clipping_norm=0.1):
-        self.train_op, self.optimizer = TO.select_algo(loss_function=self.loss_function,
-                                                       algo=self.optimizer_type,
-                                                       learning_rate=self.learning_rate,
-                                                       b1=self.beta1, b2=self.beta2,
-                                                       var_list=var_list,
-                                                       gradient_cliiping=gradient_cliiping,
-                                                       clipping_norm=clipping_norm)
-        self.grad_op = self.optimizer.compute_gradients(self.loss_function)
+        if self.gpu < 2:
+            self.train_op, self.optimizer = TO.select_algo(loss_function=self.loss_function,
+                                                           algo=self.optimizer_type,
+                                                           learning_rate=self.learning_rate,
+                                                           b1=self.beta1, b2=self.beta2,
+                                                           var_list=var_list,
+                                                           gradient_cliiping=gradient_cliiping,
+                                                           clipping_norm=clipping_norm)
+            self.grad_op = self.optimizer.compute_gradients(self.loss_function)
+        else:
+            with tf.device('/cpu:0'):
+                _, self.optimizer = TO.select_algo(loss_function=self.loss_functions[0],
+                                                   algo=self.optimizer_type,
+                                                   learning_rate=self.learning_rate,
+                                                   b1=self.beta1, b2=self.beta2,
+                                                   var_list=var_list,
+                                                   gradient_cliiping=gradient_cliiping,
+                                                   clipping_norm=clipping_norm)
+                grads = []
+                with tf.variable_scope('transfer_Weight_Regularization', reuse=True):
+                    for i in range(self.gpu_num):
+                        with tf.device('/gpu:%d' % i):
+                            with tf.name_scope('%s_%d' % ('g', i)) as scope:
+                                # TBD gradient clipping and trainable variables
+                                grad = self.optimizer.compute_gradients(
+                                    self.loss_functions[i])
+                                grads.append(grad)
+                gs = average_gradients(grads)
+                apply_gradient_op = self.optimizer.apply_gradients(gs)
+                variable_averages = tf.train.ExponentialMovingAverage(0.9999)
+                variables_averages_op = variable_averages.apply(tf.trainable_variables())
+                self.train_op = tf.group(apply_gradient_op, variables_averages_op)
+
+    def average_gradients(tower_grads):
+        """Calculate the average gradient for each shared variable across all towers.
+        Note that this function provides a synchronization point across all towers.
+        Args:
+          tower_grads: List of lists of (gradient, variable) tuples. The outer list
+            is over individual gradients. The inner list is over the gradient
+            calculation for each tower.
+        Returns:
+           List of pairs of (gradient, variable) where the gradient has been averaged
+           across all towers.
+        """
+        average_grads = []
+        for grad_and_vars in zip(*tower_grads):
+            # Note that each grad_and_vars looks like the following:
+            #   ((grad0_gpu0, var0_gpu0), ... , (grad0_gpuN, var0_gpuN))
+            grads = []
+            for g, _ in grad_and_vars:
+                # Add 0 dimension to the gradients to represent the tower.
+                expanded_g = tf.expand_dims(g, 0)
+
+                # Append on a 'tower' dimension which we will average over below.
+                grads.append(expanded_g)
+
+            # Average over the 'tower' dimension.
+            grad = tf.concat(axis=0, values=grads)
+            grad = tf.reduce_mean(grad, 0)
+
+            # Keep in mind that the Variables are redundant because they are shared
+            # across towers. So .. we will just return the first tower's pointer to
+            # the Variable.
+            v = grad_and_vars[0][1]
+            grad_and_var = (grad, v)
+            average_grads.append(grad_and_var)
+        return average_grads
 
     def make_feed_dict(self, prob, data, label=None, is_Train=True, is_update=False, is_label=False):
         if self.steps <= 5000:
@@ -325,7 +427,8 @@ class Detector(Core2.Core):
                 prob=False, data=batch[0], label=batch[2], is_Train=True, is_update=True, is_label=True)
             _, summary = self.sess.run(
                 [self.train_op, self.summary], feed_dict=feed_dict)
-            vs.add_log(writer=self.train_writer, summary=summary, step=self.steps)
+            vs.add_log(writer=self.train_writer,
+                       summary=summary, step=self.steps)
 
             if i % self.tflog == 0:
                 if self.network_mode == 'pretrain':
@@ -336,14 +439,16 @@ class Detector(Core2.Core):
                     prob=True, data=validation_batch[0], label=validation_batch[2], is_Train=False, is_label=True)
                 summary = self.sess.run(self.summary, feed_dict=feed_dict_val
                                         )
-                vs.add_log(writer=self.val_writer, summary=summary, step=self.steps)
+                vs.add_log(writer=self.val_writer,
+                           summary=summary, step=self.steps)
                 test_batch = data.test.next_batch(
                     self.batch, augment=False, batch_ratio=batch_ratio[br % len(batch_ratio)])
                 feed_dict_test = self.make_feed_dict(
                     prob=True, data=test_batch[0], label=test_batch[2], is_Train=False, is_label=True)
                 summary = self.sess.run(self.summary, feed_dict=feed_dict_test
                                         )
-                vs.add_log(writer=self.test_writer, summary=summary, step=self.steps)
+                vs.add_log(writer=self.test_writer,
+                           summary=summary, step=self.steps)
             self.steps += 1
         self.save_checkpoint()
         if self.network_mode == 'pretrain':
