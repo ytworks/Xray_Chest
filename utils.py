@@ -7,12 +7,14 @@ import six
 from sklearn.metrics import roc_curve, auc
 import scipy
 import cv2
+import skimage
 
 
 def image_process(img):
+    img = dicom_to_np(f)
     equ = cv2.equalizeHist(img)
-    LoG = scipy.ndimage.filters.gaussian_laplace(img, sigma=1.0)
-    img = np.stack((img, equ, LoG), axis=-1)
+    gm1 = skimage.exposure.adjust_gamma(img, 1.5)
+    img = np.stack((img, equ, gm1), axis=-1)
     return img
 
 

@@ -192,7 +192,8 @@ class Detector(Core2.Core):
                                                        b1=self.beta1, b2=self.beta2,
                                                        var_list=var_list,
                                                        gradient_cliiping=gradient_cliiping,
-                                                       clipping_norm=clipping_norm)
+                                                       clipping_norm=clipping_norm,
+                                                       ema=True)
         self.grad_op = self.optimizer.compute_gradients(self.loss_function)
 
     def make_feed_dict(self, prob, data, label=None, is_Train=True, is_update=False, is_label=False):
@@ -302,7 +303,7 @@ class Detector(Core2.Core):
                         float((len(validation_data[0]) // self.batch))
                 logger.debug("Before val: %g, After val: %g" %
                              (self.prev_val, validation_loss))
-                if validation_loss > 0.99 * self.prev_val:
+                if validation_loss > self.prev_val:
                     logger.debug("Before Learning Rate: %g" %
                                  self.learning_rate_value)
                     self.learning_rate_value = max(
