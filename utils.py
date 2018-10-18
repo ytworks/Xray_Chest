@@ -11,7 +11,6 @@ import skimage
 
 
 def image_process(img):
-    img = dicom_to_np(f)
     equ = cv2.equalizeHist(img)
     gm1 = skimage.exposure.adjust_gamma(img, 1.5)
     img = np.stack((img, equ, gm1), axis=-1)
