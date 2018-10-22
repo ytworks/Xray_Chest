@@ -104,7 +104,7 @@ def pretrain_model(x, reuse=False):
                          ksize=[7, 7],
                          strides=[7, 7],
                          padding='SAME',
-                         algorithm='Avg')
+                         algorithm='Max')
 
     # reshape
     y71 = Layers.reshape_tensor(x=y61, shape=[1 * 1 * 1024])
