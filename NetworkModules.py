@@ -100,23 +100,22 @@ def pretrain_model(x, reuse=False):
     p = trans.Transfer(x, 'densenet121', pooling=None, vname='transfer_Weight_Regularization',
                        trainable=True)
     y51 = p.get_output_tensor()
-    y61 = Layers.pooling(x=y51,
-                         ksize=[7, 7],
-                         strides=[7, 7],
-                         padding='SAME',
-                         algorithm='Max')
-
-    # reshape
-    y71 = Layers.reshape_tensor(x=y61, shape=[1 * 1 * 1024])
-    # fnn
-    y72 = Outputs.output(x=y71,
-                         InputSize=1024,
-                         OutputSize=15,
-                         Initializer='Xavier_normal',
-                         BatchNormalization=False,
-                         Regularization=True,
-                         vname='Output_z',
-                         Is_bias=True)
-    z = y72
+    tsl = Layers.convolution2d(x=y51,
+                               FilterSize=[1, 1, 1024, 15 * 128],
+                               Initializer='He',
+                               Strides=[1, 1],
+                               Padding='SAME',
+                               ActivationFunction='Equal',
+                               BatchNormalization=False,
+                               Renormalization=False,
+                               Regularization=True,
+                               Rmax=None,
+                               Dmax=None,
+                               Training=False,
+                               vname='transfer_conv',
+                               Is_log=False)
+    cwp = Layers.class_wise_pooling(x=tsl, n_classes=15, m=128)
+    print(cwp)
+    z = Layers.spatial_pooling(x=cwp, k=10, alpha=0.5)
     logit = tf.sigmoid(z)
-    return z, logit, y51, p
+    return z, logit, cwp, p

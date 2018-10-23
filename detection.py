@@ -347,15 +347,6 @@ class Detector(Core2.Core):
         if self.network_mode == 'pretrain':
             self.save_transfer_checkpoint()
 
-    def get_output_weights(self, feed_dict):
-        tvar = self.get_trainable_var()
-        output_vars = []
-        for var in tvar:
-            if var.name.find('Output_z') >= 0:
-                output_vars.append(var)
-        weights = self.sess.run(output_vars, feed_dict=feed_dict)
-        return weights
-
     def get_roi_map_base(self, feed_dict):
         return self.sess.run([self.y51], feed_dict=feed_dict)
 
@@ -376,12 +367,10 @@ class Detector(Core2.Core):
         if not roi:
             return result_y, result_z, None, None
         else:
-            weights = self.get_output_weights(feed_dict=feed_dict)
             roi_base = self.get_roi_map_base(feed_dict=feed_dict)
             result_roi = []
             for i in range(len(filenames)):
-                roi_map, filepath = self.make_roi(weights=weights[0],
-                                                  roi_base=roi_base[0][i,
+                roi_map, filepath = self.make_roi(roi_base=roi_base[0][i,
                                                                        :, :, :],
                                                   height=height,
                                                   width=width,
@@ -389,10 +378,9 @@ class Detector(Core2.Core):
                                                   filename=filenames[i],
                                                   label_def=label_def)
                 result_roi.append(roi_map)
-
             return result_y, result_z, np.array(result_roi), filepath
 
-    def make_roi(self, weights, roi_base, height, width, save_dir, filename, label_def):
+    def make_roi(self, roi_base, height, width, save_dir, filename, label_def):
         # Read files
         if filename.find('.png') >= 0:
             img = cv2.imread(filename, cv2.IMREAD_GRAYSCALE)
@@ -408,11 +396,9 @@ class Detector(Core2.Core):
         for x, finding in enumerate(label_def):
             # sum channels
             images = np.zeros((roi_base.shape[0], roi_base.shape[1], 3))
-            for channel in range(roi_base.shape[2]):
-                c = roi_base[:, :, channel]
-                c0 = np.zeros((roi_base.shape[0], roi_base.shape[1]))
-                image = np.stack((c, c, c), axis=-1)
-                images += image * weights[channel][x]
+            c = roi_base[:,:, x]
+            image = np.stack((c, c, c), axis=-1)
+            images += image
             # process image
             images = np.maximum(images - np.mean(images), 0)
             images = 255.0 * (images - np.min(images)) / \
