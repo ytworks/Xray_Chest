@@ -101,7 +101,7 @@ def pretrain_model(x, reuse=False):
                        trainable=True)
     y51 = p.get_output_tensor()
     tsl = Layers.convolution2d(x=y51,
-                               FilterSize=[1, 1, 1024, 15 * 128],
+                               FilterSize=[1, 1, 1024, 15 * 256],
                                Initializer='He',
                                Strides=[1, 1],
                                Padding='SAME',
@@ -114,8 +114,8 @@ def pretrain_model(x, reuse=False):
                                Training=False,
                                vname='transfer_conv',
                                Is_log=False)
-    cwp = Layers.class_wise_pooling(x=tsl, n_classes=15, m=128)
+    cwp = Layers.class_wise_pooling(x=tsl, n_classes=15, m=256)
     print(cwp)
-    z = Layers.spatial_pooling(x=cwp, k=10, alpha=0.5)
+    z = Layers.spatial_pooling(x=cwp, k=10, alpha=0.3)
     logit = tf.sigmoid(z)
     return z, logit, cwp, p
