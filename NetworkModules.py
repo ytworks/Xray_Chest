@@ -96,7 +96,7 @@ def scratch_model(x, SIZE, CH, istraining, rmax, dmax, keep_probs, reuse=False):
     return z, logit, y51
 
 
-def pretrain_model(x, reuse=False):
+def pretrain_model(x, reuse=False, is_train=True):
     p = trans.Transfer(x, 'densenet121', pooling=None, vname='transfer_Weight_Regularization',
                        trainable=True)
     y51 = p.get_output_tensor()
@@ -114,8 +114,8 @@ def pretrain_model(x, reuse=False):
                                Training=False,
                                vname='transfer_conv',
                                Is_log=False)
-    cwp = Layers.class_wise_pooling(x=tsl, n_classes=15, m=256)
+    cwp = Layers.class_wise_pooling(x=tsl, n_classes=15, m=14)
     print(cwp)
-    z = Layers.spatial_pooling(x=cwp, k=10, alpha=0.3)
+    z = Layers.spatial_pooling(x=cwp, k_train=10, k_test=15, alpha=1.0, is_train=is_train)
     logit = tf.sigmoid(z)
     return z, logit, cwp, p

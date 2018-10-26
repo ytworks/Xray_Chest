@@ -171,7 +171,8 @@ class Detector(Core2.Core):
                                                          dmax=self.dmax,
                                                          keep_probs=self.keep_probs)
         else:
-            self.z, self.logit, self.y51, self.p = pretrain_model(x=self.x)
+            self.z, self.logit, self.y51, self.p = pretrain_model(x=self.x,
+                                                                  is_train=self.istraining)
 
 
     def loss(self):
