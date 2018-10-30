@@ -176,8 +176,7 @@ class Detector(Core2.Core):
 
 
     def loss(self):
-        diag_output_type = self.output_type if self.output_type.find(
-            'hinge') >= 0 else 'classified-sigmoid'
+        diag_output_type = self.output_type
         self.loss_ce = Loss.loss_func(y=self.z,
                                       y_=self.z_,
                                       regularization=self.regularization,
