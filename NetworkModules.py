@@ -116,6 +116,6 @@ def pretrain_model(x, reuse=False, is_train=True):
                                Is_log=False)
     cwp = Layers.class_wise_pooling(x=tsl, n_classes=15, m=256)
     print(cwp)
-    z = Layers.spatial_pooling(x=cwp, k_train=10, k_test=15, alpha=1.0, is_train=is_train)
+    z = Layers.spatial_pooling(x=cwp, k_train=10, k_test=10, alpha=1.0, is_train=is_train)
     logit = tf.sigmoid(z)
     return z, logit, cwp, p
