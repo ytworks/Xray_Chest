@@ -181,7 +181,8 @@ class Detector(Core2.Core):
                                       y_=self.z_,
                                       regularization=self.regularization,
                                       regularization_type=self.regularization_type,
-                                      output_type=diag_output_type)
+                                      output_type=diag_output_type,
+                                      alpha=0.5) * 2.0
         self.loss_function = self.loss_ce
         vs.variable_summary(self.loss_function, 'Loss', is_scalar=True)
 
