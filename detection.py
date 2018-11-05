@@ -83,6 +83,7 @@ class Detector(Core2.Core):
         self.gpu_num = gpu_num
         self.distributed_batch = distributed_batch
         self.prev_val = 10000.0
+        self.gradient_init = True
         for i in range(self.steps):
             if i != 0 and i % self.dumping_period == 0:
                 self.learning_rate_value = max(
@@ -182,7 +183,7 @@ class Detector(Core2.Core):
                                       regularization=self.regularization,
                                       regularization_type=self.regularization_type,
                                       output_type=diag_output_type,
-                                      alpha=0.5) * 2.0
+                                      alpha=0.25)
         self.loss_function = self.loss_ce
         vs.variable_summary(self.loss_function, 'Loss', is_scalar=True)
 
@@ -306,12 +307,24 @@ class Detector(Core2.Core):
                 logger.debug("Before val: %g, After val: %g" %
                              (self.prev_val, validation_loss))
                 if validation_loss > self.prev_val:
-                    logger.debug("Before Learning Rate: %g" %
-                                 self.learning_rate_value)
-                    self.learning_rate_value = max(
-                        0.00000001, self.learning_rate_value * self.dumping_rate)
-                    logger.debug("After Learning Rate: %g" %
-                                 self.learning_rate_value)
+                    if self.gradient_init:
+                         self.sess.run(tf.variables_initializer(self.optimizer.variables()))
+                         self.gradient_init = False
+                         logger.debug("Reader for Adam Gradient paramters initialized mode")
+                    else:
+                        logger.debug("Before Learning Rate: %g" %
+                                     self.learning_rate_value)
+                        self.learning_rate_value = max(
+                            0.00000001, self.learning_rate_value * self.dumping_rate)
+                        logger.debug("After Learning Rate: %g" %
+                                     self.learning_rate_value)
+                        self.gradient_init = True
+                else:
+                    if self.gradient_init == False:
+                        logger.debug("Reset Adam Gradient paramters initialized mode")
+                        self.gradient_init = True
+
+
                 self.prev_val = validation_loss
                 self.validation_save(str(int(validation_loss * 10000)))
 
