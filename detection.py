@@ -310,18 +310,18 @@ class Detector(Core2.Core):
                     if self.gradient_init:
                          self.sess.run(tf.variables_initializer(self.optimizer.variables()))
                          self.gradient_init = False
-                         logger.debug("Reader for Adam Gradient paramters initialized mode")
+                         logger.debug("INFO: Reader for Adam Gradient paramters initialized mode")
                     else:
-                        logger.debug("Before Learning Rate: %g" %
+                        logger.debug("INFO: Before Learning Rate: %g" %
                                      self.learning_rate_value)
                         self.learning_rate_value = max(
                             0.00000001, self.learning_rate_value * self.dumping_rate)
-                        logger.debug("After Learning Rate: %g" %
+                        logger.debug("INFO: After Learning Rate: %g" %
                                      self.learning_rate_value)
                         self.gradient_init = True
                 else:
                     if self.gradient_init == False:
-                        logger.debug("Reset Adam Gradient paramters initialized mode")
+                        logger.debug("INFO: Reset Adam Gradient paramters initialized mode")
                         self.gradient_init = True
 
 
