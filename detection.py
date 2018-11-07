@@ -84,6 +84,7 @@ class Detector(Core2.Core):
         self.distributed_batch = distributed_batch
         self.prev_val = 10000.0
         self.gradient_init = 0
+        print(self.optimizer_type)
         for i in range(self.steps):
             if i != 0 and i % self.dumping_period == 0:
                 self.learning_rate_value = max(
