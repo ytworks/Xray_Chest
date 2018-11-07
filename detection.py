@@ -188,7 +188,7 @@ class Detector(Core2.Core):
         self.loss_function = self.loss_ce
         vs.variable_summary(self.loss_function, 'Loss', is_scalar=True)
 
-    def training(self, var_list=None, gradient_cliiping=True, clipping_norm=1.0):
+    def training(self, var_list=None, gradient_cliiping=True, clipping_norm=0.01):
         self.train_op, self.optimizer = TO.select_algo(loss_function=self.loss_function,
                                                        algo=self.optimizer_type,
                                                        learning_rate=self.learning_rate,
@@ -196,7 +196,7 @@ class Detector(Core2.Core):
                                                        var_list=var_list,
                                                        gradient_clipping=gradient_cliiping,
                                                        clipping_norm=clipping_norm,
-                                                       clipping_type='norm',
+                                                       clipping_type='value',
                                                        ema=True)
         self.grad_op = self.optimizer.compute_gradients(self.loss_function)
 
