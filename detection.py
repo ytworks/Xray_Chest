@@ -83,7 +83,7 @@ class Detector(Core2.Core):
         self.gpu_num = gpu_num
         self.distributed_batch = distributed_batch
         self.prev_val = 10000.0
-        self.gradient_init = True
+        self.gradient_init = 0
         for i in range(self.steps):
             if i != 0 and i % self.dumping_period == 0:
                 self.learning_rate_value = max(
@@ -307,9 +307,9 @@ class Detector(Core2.Core):
                 logger.debug("Before val: %g, After val: %g" %
                              (self.prev_val, validation_loss))
                 if validation_loss > self.prev_val:
-                    if self.gradient_init:
+                    if self.gradient_init < 4:
                          self.sess.run(tf.variables_initializer(self.optimizer.variables()))
-                         self.gradient_init = False
+                         self.gradient_init +=1
                          logger.debug("INFO: Reader for Adam Gradient paramters initialized mode")
                     else:
                         logger.debug("INFO: Before Learning Rate: %g" %
@@ -318,11 +318,7 @@ class Detector(Core2.Core):
                             0.00000001, self.learning_rate_value * self.dumping_rate)
                         logger.debug("INFO: After Learning Rate: %g" %
                                      self.learning_rate_value)
-                        self.gradient_init = True
-                else:
-                    if self.gradient_init == False:
-                        logger.debug("INFO: Reset Adam Gradient paramters initialized mode")
-                        self.gradient_init = True
+                        self.gradient_init = 0
 
 
                 self.prev_val = validation_loss
