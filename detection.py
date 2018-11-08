@@ -127,7 +127,7 @@ class Detector(Core2.Core):
         now = datetime.now()
         now = now.strftime("%Y-%m-%d")
         self.summary, self.train_writer, self.val_writer, self.test_writer = vs.file_writer(
-            sess=self.sess, file_name='./Result/' + now)
+            sess=self.sess, file_name=self.config.get('OutputParams', 'logfile') + '/' + now)
         # チェックポイントの呼び出し
         if self.network_mode == 'pretrain':
             self.transfer_saver = tf.train.Saver(p_vars)
