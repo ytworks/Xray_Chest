@@ -59,7 +59,8 @@ def main():
                    transfer_checkpoint=config.get("OutputParams", "transfer_checkpoint"),
                    tflog=tflog,
                    gpu_num=config.getint("DLParams", "gpu_num"),
-                   distributed_batch=config.getint("DLParams", "distributed_batch"))
+                   distributed_batch=config.getint("DLParams", "distributed_batch"),
+                   config=config)
     obj.construct()
     label_list = json.load(open('./Config/label_def.json'))
     root, ext = os.path.splitext(filename)

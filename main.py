@@ -23,6 +23,12 @@ def main():
     size, augment, checkpoint, lr, dlr, rtype, rr, l1_norm, dumping_rate, dumping_period, epoch, batch, log, tflog, ds, roi, output_type, outfile, mode, step, split_mode, network_mode, auc_file, validation_set, optimizer_type, config = config_list(
         args)
 
+    os.system("mkdir " + os.path.dirname(config.get('OutputParams', 'checkpoint')))
+    os.system("mkdir " + os.path.dirname(config.get('OutputParams', 'outfile')))
+    os.system("mkdir " + config.get('OutputParams', 'config_file'))
+
+
+
     if mode in ['learning']:
         init = True
     elif mode in ['update', 'prediction']:
@@ -66,7 +72,8 @@ def main():
                    transfer_checkpoint=config.get("OutputParams", "transfer_checkpoint"),
                    tflog=tflog,
                    gpu_num=config.getint("DLParams", "gpu_num"),
-                   distributed_batch=config.getint("DLParams", "distributed_batch")
+                   distributed_batch=config.getint("DLParams", "distributed_batch"),
+                   config=config
                    )
     obj.construct()
     for n in range(config.getint('DLParams', 'loop_num')):

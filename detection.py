@@ -51,7 +51,8 @@ class Detector(Core2.Core):
                  transfer_checkpoint='./Strages/Core.ckpt',
                  tflog=10,
                  gpu_num=0,
-                 distributed_batch=32):
+                 distributed_batch=32,
+                 config=None):
         super(Detector, self).__init__(output_type=output_type,
                                        epoch=epoch,
                                        batch=batch,
@@ -84,6 +85,7 @@ class Detector(Core2.Core):
         self.distributed_batch = distributed_batch
         self.prev_val = 10000.0
         self.gradient_init = 0
+        self.config = config
         print(self.optimizer_type)
         for i in range(self.steps):
             if i != 0 and i % self.dumping_period == 0:
@@ -162,6 +164,7 @@ class Detector(Core2.Core):
         self.z_ = tf.placeholder(
             "float", shape=[None, 15], name="Label_Diagnosis")
         self.keep_probs = []
+        print(self.x)
 
     def network(self):
         if self.network_mode == 'scratch':
@@ -192,12 +195,15 @@ class Detector(Core2.Core):
         self.train_op, self.optimizer = TO.select_algo(loss_function=self.loss_function,
                                                        algo=self.optimizer_type,
                                                        learning_rate=self.learning_rate,
-                                                       b1=self.beta1, b2=self.beta2,
+                                                       b1=np.float32(self.beta1), b2=np.float32(self.beta2),
                                                        var_list=var_list,
                                                        gradient_clipping=gradient_cliiping,
                                                        clipping_norm=clipping_norm,
                                                        clipping_type='value',
-                                                       ema=True)
+                                                       ema=True,
+                                                       nesterov=self.config.getboolean('DLParams', 'nesterov'),
+                                                       weight_decay=self.config.getfloat('DLParams', 'weight_decay')
+                                                       )
         self.grad_op = self.optimizer.compute_gradients(self.loss_function)
 
     def make_feed_dict(self, prob, data, label=None, is_Train=True, is_update=False, is_label=False):
