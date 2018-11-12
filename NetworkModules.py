@@ -100,8 +100,9 @@ def pretrain_model(x, reuse=False, is_train=True):
     p = trans.Transfer(x, 'densenet121', pooling=None, vname='transfer_Weight_Regularization',
                        trainable=True)
     y51 = p.get_output_tensor()
+    m_size = 128
     tsl = Layers.convolution2d(x=y51,
-                               FilterSize=[1, 1, 1024, 15 * 256],
+                               FilterSize=[1, 1, 1024, 15 * m_size],
                                Initializer='He',
                                Strides=[1, 1],
                                Padding='SAME',
@@ -114,7 +115,7 @@ def pretrain_model(x, reuse=False, is_train=True):
                                Training=False,
                                vname='transfer_conv',
                                Is_log=False)
-    cwp = Layers.class_wise_pooling(x=tsl, n_classes=15, m=128)
+    cwp = Layers.class_wise_pooling(x=tsl, n_classes=15, m=m_size)
     print(cwp)
     z = Layers.spatial_pooling(x=cwp, k_train=10, k_test=10, alpha=0.7, is_train=is_train)
     logit = tf.sigmoid(z)
