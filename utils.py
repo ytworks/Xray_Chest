@@ -11,9 +11,7 @@ import skimage
 
 
 def image_process(img):
-    equ = cv2.equalizeHist(img)
-    gm1 = skimage.exposure.adjust_gamma(img, 1.5)
-    img = np.stack((img, equ, gm1), axis=-1)
+    img = np.stack((img, img, img), axis=-1)
     return img
 
 
