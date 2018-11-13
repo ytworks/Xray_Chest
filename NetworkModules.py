@@ -100,9 +100,25 @@ def pretrain_model(x, reuse=False, is_train=True):
     p = trans.Transfer(x, 'densenet121', pooling=None, vname='transfer_Weight_Regularization',
                        trainable=True)
     y51 = p.get_output_tensor()
+    pool4 = p['pool4_conv']
+    pool3 = p['pool3_conv']
+    pool2 = p['pool2_conv']
+    pool3 = tf.image.resize_images(images=pool3,
+                                   size=[tf.constant(14, tf.int32), tf.constant(14, tf.int32)],
+                                   method=tf.image.ResizeMethod.BICUBIC,
+                                   align_corners=False)
+    pool2 = tf.image.resize_images(images=pool2,
+                                   size=[tf.constant(14, tf.int32), tf.constant(14, tf.int32)],
+                                   method=tf.image.ResizeMethod.BICUBIC,
+                                   align_corners=False)
+    y51 = tf.image.resize_images(images=y51,
+                                   size=[tf.constant(14, tf.int32), tf.constant(14, tf.int32)],
+                                   method=tf.image.ResizeMethod.BICUBIC,
+                                   align_corners=False)
+    feature = Layers.concat(xs=[y51, pool2, pool3, pool4], concat_type='Channel')
     m_size = 128
-    tsl = Layers.convolution2d(x=y51,
-                               FilterSize=[1, 1, 1024, 15 * m_size],
+    tsl = Layers.convolution2d(x=feature,
+                               FilterSize=[1, 1, 1024+512+256+128, 15 * m_size],
                                Initializer='He',
                                Strides=[1, 1],
                                Padding='SAME',
@@ -115,8 +131,9 @@ def pretrain_model(x, reuse=False, is_train=True):
                                Training=False,
                                vname='transfer_conv',
                                Is_log=False)
+    tsl = SE_module(x=tsl, InputNode=[14,14,15*m_size], Act='Relu', Rate=0.5, vname='SE')
     cwp = Layers.class_wise_pooling(x=tsl, n_classes=15, m=m_size)
     print(cwp)
-    z = Layers.spatial_pooling_random(x=cwp, k_size=10, prob=0.8, is_train=is_train)
+    z = Layers.spatial_pooling(x=cwp, k_train=10, k_test=10, alpha=-1.0, is_train=is_train)
     logit = tf.sigmoid(z)
     return z, logit, cwp, p
