@@ -177,7 +177,8 @@ class Detector(Core2.Core):
                                                          keep_probs=self.keep_probs)
         else:
             self.z, self.logit, self.y51, self.p = pretrain_model(x=self.x,
-                                                                  is_train=self.istraining)
+                                                                  is_train=self.istraining,
+                                                                  config=self.config)
 
 
     def loss(self):
@@ -187,7 +188,9 @@ class Detector(Core2.Core):
                                       regularization=self.regularization,
                                       regularization_type=self.regularization_type,
                                       output_type=diag_output_type,
-                                      alpha=0.25)
+                                      alpha=self.config.getfloat('DLParams', 'focal_alpha'),
+                                      gamma=self.config.getfloat('DLParams', 'focal_gamma')
+                                      )
         self.loss_function = self.loss_ce
         vs.variable_summary(self.loss_function, 'Loss', is_scalar=True)
 
@@ -314,7 +317,7 @@ class Detector(Core2.Core):
                 logger.debug("Before val: %g, After val: %g" %
                              (self.prev_val, validation_loss))
                 if validation_loss > self.prev_val:
-                    if self.gradient_init < 4:
+                    if self.gradient_init < self.config.getint('DLParams', 'dumping_patient'):
                          self.sess.run(tf.variables_initializer(self.optimizer.variables()))
                          self.gradient_init +=1
                          logger.debug("INFO: Reader for Adam Gradient paramters initialized mode")
