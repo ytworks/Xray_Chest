@@ -72,6 +72,8 @@ class Detector(Core2.Core):
         self.regularization = tf.placeholder(tf.float32)
         self.rmax = tf.placeholder(tf.float32, shape=())
         self.dmax = tf.placeholder(tf.float32, shape=())
+        self.wd = tf.placeholder(tf.float32, shape=())
+        self.wd_value = self.config.getfloat('DLParams', 'weight_decay')
         self.steps = step
         self.l1_norm_value = 0.0
         self.regularization_value = regularization
@@ -90,7 +92,9 @@ class Detector(Core2.Core):
         for i in range(self.steps):
             if i != 0 and i % self.dumping_period == 0:
                 self.learning_rate_value = max(
-                    0.000001, self.learning_rate_value * self.dumping_rate)
+                    1.0e-8, self.learning_rate_value * self.dumping_rate)
+                self.wd_value = max(
+                    1.0e-16, self.wd_value * self.dumping_rate)
 
         logger.info("start step %g, learning_rate %g" %
                     (self.steps, self.learning_rate_value))
@@ -205,7 +209,7 @@ class Detector(Core2.Core):
                                                        clipping_type='value',
                                                        ema=True,
                                                        nesterov=self.config.getboolean('DLParams', 'nesterov'),
-                                                       weight_decay=self.config.getfloat('DLParams', 'weight_decay')
+                                                       weight_decay=self.wd
                                                        )
         self.grad_op = self.optimizer.compute_gradients(self.loss_function)
 
@@ -220,6 +224,7 @@ class Detector(Core2.Core):
         if is_label:
             feed_dict.setdefault(self.z_, label)
         feed_dict.setdefault(self.learning_rate, self.learning_rate_value)
+        feed_dict.setdefault(self.wd, self.wd_value)
         feed_dict.setdefault(self.istraining, is_Train)
         feed_dict.setdefault(self.rmax, rmax)
         feed_dict.setdefault(self.dmax, dmax)
@@ -325,7 +330,9 @@ class Detector(Core2.Core):
                         logger.debug("INFO: Before Learning Rate: %g" %
                                      self.learning_rate_value)
                         self.learning_rate_value = max(
-                            0.00000001, self.learning_rate_value * self.dumping_rate)
+                            1.0e-8, self.learning_rate_value * self.dumping_rate)
+                        self.wd_value = max(
+                            1.0e-16, self.wd_value * self.dumping_rate)
                         logger.debug("INFO: After Learning Rate: %g" %
                                      self.learning_rate_value)
                         self.gradient_init = 0
