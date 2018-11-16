@@ -73,7 +73,6 @@ class Detector(Core2.Core):
         self.rmax = tf.placeholder(tf.float32, shape=())
         self.dmax = tf.placeholder(tf.float32, shape=())
         self.wd = tf.placeholder(tf.float32, shape=())
-        self.wd_value = self.config.getfloat('DLParams', 'weight_decay')
         self.steps = step
         self.l1_norm_value = 0.0
         self.regularization_value = regularization
@@ -88,6 +87,7 @@ class Detector(Core2.Core):
         self.prev_val = 10000.0
         self.gradient_init = 0
         self.config = config
+        self.wd_value = self.config.getfloat('DLParams', 'weight_decay')
         print(self.optimizer_type)
         for i in range(self.steps):
             if i != 0 and i % self.dumping_period == 0:
