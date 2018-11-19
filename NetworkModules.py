@@ -120,6 +120,6 @@ def pretrain_model(x, config, reuse=False, is_train=True):
     tsl = SE_module(x=tsl, InputNode=[7,7,15*m_size], Act='Relu', Rate=0.5, vname='SE')
     cwp = Layers.class_wise_pooling(x=tsl, n_classes=15, m=m_size)
     print(cwp)
-    z = Layers.spatial_pooling_dif(x=cwp, k_train=k_size, k_test=k_size, alpha=alpha, is_train=is_train)
+    z = Layers.spatial_pooling(x=cwp, k_train=k_size, k_test=k_size, alpha=alpha, is_train=is_train)
     logit = tf.sigmoid(z)
     return z, logit, cwp, p
