@@ -165,6 +165,9 @@ def spatial_and_excitation_module(x,
                                shape=[InputNode[0], InputNode[1], 1])
     x5 = []
     for i in range(InputNode[2]):
-        x5.append(x[:, :, :, i] * x4)
+        t = Layers.reshape_tensor(x=x[:, :, :, i],
+                                  shape=[InputNode[0], InputNode[1], 1])
+
+        x5.append(t * x4)
     scale = Layers.concat(x5, concat_type='Channel')
     return scale
