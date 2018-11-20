@@ -116,11 +116,7 @@ class Detector(Core2.Core):
         self.training(var_list=None)
         logger.debug("05: TF Training operation done")
         # 精度の定義
-        self.accuracy_z = tf.keras.metrics.binary_accuracy(
-            y_true=self.z_,
-            y_pred=self.z,
-            threshold=0.5
-        )
+        self.accuracy_z = self.z
         vs.variable_summary(self.accuracy_z, 'Accuracy', is_scalar=True)
 
         logger.debug("06: TF Accuracy measure definition done")
