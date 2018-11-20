@@ -12,6 +12,7 @@ from LinearMotor import Outputs
 from LinearMotor import Visualizer as vs
 from LinearMotor import Transfer as trans
 from SimpleCells import *
+import densenet
 
 
 def scratch_model(x, SIZE, CH, istraining, rmax, dmax, keep_probs, reuse=False):
@@ -119,8 +120,6 @@ def pretrain_model(x, config, reuse=False, is_train=True):
                                Is_log=False)
     tsl = SE_module(x=tsl, InputNode=[
                     7, 7, 15 * m_size], Act='Relu', Rate=0.5, vname='SE')
-    tsl = spatial_and_excitation_module(x=tsl, InputNode=[
-        7, 7, 15 * m_size], Act='Relu', Rate=0.5, vname='Spatial')
     cwp = Layers.class_wise_pooling(x=tsl, n_classes=15, m=m_size)
     print(cwp)
     z = Layers.spatial_pooling(
@@ -129,39 +128,5 @@ def pretrain_model(x, config, reuse=False, is_train=True):
     return z, logit, cwp, p
 
 
-# SE cell
-def spatial_and_excitation_module(x,
-                                  InputNode,
-                                  Act='Relu',
-                                  Rate=0.5,
-                                  vname='SE'):
-    # Global Average Pooling
-    x0 = tf.reduce_mean(x, axis=3)
-
-    x1 = Layers.reshape_tensor(x=x0,
-                               shape=[1 * InputNode[0] * InputNode[1]])
-
-    x2 = Layers.fnn(x=x1,
-                    InputSize=InputNode[0] * InputNode[1],
-                    OutputSize=int(InputNode[0] * InputNode[1] * Rate),
-                    Initializer='He' if Act in ['Relu', 'Gelu'] else 'Xavier',
-                    ActivationFunction=Act,
-                    MaxoutSize=3,
-                    BatchNormalization=False,
-                    Regularization=False,
-                    vname=vname + '_FNN0')
-
-    x3 = Layers.fnn(x=x2,
-                    InputSize=int(InputNode[0] * InputNode[1] * Rate),
-                    OutputSize=InputNode[0] * InputNode[1],
-                    Initializer='Xavier_normal',
-                    ActivationFunction='Sigmoid',
-                    MaxoutSize=3,
-                    BatchNormalization=False,
-                    Regularization=False,
-                    vname=vname + '_FNN1')
-
-    x4 = Layers.reshape_tensor(x=x3,
-                               shape=[InputNode[0], InputNode[1], 1])
-    scale = x * x4
-    return scale
+def light_model(x, is_train, rmax, dmax, ini):
+    return densenet.densenet121(x, is_train, rmax, dmax, ini, reuse=False, se=True, renorm=True, act_f='Relu')

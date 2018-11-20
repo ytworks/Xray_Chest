@@ -179,6 +179,12 @@ class Detector(Core2.Core):
                                                          rmax=self.rmax,
                                                          dmax=self.dmax,
                                                          keep_probs=self.keep_probs)
+        elif self.network_mode == 'scratch_light':
+            self.z, self.logit, self.y51 = light_model(x=self.x,
+                                                       is_train=self.istraining,
+                                                       rmax=self.rmax,
+                                                       dmax=self.dmax,
+                                                       ini=self.config)
         else:
             self.z, self.logit, self.y51, self.p = pretrain_model(x=self.x,
                                                                   is_train=self.istraining,
