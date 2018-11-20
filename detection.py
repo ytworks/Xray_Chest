@@ -116,12 +116,11 @@ class Detector(Core2.Core):
         self.training(var_list=None)
         logger.debug("05: TF Training operation done")
         # 精度の定義
-        if self.output_type.find('hinge') >= 0:
-            self.accuracy_z = tf.sqrt(tf.reduce_mean(
-                tf.multiply(self.z - self.z_, self.z - self.z_)))
-        else:
-            self.accuracy_z = tf.sqrt(tf.reduce_mean(tf.multiply(
-                tf.sigmoid(self.z) - self.z_, tf.sigmoid(self.z) - self.z_)))
+        self.accuracy_z = tf.keras.metrics.binary_accuracy(
+            y_true=self.z_,
+            y_pred=self.z,
+            threshold=0.5
+        )
         vs.variable_summary(self.accuracy_z, 'Accuracy', is_scalar=True)
 
         logger.debug("06: TF Accuracy measure definition done")
@@ -135,7 +134,8 @@ class Detector(Core2.Core):
         # チェックポイントの呼び出し
         if self.network_mode == 'pretrain':
             self.transfer_saver = tf.train.Saver(p_vars)
-        self.saver = tf.train.Saver(list(set(tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES))))
+        self.saver = tf.train.Saver(
+            list(set(tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES))))
         self.restore()
         if self.init and self.network_mode == 'pretrain':
             self.p.load_weights()
@@ -190,7 +190,6 @@ class Detector(Core2.Core):
                                                                   is_train=self.istraining,
                                                                   config=self.config)
 
-
     def loss(self):
         diag_output_type = self.output_type
         self.loss_ce = Loss.loss_func(y=self.z,
@@ -198,8 +197,10 @@ class Detector(Core2.Core):
                                       regularization=self.regularization,
                                       regularization_type=self.regularization_type,
                                       output_type=diag_output_type,
-                                      alpha=self.config.getfloat('DLParams', 'focal_alpha'),
-                                      gamma=self.config.getfloat('DLParams', 'focal_gamma')
+                                      alpha=self.config.getfloat(
+                                          'DLParams', 'focal_alpha'),
+                                      gamma=self.config.getfloat(
+                                          'DLParams', 'focal_gamma')
                                       )
         self.loss_function = self.loss_ce
         vs.variable_summary(self.loss_function, 'Loss', is_scalar=True)
@@ -214,7 +215,8 @@ class Detector(Core2.Core):
                                                        clipping_norm=clipping_norm,
                                                        clipping_type='value',
                                                        ema=True,
-                                                       nesterov=self.config.getboolean('DLParams', 'nesterov'),
+                                                       nesterov=self.config.getboolean(
+                                                           'DLParams', 'nesterov'),
                                                        weight_decay=self.wd
                                                        )
         self.grad_op = self.optimizer.compute_gradients(self.loss_function)
@@ -329,9 +331,11 @@ class Detector(Core2.Core):
                              (self.prev_val, validation_loss))
                 if validation_loss > self.prev_val:
                     if self.gradient_init < self.config.getint('DLParams', 'dumping_patient'):
-                         self.sess.run(tf.variables_initializer(self.optimizer.variables()))
-                         self.gradient_init +=1
-                         logger.debug("INFO: Reader for Adam Gradient paramters initialized mode")
+                        self.sess.run(tf.variables_initializer(
+                            self.optimizer.variables()))
+                        self.gradient_init += 1
+                        logger.debug(
+                            "INFO: Reader for Adam Gradient paramters initialized mode")
                     else:
                         logger.debug("INFO: Before Learning Rate: %g" %
                                      self.learning_rate_value)
@@ -342,7 +346,6 @@ class Detector(Core2.Core):
                         logger.debug("INFO: After Learning Rate: %g" %
                                      self.learning_rate_value)
                         self.gradient_init = 0
-
 
                 self.prev_val = validation_loss
                 self.validation_save(str(int(validation_loss * 10000)))
@@ -356,7 +359,8 @@ class Detector(Core2.Core):
                 prob=False, data=batch[0], label=batch[2], is_Train=True, is_update=True, is_label=True)
             _, summary = self.sess.run(
                 [self.train_op, self.summary], feed_dict=feed_dict)
-            vs.add_log(writer=self.train_writer, summary=summary, step=self.steps)
+            vs.add_log(writer=self.train_writer,
+                       summary=summary, step=self.steps)
 
             if i % self.tflog == 0:
                 if self.network_mode == 'pretrain':
@@ -367,14 +371,16 @@ class Detector(Core2.Core):
                     prob=True, data=validation_batch[0], label=validation_batch[2], is_Train=False, is_label=True)
                 summary = self.sess.run(self.summary, feed_dict=feed_dict_val
                                         )
-                vs.add_log(writer=self.val_writer, summary=summary, step=self.steps)
+                vs.add_log(writer=self.val_writer,
+                           summary=summary, step=self.steps)
                 test_batch = data.test.next_batch(
                     self.batch, augment=False, batch_ratio=batch_ratio[br % len(batch_ratio)])
                 feed_dict_test = self.make_feed_dict(
                     prob=True, data=test_batch[0], label=test_batch[2], is_Train=False, is_label=True)
                 summary = self.sess.run(self.summary, feed_dict=feed_dict_test
                                         )
-                vs.add_log(writer=self.test_writer, summary=summary, step=self.steps)
+                vs.add_log(writer=self.test_writer,
+                           summary=summary, step=self.steps)
             self.steps += 1
         self.save_checkpoint()
         if self.network_mode == 'pretrain':
@@ -429,7 +435,7 @@ class Detector(Core2.Core):
         for x, finding in enumerate(label_def):
             # sum channels
             images = np.zeros((roi_base.shape[0], roi_base.shape[1], 3))
-            c = roi_base[:,:, x]
+            c = roi_base[:, :, x]
             image = np.stack((c, c, c), axis=-1)
             images += image
             # process image
