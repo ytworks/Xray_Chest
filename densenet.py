@@ -180,7 +180,7 @@ def densenet121(x, is_train, rmax, dmax, ini, reuse=False, se=True, renorm=True,
                                          rmax=rmax,
                                          dmax=dmax)
         y51 = Layers.class_wise_pooling(x=y42,
-                                        n_classes=28,
+                                        n_classes=15,
                                         m=ini.getint(
                                             'DLParams', 'wc_m'))
         y61 = Layers.spatial_pooling(x=y51,
