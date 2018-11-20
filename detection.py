@@ -250,7 +250,7 @@ class Detector(Core2.Core):
 
     def get_auc_list(self, feed_dict, batch):
         res = self.sess.run(
-            [self.accuracy_z, self.loss_function], feed_dict=feed_dict)
+            [self.loss_function, self.loss_function], feed_dict=feed_dict)
         accuracy_z = res[0]
         losses = res[1]
         prediction = self.prediction(data=batch[0], roi=False)
