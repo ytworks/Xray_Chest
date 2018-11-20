@@ -179,7 +179,21 @@ def densenet121(x, is_train, rmax, dmax, ini, reuse=False, se=True, renorm=True,
                                          Is_Fused=False,
                                          rmax=rmax,
                                          dmax=dmax)
-        y51 = Layers.class_wise_pooling(x=y42,
+        tsl = Layers.convolution2d(x=y42,
+                                   FilterSize=[1, 1, 1024, 15 * ini.getint('DLParams', 'wc_m')],
+                                   Initializer='He',
+                                   Strides=[1, 1],
+                                   Padding='SAME',
+                                   ActivationFunction='Equal',
+                                   BatchNormalization=False,
+                                   Renormalization=False,
+                                   Regularization=True,
+                                   Rmax=None,
+                                   Dmax=None,
+                                   Training=False,
+                                   vname='transfer_conv',
+                                   Is_log=False)
+        y51 = Layers.class_wise_pooling(x=tsl,
                                         n_classes=15,
                                         m=ini.getint(
                                             'DLParams', 'wc_m'))

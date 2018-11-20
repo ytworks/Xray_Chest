@@ -116,8 +116,13 @@ class Detector(Core2.Core):
         self.training(var_list=None)
         logger.debug("05: TF Training operation done")
         # 精度の定義
-        #self.accuracy_z = tf.reduce_mean(self.z)
-        #vs.variable_summary(self.accuracy_z, 'Accuracy', is_scalar=True)
+        if self.output_type.find('hinge') >= 0:
+            self.accuracy_z = tf.sqrt(tf.reduce_mean(
+                tf.multiply(self.z - self.z_, self.z - self.z_)))
+        else:
+            self.accuracy_z = tf.sqrt(tf.reduce_mean(tf.multiply(
+                tf.sigmoid(self.z) - self.z_, tf.sigmoid(self.z) - self.z_)))
+        vs.variable_summary(self.accuracy_z, 'Accuracy', is_scalar=True)
 
         logger.debug("06: TF Accuracy measure definition done")
         # セッションの定義
@@ -250,7 +255,7 @@ class Detector(Core2.Core):
 
     def get_auc_list(self, feed_dict, batch):
         res = self.sess.run(
-            [self.loss_function, self.loss_function], feed_dict=feed_dict)
+            [self.accuracy_z, self.loss_function], feed_dict=feed_dict)
         accuracy_z = res[0]
         losses = res[1]
         prediction = self.prediction(data=batch[0], roi=False)
