@@ -116,8 +116,8 @@ class Detector(Core2.Core):
         self.training(var_list=None)
         logger.debug("05: TF Training operation done")
         # 精度の定義
-        self.accuracy_z = tf.reduce_mean(self.z)
-        vs.variable_summary(self.accuracy_z, 'Accuracy', is_scalar=True)
+        #self.accuracy_z = tf.reduce_mean(self.z)
+        #vs.variable_summary(self.accuracy_z, 'Accuracy', is_scalar=True)
 
         logger.debug("06: TF Accuracy measure definition done")
         # セッションの定義
