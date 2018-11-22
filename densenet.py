@@ -59,8 +59,9 @@ def SE_module(x,
 def densenet121(x, is_train, rmax, dmax, ini, reuse=False, se=True, renorm=True, act_f='Relu'):
     with tf.variable_scope('Densenet101_Weight_Regularization', reuse=reuse):
         # TOP
+        _, _, _, c = x.get_shape().as_list()
         y00 = Layers.batch_normalization(x=x,
-                                         shape=3,
+                                         shape=c,
                                          vname='TOP_BN01',
                                          dim=[0, 1, 2],
                                          Training=is_train,
@@ -69,7 +70,7 @@ def densenet121(x, is_train, rmax, dmax, ini, reuse=False, se=True, renorm=True,
                                          rmax=rmax,
                                          dmax=dmax)
         y01 = Layers.convolution2d(x=y00,
-                                   FilterSize=[7, 7, 3, 64],
+                                   FilterSize=[7, 7, c, 64],
                                    Initializer='He',
                                    Strides=[2, 2],
                                    Padding='SAME',
