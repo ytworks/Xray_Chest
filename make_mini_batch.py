@@ -220,6 +220,7 @@ class DataSet(object):
         # 教師データの読み込み
         label = self.labels[filename]['label']
         img = self.img_process(f, ext, augment)
+        print(img.shape)
 
         return img, label[0], label[1], filename, self.labels[filename]['raw']
 
