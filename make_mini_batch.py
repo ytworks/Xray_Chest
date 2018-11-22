@@ -208,7 +208,7 @@ class DataSet(object):
         img = cv2.resize(img, (self.size, self.size),
                          interpolation=cv2.INTER_AREA)
 
-        if config.getboolean('DLParams', 'is_preprocess'):
+        if self.config.getboolean('DLParams', 'is_preprocess'):
             img = pi(img.astype(np.float32))
         else:
             img = img.astype(np.float32)
