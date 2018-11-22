@@ -205,8 +205,9 @@ class DataSet(object):
                 img = self.augmentation(img)
 
         # 画像サイズの調整
-        img = cv2.resize(img, (self.size, self.size, self.channel),
+        img = cv2.resize(img, (self.size, self.size),
                          interpolation=cv2.INTER_AREA)
+        img = img.reshape((img.shape[0], img.shape[1], self.channel))
 
         if self.config.getboolean('DLParams', 'is_preprocess'):
             img = pi(img.astype(np.float32))
