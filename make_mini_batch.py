@@ -205,7 +205,7 @@ class DataSet(object):
                 img = self.augmentation(img)
 
         # 画像サイズの調整
-        img = cv2.resize(img, (self.size, self.size),
+        img = cv2.resize(img, (self.size, self.size, self.channel),
                          interpolation=cv2.INTER_AREA)
 
         if self.config.getboolean('DLParams', 'is_preprocess'):
@@ -220,8 +220,6 @@ class DataSet(object):
         # 教師データの読み込み
         label = self.labels[filename]['label']
         img = self.img_process(f, ext, augment)
-        print(img.shape)
-
         return img, label[0], label[1], filename, self.labels[filename]['raw']
 
     def next_batch(self, batch_size, augment=True, debug=True, batch_ratio=0.5):
