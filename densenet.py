@@ -363,7 +363,7 @@ def attention_block(x, is_train, rmax, dmax, vname, renorm=True, act_f='Relu'):
                                        tf.constant(w, tf.int32)],
                                  method=tf.image.ResizeMethod.BICUBIC,
                                  align_corners=False)
-    t10 = Layers.convolution2d(x=t09,
+    t10 = Layers.convolution2d(x=t08,
                                FilterSize=[1, 1, c, c],
                                Initializer='He',
                                Strides=[1, 1],
