@@ -120,6 +120,11 @@ def densenet121(x, is_train, rmax, dmax, ini, reuse=False, se=True, renorm=True,
                             Act=act_f,
                             Rate=0.5,
                             vname='SE1')
+            y13 = attention_block(x=y13,
+                                  is_train=is_train,
+                                  rmax=rmax,
+                                  dmax=dmax,
+                                  vname="Attention01", renorm=renorm, act_f=act_f)
         else:
             y13 = y12
         y21 = dense_block(x=y13,
@@ -141,6 +146,11 @@ def densenet121(x, is_train, rmax, dmax, ini, reuse=False, se=True, renorm=True,
                             Act=act_f,
                             Rate=0.5,
                             vname='SE2')
+            y23 = attention_block(x=y23,
+                                  is_train=is_train,
+                                  rmax=rmax,
+                                  dmax=dmax,
+                                  vname="Attention02", renorm=renorm, act_f=act_f)
         else:
             y23 = y22
         y31 = dense_block(x=y23,
@@ -162,6 +172,11 @@ def densenet121(x, is_train, rmax, dmax, ini, reuse=False, se=True, renorm=True,
                             Act=act_f,
                             Rate=0.5,
                             vname='SE3')
+            y33 = attention_block(x=y33,
+                                  is_train=is_train,
+                                  rmax=rmax,
+                                  dmax=dmax,
+                                  vname="Attention03", renorm=renorm, act_f=act_f)
         else:
             y33 = y32
         y41 = dense_block(x=y33,
@@ -181,7 +196,8 @@ def densenet121(x, is_train, rmax, dmax, ini, reuse=False, se=True, renorm=True,
                                          rmax=rmax,
                                          dmax=dmax)
         tsl = Layers.convolution2d(x=y42,
-                                   FilterSize=[1, 1, 1024, 15 * ini.getint('DLParams', 'wc_m')],
+                                   FilterSize=[1, 1, 1024, 15 *
+                                               ini.getint('DLParams', 'wc_m')],
                                    Initializer='He',
                                    Strides=[1, 1],
                                    Padding='SAME',
@@ -309,3 +325,129 @@ def transition_block(x, reduction, is_train, rmax, dmax, vname, renorm=True, act
                          padding='SAME',
                          algorithm='Max')
     return x04
+
+
+def attention_block(x, is_train, rmax, dmax, vname, renorm=True, act_f='Relu'):
+    _, h, w, c = x.get_shape().as_list()
+    x01 = res_block(x=x, is_train=is_train, rmax=rmax, dmax=dmax,
+                    vname=vname + '_r01', renorm=True, act_f='Relu')
+    s01 = res_block(x=x01, is_train=is_train, rmax=rmax, dmax=dmax,
+                    vname=vname + '_s01', renorm=True, act_f='Relu')
+    s02 = res_block(x=s01, is_train=is_train, rmax=rmax, dmax=dmax,
+                    vname=vname + '_s02', renorm=True, act_f='Relu')
+    t01 = Layers.pooling(x=x01,
+                         ksize=[2, 2],
+                         strides=[2, 2],
+                         padding='SAME',
+                         algorithm='Max')
+    t02 = res_block(x=t01, is_train=is_train, rmax=rmax, dmax=dmax,
+                    vname=vname + '_t02', renorm=True, act_f='Relu')
+    t03 = Layers.pooling(x=t02,
+                         ksize=[2, 2],
+                         strides=[2, 2],
+                         padding='SAME',
+                         algorithm='Max')
+    t04 = res_block(x=t03, is_train=is_train, rmax=rmax, dmax=dmax,
+                    vname=vname + '_t03', renorm=True, act_f='Relu')
+    t05 = res_block(x=t04, is_train=is_train, rmax=rmax, dmax=dmax,
+                    vname=vname + '_t04', renorm=True, act_f='Relu')
+    t06 = tf.image.resize_images(images=t05,
+                                 size=[tf.constant(
+                                     h / 2, tf.int32), tf.constant(w / 2, tf.int32)],
+                                 method=tf.image.ResizeMethod.BICUBIC,
+                                 align_corners=False)
+    t07 = res_block(x=t06, is_train=is_train, rmax=rmax, dmax=dmax,
+                    vname=vname + '_t06', renorm=True, act_f='Relu')
+    t08 = tf.image.resize_images(images=t07,
+                                 size=[tf.constant(h, tf.int32),
+                                       tf.constant(w, tf.int32)],
+                                 method=tf.image.ResizeMethod.BICUBIC,
+                                 align_corners=False)
+    t10 = Layers.convolution2d(x=t09,
+                               FilterSize=[1, 1, c, c],
+                               Initializer='He',
+                               Strides=[1, 1],
+                               Padding='SAME',
+                               ActivationFunction='Equal',
+                               BatchNormalization=False,
+                               Renormalization=False,
+                               Regularization=True,
+                               Rmax=None,
+                               Dmax=None,
+                               Training=is_train,
+                               vname=vname + '_Conv01',
+                               Is_log=False)
+    t11 = Layers.convolution2d(x=t10,
+                               FilterSize=[1, 1, c, c],
+                               Initializer='He',
+                               Strides=[1, 1],
+                               Padding='SAME',
+                               ActivationFunction='Equal',
+                               BatchNormalization=False,
+                               Renormalization=False,
+                               Regularization=True,
+                               Rmax=None,
+                               Dmax=None,
+                               Training=is_train,
+                               vname=vname + '_Conv02',
+                               Is_log=False)
+    t12 = tf.sigmoid(t11)
+    m01 = s02 + s02 * t12
+    m02 = res_block(x=m01, is_train=is_train, rmax=rmax, dmax=dmax,
+                    vname=vname + '_m02', renorm=True, act_f='Relu')
+    return m02
+
+
+def res_block(x, is_train, rmax, dmax, vname, renorm=True, act_f='Relu'):
+    _, _, _, c = x.get_shape().as_list()
+    x01 = Layers.batch_normalization(x=x,
+                                     shape=c,
+                                     vname=vname + '_BN01',
+                                     dim=[0, 1, 2],
+                                     Training=is_train,
+                                     Renormalization=renorm,
+                                     Is_Fused=False,
+                                     rmax=rmax,
+                                     dmax=dmax)
+    with tf.variable_scope(vname + '_Act01') as scope:
+        x02 = act.select_activation(act_f)(x01)
+    x03 = Layers.convolution2d(x=x02,
+                               FilterSize=[3, 3, c, c],
+                               Initializer='He',
+                               Strides=[1, 1],
+                               Padding='SAME',
+                               ActivationFunction='Equal',
+                               BatchNormalization=False,
+                               Renormalization=False,
+                               Regularization=True,
+                               Rmax=None,
+                               Dmax=None,
+                               Training=is_train,
+                               vname=vname + '_Conv01',
+                               Is_log=False)
+    x04 = Layers.batch_normalization(x=x03,
+                                     shape=c,
+                                     vname=vname + '_BN02',
+                                     dim=[0, 1, 2],
+                                     Training=is_train,
+                                     Renormalization=renorm,
+                                     Is_Fused=False,
+                                     rmax=rmax,
+                                     dmax=dmax)
+    with tf.variable_scope(vname + '_Act02') as scope:
+        x05 = act.select_activation(act_f)(x04)
+    x06 = Layers.convolution2d(x=x05,
+                               FilterSize=[3, 3, c, c],
+                               Initializer='He',
+                               Strides=[1, 1],
+                               Padding='SAME',
+                               ActivationFunction='Equal',
+                               BatchNormalization=False,
+                               Renormalization=False,
+                               Regularization=True,
+                               Rmax=None,
+                               Dmax=None,
+                               Training=is_train,
+                               vname=vname + '_Conv02',
+                               Is_log=False)
+    return x + x06
