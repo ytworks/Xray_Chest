@@ -353,7 +353,7 @@ def attention_block(x, is_train, rmax, dmax, vname, renorm=True, act_f='Relu'):
                     vname=vname + '_t04', renorm=True, act_f='Relu')
     t06 = tf.image.resize_images(images=t05,
                                  size=[tf.constant(
-                                     h / 2, tf.int32), tf.constant(w / 2, tf.int32)],
+                                     int(h / 2), tf.int32), tf.constant(int(w / 2), tf.int32)],
                                  method=tf.image.ResizeMethod.BICUBIC,
                                  align_corners=False)
     t07 = res_block(x=t06, is_train=is_train, rmax=rmax, dmax=dmax,
