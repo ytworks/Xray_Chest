@@ -34,7 +34,7 @@ class DataSet(object):
         self.augment = augment
         self.files = data
         self.labels = label
-        self.channel = 3
+        self.channel = config.getint('DLParams', 'channel')
         self.is_train = is_train
         self.config = config
         logger.debug("Channel %s" % str(self.channel))
@@ -94,7 +94,7 @@ class DataSet(object):
         # rotation
         if np.random.rand() < self.config.getfloat("Augmentation", "rotation"):
             img = self.rotation(img, rot=random.choice(json.loads(self.config.get("Augmentation", "rotation_angle"))))
-            img = img.reshape((img.shape[0], img.shape[1], 3))
+            img = img.reshape((img.shape[0], img.shape[1], self.channel))
         # Shift
         shift_width = self.config.getfloat("Augmentation", "shift_width")
         img = self.shift(img=img, move_x=shift_width, move_y=shift_width)
@@ -102,7 +102,7 @@ class DataSet(object):
         if np.random.rand() < self.config.getfloat("Augmentation", "small_rotation"):
             angle = self.config.getfloat("Augmentation", "small_rotation_angle")
             img = self.rotation(img, rot=angle * (2.0 * random.random() - 1.0))
-            img = img.reshape((img.shape[0], img.shape[1], 3))
+            img = img.reshape((img.shape[0], img.shape[1], self.channel))
         return img
 
     def zoom(self, img):
@@ -123,10 +123,10 @@ class DataSet(object):
     def flip(self, img):
         if np.random.rand() < self.config.getfloat("Augmentation", "flip_v"):
             img = cv2.flip(img, 0)
-            img = img.reshape((img.shape[0], img.shape[1], 3))
+            img = img.reshape((img.shape[0], img.shape[1], self.channel))
         if np.random.rand() < self.config.getfloat("Augmentation", "flip_h"):
             img = cv2.flip(img, 1)
-            img = img.reshape((img.shape[0], img.shape[1], 3))
+            img = img.reshape((img.shape[0], img.shape[1], self.channel))
         return img
 
     def rotation(self, img, rot=45):
@@ -148,7 +148,7 @@ class DataSet(object):
             affine_matrix = np.float32(matrix)
             img = cv2.warpAffine(img, affine_matrix, size,
                                  flags=cv2.INTER_LINEAR)
-            img = img.reshape((img.shape[0], img.shape[1], 3))
+            img = img.reshape((img.shape[0], img.shape[1], self.channel))
             return img
         else:
             return img
@@ -195,7 +195,7 @@ class DataSet(object):
         else:
             img = []
 
-        img = utils.image_process(img)
+        img = utils.image_process(img, self.channel)
 
         # データオーギュメンテーション
         if augment:
@@ -208,8 +208,10 @@ class DataSet(object):
         img = cv2.resize(img, (self.size, self.size),
                          interpolation=cv2.INTER_AREA)
 
-
-        img = self.pi(img.astype(np.float32))
+        if config.getboolean('DLParams', 'is_preprocess'):
+            img = pi(img.astype(np.float32))
+        else:
+            img = img.astype(np.float32)
         return img
 
     def img_reader(self, f, augment=True):

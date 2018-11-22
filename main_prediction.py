@@ -64,7 +64,7 @@ def main():
     obj.construct()
     label_list = json.load(open('./Config/label_def.json'))
     root, ext = os.path.splitext(filename)
-    img, h, w = img_process(f=filename, ext=ext, size=size, model='densenet')
+    img, h, w = img_process(f=filename, ext=ext, size=size, model='densenet', channel=config.getint('DLParams', 'channel'), config=config)
     ts = [img]
     x, y, z, filepath = obj.prediction(data=ts, roi=roi,
                                        height=h, width=w,
@@ -83,7 +83,7 @@ def main():
     return s[6], filepath[6]
 
 
-def img_process(f, ext, size, model):
+def img_process(f, ext, size, model, channel, config):
     # 画像の読み込み
     if ext == ".dcm":
         img, bits = dicom_to_np(f)
@@ -93,7 +93,7 @@ def img_process(f, ext, size, model):
         img = cv2.imread(f, cv2.IMREAD_GRAYSCALE)
     else:
         img = []
-    img = utils.image_process(img)
+    img = utils.image_process(img, channel)
 
     if model == 'xception':
         pi = tf.keras.applications.xception.preprocess_input
@@ -111,7 +111,10 @@ def img_process(f, ext, size, model):
     img = cv2.resize(img, (size, size),
                      interpolation=cv2.INTER_AREA)
 
-    img = pi(img.astype(np.float32))
+    if config.getboolean('DLParams', 'is_preprocess'):
+        img = pi(img.astype(np.float32))
+    else:
+        img = img.astype(np.float32)
     return img, h, w
 
 

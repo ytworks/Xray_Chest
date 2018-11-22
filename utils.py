@@ -10,8 +10,11 @@ import cv2
 import skimage
 
 
-def image_process(img):
-    img = np.stack((img, img, img), axis=-1)
+def image_process(img, channel):
+    if channel == 3:
+        img = np.stack((img, img, img), axis=-1)
+    else:
+        img = img
     return img
 
 
