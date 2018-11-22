@@ -68,7 +68,7 @@ class Detector(Core2.Core):
                                        init=init
                                        )
         self.SIZE = size
-        self.CH = self.config.getint('DLParams', 'channel')
+        self.CH = config.getint('DLParams', 'channel')
         self.l1_norm = tf.placeholder(tf.float32)
         self.regularization = tf.placeholder(tf.float32)
         self.rmax = tf.placeholder(tf.float32, shape=())
