@@ -14,7 +14,7 @@ def image_process(img, channel):
     if channel == 3:
         img = np.stack((img, img, img), axis=-1)
     else:
-        img = np.stack((img), axis=-1)
+        img = np.reshape(img, (img.shape[0], img.shape[1], 1))
     return img
 
 
