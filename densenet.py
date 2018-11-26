@@ -314,6 +314,9 @@ def sfcm(x1, x2, is_train, rmax, dmax, renorm, act_f, vname):
     print('GMSP', gmsp)
     wx = Variables.bias_variable(shape = [1], initial_value = 1.0, vname = vname + '_SCALE')
     y = x1 + wx * gmsp
+    print('XXXXXXXXXXXXXXXXXXXXX', x1)
+    print('XXXXXXXXXXXXXXXXXXXXX', wx)
+    print('XXXXXXXXXXXXXXXXXXXXX', gmsp)
     print('XXXXXXXXXXXXXXXXXXXXX', y)
     return y
 
