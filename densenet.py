@@ -306,6 +306,7 @@ def sfcm(x1, x2, is_train, rmax, dmax, renorm, act_f, vname):
                                Is_log=False)
     gms = tf.nn.softmax(gm)
     gmsp = x1 * gms
+    print('GMSP', gmsp)
     wx = Variables.bias_variable(shape = [1], initial_value = 1.0, vname = vname + '_SCALE')
     return x1 + wx * gmsp
 
