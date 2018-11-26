@@ -283,8 +283,8 @@ def conv_block(x, growth_rate, is_train, rmax, dmax, vname, renorm=True, act_f='
                                Training=is_train,
                                vname=vname + '_Conv02',
                                Is_log=False)
-    x07 = sfcm(x1=x, x2=x07, is_train=is_train, rmax=rmax, dmax=dmax, renorm=renorm, act_f=act_f, vname=vname+'_SFCM')
-    x08 = Layers.concat(xs=[x, x07], concat_type='Channel')
+    x_sfcm = sfcm(x1=x, x2=x07, is_train=is_train, rmax=rmax, dmax=dmax, renorm=renorm, act_f=act_f, vname=vname+'_SFCM')
+    x08 = Layers.concat(xs=[x_sfcm, x07], concat_type='Channel')
     return x08
 
 
@@ -306,18 +306,9 @@ def sfcm(x1, x2, is_train, rmax, dmax, renorm, act_f, vname):
                                vname=vname + '_SFCM_Conv01',
                                Is_log=False)
     gms = tf.nn.softmax(gm)
-    _, h, w, c = x1.get_shape().as_list()
-    print(h, w, c)
-    gms = tf.broadcast_to(gms, [-1, h, w, c])
-    print(gms)
     gmsp = x1 * gms
-    print('GMSP', gmsp)
-    wx = Variables.bias_variable(shape = [1], initial_value = 1.0, vname = vname + '_SCALE')
+    wx = Variables.bias_variable(shape = [1], initial_value = 1.0, vname = vname + '_SFCM')
     y = x1 + wx * gmsp
-    print('XXXXXXXXXXXXXXXXXXXXX', x1)
-    print('XXXXXXXXXXXXXXXXXXXXX', wx)
-    print('XXXXXXXXXXXXXXXXXXXXX', gmsp)
-    print('XXXXXXXXXXXXXXXXXXXXX', y)
     return y
 
 
