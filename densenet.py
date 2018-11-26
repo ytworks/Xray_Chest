@@ -290,6 +290,7 @@ def conv_block(x, growth_rate, is_train, rmax, dmax, vname, renorm=True, act_f='
 
 def sfcm(x1, x2, is_train, rmax, dmax, renorm, act_f, vname):
     _, h, w, c = x2.get_shape().as_list()
+    print(h, w, c)
     gm = Layers.convolution2d(x=x2,
                                FilterSize=[1, 1, c, 1],
                                Initializer='Xavier_normal',
@@ -306,6 +307,7 @@ def sfcm(x1, x2, is_train, rmax, dmax, renorm, act_f, vname):
                                Is_log=False)
     gms = tf.nn.softmax(gm)
     _, h, w, c = x1.get_shape().as_list()
+    print(h, w, c)
     gms = tf.broadcast_to(gms, [-1, h, w, c])
     print(gms)
     gmsp = x1 * gms
