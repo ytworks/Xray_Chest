@@ -283,7 +283,7 @@ def conv_block(x, growth_rate, is_train, rmax, dmax, vname, renorm=True, act_f='
                                Training=is_train,
                                vname=vname + '_Conv02',
                                Is_log=False)
-    x_sfcm = sfcm(x1=x, x2=x07, is_train=istrain, rmax=rmax, dmax=dmax, renorm=renorm, act_f=act_f, vname=vname+'_SFCM')
+    x_sfcm = sfcm(x1=x, x2=x07, is_train=is_train, rmax=rmax, dmax=dmax, renorm=renorm, act_f=act_f, vname=vname+'_SFCM')
     x08 = Layers.concat(xs=[x, x_sfcm], concat_type='Channel')
     return x08
 
