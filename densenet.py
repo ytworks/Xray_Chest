@@ -196,7 +196,7 @@ def densenet121(x, is_train, rmax, dmax, ini, reuse=False, se=True, renorm=True,
                                    Training=False,
                                    vname='transfer_conv',
                                    Is_log=False)
-        tsl = Layers.batch_normalization(x=ytsl,
+        tsl = Layers.batch_normalization(x=tsl,
                                          shape=c,
                                          vname='LAST_BN02',
                                          dim=[0, 1, 2],
@@ -283,7 +283,7 @@ def conv_block(x, growth_rate, is_train, rmax, dmax, vname, renorm=True, act_f='
                                Training=is_train,
                                vname=vname + '_Conv02',
                                Is_log=False)
-    #x_sfcm = sfcm(x1=x, x2=x07, is_train=is_train, rmax=rmax, dmax=dmax, renorm=renorm, act_f=act_f, vname=vname+'_SFCM')
+    x07 = sfcm(x1=x, x2=x07, is_train=is_train, rmax=rmax, dmax=dmax, renorm=renorm, act_f=act_f, vname=vname+'_SFCM')
     x08 = Layers.concat(xs=[x, x07], concat_type='Channel')
     return x08
 
