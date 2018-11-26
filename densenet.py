@@ -12,6 +12,7 @@ from LinearMotor import Layers
 from LinearMotor import Outputs
 from LinearMotor import Visualizer as vs
 from LinearMotor import Transfer as trans
+from LinearMotor import Variables
 import cv2
 
 
@@ -120,11 +121,6 @@ def densenet121(x, is_train, rmax, dmax, ini, reuse=False, se=True, renorm=True,
                             Act=act_f,
                             Rate=0.5,
                             vname='SE1')
-            y13 = attention_block(x=y13,
-                                  is_train=is_train,
-                                  rmax=rmax,
-                                  dmax=dmax,
-                                  vname="Attention01", renorm=renorm, act_f=act_f)
         else:
             y13 = y12
         y21 = dense_block(x=y13,
@@ -146,11 +142,6 @@ def densenet121(x, is_train, rmax, dmax, ini, reuse=False, se=True, renorm=True,
                             Act=act_f,
                             Rate=0.5,
                             vname='SE2')
-            y23 = attention_block(x=y23,
-                                  is_train=is_train,
-                                  rmax=rmax,
-                                  dmax=dmax,
-                                  vname="Attention02", renorm=renorm, act_f=act_f)
         else:
             y23 = y22
         y31 = dense_block(x=y23,
@@ -172,11 +163,6 @@ def densenet121(x, is_train, rmax, dmax, ini, reuse=False, se=True, renorm=True,
                             Act=act_f,
                             Rate=0.5,
                             vname='SE3')
-            y33 = attention_block(x=y33,
-                                  is_train=is_train,
-                                  rmax=rmax,
-                                  dmax=dmax,
-                                  vname="Attention03", renorm=renorm, act_f=act_f)
         else:
             y33 = y32
         y41 = dense_block(x=y33,
@@ -210,6 +196,15 @@ def densenet121(x, is_train, rmax, dmax, ini, reuse=False, se=True, renorm=True,
                                    Training=False,
                                    vname='transfer_conv',
                                    Is_log=False)
+        tsl = Layers.batch_normalization(x=ytsl,
+                                         shape=c,
+                                         vname='LAST_BN02',
+                                         dim=[0, 1, 2],
+                                         Training=is_train,
+                                         Renormalization=renorm,
+                                         Is_Fused=False,
+                                         rmax=rmax,
+                                         dmax=dmax)
         y51 = Layers.class_wise_pooling(x=tsl,
                                         n_classes=15,
                                         m=ini.getint(
@@ -288,8 +283,31 @@ def conv_block(x, growth_rate, is_train, rmax, dmax, vname, renorm=True, act_f='
                                Training=is_train,
                                vname=vname + '_Conv02',
                                Is_log=False)
-    x08 = Layers.concat(xs=[x, x07], concat_type='Channel')
+    x_sfcm = sfcm(x1=x, x2=x07, is_train=istrain, rmax=rmax, dmax=dmax, renorm=renorm, act_f=act_f, vname=vname+'_SFCM')
+    x08 = Layers.concat(xs=[x, x_sfcm], concat_type='Channel')
     return x08
+
+
+def sfcm(x1, x2, is_train, rmax, dmax, renorm, act_f, vname):
+    _, _, _, c = x2.get_shape().as_list()
+    gm = Layers.convolution2d(x=x2,
+                               FilterSize=[1, 1, c, 1],
+                               Initializer='Xavier_normal',
+                               Strides=[1, 1],
+                               Padding='SAME',
+                               ActivationFunction='Equal',
+                               BatchNormalization=False,
+                               Renormalization=False,
+                               Regularization=True,
+                               Rmax=None,
+                               Dmax=None,
+                               Training=is_train,
+                               vname=vname + '_SFCM_Conv01',
+                               Is_log=False)
+    gms = tf.nn.softmax(gm)
+    gmsp = x1 * gms
+    wx = Variables.bias_variable(shape = [1], initial_value = 1.0, vname = vname + '_SCALE')
+    return x1 + wx * gmsp
 
 
 def transition_block(x, reduction, is_train, rmax, dmax, vname, renorm=True, act_f='Relu'):
