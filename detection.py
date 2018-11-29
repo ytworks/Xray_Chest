@@ -180,17 +180,20 @@ class Detector(Core2.Core):
                                                          istraining=self.istraining,
                                                          rmax=self.rmax,
                                                          dmax=self.dmax,
-                                                         keep_probs=self.keep_probs)
+                                                         keep_probs=self.keep_probs,
+                                                         reuse=False)
         elif self.network_mode == 'scratch_light':
             self.z, self.logit, self.y51 = light_model(x=self.x,
                                                        is_train=self.istraining,
                                                        rmax=self.rmax,
                                                        dmax=self.dmax,
-                                                       ini=self.config)
+                                                       ini=self.config,
+                                                       reuse=False)
         else:
             self.z, self.logit, self.y51, self.p = pretrain_model(x=self.x,
                                                                   is_train=self.istraining,
-                                                                  config=self.config)
+                                                                  config=self.config,
+                                                                  reuse=False)
 
     def loss(self):
         diag_output_type = self.output_type
