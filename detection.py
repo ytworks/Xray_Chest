@@ -105,17 +105,21 @@ class Detector(Core2.Core):
         # 入出力の定義
         self.io_def()
         logger.debug("02: TF I/O definition done")
-        # ネットワークの構成
-        self.network()
-        logger.debug("03: TF network construction done")
-        # 誤差関数の定義
-        self.loss()
-        logger.debug("04: TF Loss definition done")
-        # 学習
-        if self.network_mode == 'pretrain':
-            p_vars = self.p.model_weights_tensors
-        self.training(var_list=None)
-        logger.debug("05: TF Training operation done")
+        if self.config.getint("DLParams", "gpu_num") < 2:
+            # ネットワークの構成
+            self.network()
+            logger.debug("03: TF network construction done")
+            # 誤差関数の定義
+            self.loss()
+            logger.debug("04: TF Loss definition done")
+            # 学習
+            if self.network_mode == 'pretrain':
+                p_vars = self.p.model_weights_tensors
+            self.training(var_list=None)
+            logger.debug("05: TF Training operation done")
+        else:
+            logger.debug("03: Multi GPU mode")
+            logger.debug("Under Construction")
         # 精度の定義
         if self.output_type.find('hinge') >= 0:
             self.accuracy_z = tf.sqrt(tf.reduce_mean(
