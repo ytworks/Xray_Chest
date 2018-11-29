@@ -120,6 +120,7 @@ class Detector(Core2.Core):
         else:
             logger.debug("03: Multi GPU mode")
             logger.debug("Under Construction")
+            self.multi_gpu_training(var_list=None)
         # 精度の定義
         if self.output_type.find('hinge') >= 0:
             self.accuracy_z = tf.sqrt(tf.reduce_mean(
@@ -229,6 +230,9 @@ class Detector(Core2.Core):
                                                        weight_decay=self.wd
                                                        )
         self.grad_op = self.optimizer.compute_gradients(self.loss_function)
+
+    def multi_gpu_training(self, var_list=None, gradient_cliiping=True, clipping_norm=0.01):
+        pass
 
     def make_feed_dict(self, prob, data, label=None, is_Train=True, is_update=False, is_label=False):
         if self.steps <= 5000:
