@@ -279,7 +279,8 @@ class Detector(Core2.Core):
                                               gamma=self.config.getfloat(
                                                   'DLParams', 'focal_gamma')
                                               )
-                        vs.variable_summary(loss, 'Loss', is_scalar=True)
+                        with tf.device('/cpu:0'):
+                            vs.variable_summary(loss, 'Loss', is_scalar=True)
                         logger.debug("03-03: Loss")
                         # get grads
                         grads = TO.get_grads(optimizer=self.optimizer,
@@ -293,13 +294,13 @@ class Detector(Core2.Core):
 
         # average grads
         grads = self.average_gradients(tower_grads)
-        logger.debug("03-04: Average grads")
+        logger.debug("03-05: Average grads")
         # apply grad
         self.train_op = TO.get_train_op(optimizer=self.optimizer,
                                         grad_var_pairs=grads,
                                         ema=True,
                                         ema_decay=0.9999)
-        logger.debug("03-04: Train op")
+        logger.debug("03-06: Train op")
 
     def average_gradients(self, tower_grads):
       """Calculate the average gradient for each shared variable across all towers.
