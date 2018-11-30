@@ -119,7 +119,6 @@ class Detector(Core2.Core):
             logger.debug("05: TF Training operation done")
         else:
             logger.debug("03: Multi GPU mode")
-            logger.debug("Under Construction")
             self.multi_gpu_training(var_list=None)
         # 精度の定義
         if self.output_type.find('hinge') >= 0:
@@ -232,7 +231,110 @@ class Detector(Core2.Core):
         self.grad_op = self.optimizer.compute_gradients(self.loss_function)
 
     def multi_gpu_training(self, var_list=None, gradient_cliiping=True, clipping_norm=0.01):
-        pass
+        # Optimizer
+        with tf.device('/cpu:0'):
+            self.optimizer = TO.get_opt(algo=self.optimizer_type,
+                                        learning_rate=self.learning_rate,
+                                        b1=np.float32(self.beta1),
+                                        b2=np.float32(self.beta2),
+                                        nesterov=self.config.getboolean(
+                                            'DLParams', 'nesterov'),
+                                        weight_decay=self.wd)
+            logger.debug("03-01: Optimizer definition")
+        # Split data and labels
+            xs = tf.reshape(self.x,
+                            (self.gpu_num, self.distributed_batch, self.SIZE, self.SIZE, self.CH))
+            z_s = tf.reshape(
+                self.z_, (self.gpu_num, self.distributed_batch, 15))
+            logger.debug("03-02: Split data")
+        # get loss
+            tower_grads = []
+            for i in range(self.gpu_num):
+                x = xs[i, :, :, :, :]
+                x = tf.reshape(x, (self.distributed_batch,
+                                   self.SIZE, self.SIZE, self.CH))
+                z_ = z_s[i, :, :]
+                z_ = tf.reshape(z_, (self.distributed_batch, 15))
+                with tf.device('/gpu:%d' % i):
+                    with tf.name_scope('%s_%d' % ('g', i)) as scope:
+                        reuse = False if i == 0 else True
+                        z, logit, y51 = light_model(x=self.x,
+                                                    is_train=self.istraining,
+                                                    rmax=self.rmax,
+                                                    dmax=self.dmax,
+                                                    ini=self.config,
+                                                    reuse=reuse)
+                        if i == 0:
+                            self.z = z
+                            self.logit = logit
+                            self.y51 = y51
+                        diag_output_type = self.output_type
+                        loss = Loss.loss_func(y=z,
+                                              y_=z_,
+                                              regularization=self.regularization,
+                                              regularization_type=self.regularization_type,
+                                              output_type=diag_output_type,
+                                              alpha=self.config.getfloat(
+                                                  'DLParams', 'focal_alpha'),
+                                              gamma=self.config.getfloat(
+                                                  'DLParams', 'focal_gamma')
+                                              )
+                        vs.variable_summary(loss, 'Loss', is_scalar=True)
+                        logger.debug("03-03: Loss")
+                        # get grads
+                        grads = TO.get_grads(optimizer=self.optimizer,
+                                             loss_function=loss,
+                                             var_list=var_list,
+                                             gradient_clipping=gradient_cliiping,
+                                             clipping_norm=clipping_norm,
+                                             clipping_type='value')
+                        tower_grads.append(grads)
+                        logger.debug("03-04: Grads")
+
+        # average grads
+        grads = average_gradients(tower_grads)
+        logger.debug("03-04: Average grads")
+        # apply grad
+        self.train_op = TO.get_train_op(optimizer=self.optimizer,
+                                        grad_var_pairs=grads,
+                                        ema=True,
+                                        ema_decay=0.9999)
+        logger.debug("03-04: Train op")
+
+    def average_gradients(tower_grads):
+      """Calculate the average gradient for each shared variable across all towers.
+      Note that this function provides a synchronization point across all towers.
+      Args:
+        tower_grads: List of lists of (gradient, variable) tuples. The outer list
+          is over individual gradients. The inner list is over the gradient
+          calculation for each tower.
+      Returns:
+         List of pairs of (gradient, variable) where the gradient has been averaged
+         across all towers.
+      """
+      average_grads = []
+      for grad_and_vars in zip(*tower_grads):
+        # Note that each grad_and_vars looks like the following:
+        #   ((grad0_gpu0, var0_gpu0), ... , (grad0_gpuN, var0_gpuN))
+        grads = []
+        for g, _ in grad_and_vars:
+          # Add 0 dimension to the gradients to represent the tower.
+          expanded_g = tf.expand_dims(g, 0)
+
+          # Append on a 'tower' dimension which we will average over below.
+          grads.append(expanded_g)
+
+        # Average over the 'tower' dimension.
+        grad = tf.concat(axis=0, values=grads)
+        grad = tf.reduce_mean(grad, 0)
+
+        # Keep in mind that the Variables are redundant because they are shared
+        # across towers. So .. we will just return the first tower's pointer to
+        # the Variable.
+        v = grad_and_vars[0][1]
+        grad_and_var = (grad, v)
+        average_grads.append(grad_and_var)
+      return average_grads
 
     def make_feed_dict(self, prob, data, label=None, is_Train=True, is_update=False, is_label=False):
         if self.steps <= 5000:
