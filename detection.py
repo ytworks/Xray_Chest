@@ -301,7 +301,7 @@ class Detector(Core2.Core):
                                         ema_decay=0.9999)
         logger.debug("03-04: Train op")
 
-    def average_gradients(tower_grads):
+    def average_gradients(self, tower_grads):
       """Calculate the average gradient for each shared variable across all towers.
       Note that this function provides a synchronization point across all towers.
       Args:
