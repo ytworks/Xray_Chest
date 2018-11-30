@@ -292,7 +292,7 @@ class Detector(Core2.Core):
                         logger.debug("03-04: Grads")
 
         # average grads
-        grads = average_gradients(tower_grads)
+        grads = self.average_gradients(tower_grads)
         logger.debug("03-04: Average grads")
         # apply grad
         self.train_op = TO.get_train_op(optimizer=self.optimizer,
