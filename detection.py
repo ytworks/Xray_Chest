@@ -215,8 +215,8 @@ class Detector(Core2.Core):
                                                        var_list=var_list,
                                                        gradient_clipping=gradient_cliiping,
                                                        clipping_norm=clipping_norm,
-                                                       clipping_type='value',
-                                                       ema=True,
+                                                       clipping_type='norm',
+                                                       ema=False,
                                                        nesterov=self.config.getboolean(
                                                            'DLParams', 'nesterov'),
                                                        weight_decay=self.wd
