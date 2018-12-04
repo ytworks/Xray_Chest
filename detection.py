@@ -331,13 +331,11 @@ class Detector(Core2.Core):
                         float((len(validation_data[0]) // self.batch))
                 logger.debug("Before val: %g, After val: %g" %
                              (self.prev_val, validation_loss))
+                self.sess.run(tf.variables_initializer(self.optimizer.variables()))
+                logger.debug("INFO: Reader for Adam Gradient paramters initialized mode")
                 if validation_loss > self.prev_val:
                     if self.gradient_init < self.config.getint('DLParams', 'dumping_patient'):
-                        self.sess.run(tf.variables_initializer(
-                            self.optimizer.variables()))
                         self.gradient_init += 1
-                        logger.debug(
-                            "INFO: Reader for Adam Gradient paramters initialized mode")
                     else:
                         logger.debug("INFO: Before Learning Rate: %g" %
                                      self.learning_rate_value)
