@@ -396,7 +396,7 @@ class Detector(Core2.Core):
             self.steps += 1
             if self.steps % one_epoch_step == 0 and self.steps != 0:
                 self.t_cur += 1
-            if self.epoch > self.t_i:
+            if self.t_cur > self.t_i:
                 self.t_i *= self.config.getfloat('DLParams', 't_mold')
                 self.t_cur = 0
 
