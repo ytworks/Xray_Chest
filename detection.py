@@ -89,6 +89,8 @@ class Detector(Core2.Core):
         self.gradient_init = 0
         self.config = config
         self.wd_value = self.config.getfloat('DLParams', 'weight_decay')
+        self.t_cur = 0
+        self.t_i = 1
         print(self.optimizer_type)
         for i in range(self.steps):
             if i != 0 and i % self.dumping_period == 0:
@@ -206,6 +208,7 @@ class Detector(Core2.Core):
                                       )
         self.loss_function = self.loss_ce
         vs.variable_summary(self.loss_function, 'Loss', is_scalar=True)
+        vs.variable_summary(self.learning_rate, 'LearningRate')
 
     def training(self, var_list=None, gradient_cliiping=True, clipping_norm=0.01):
         self.train_op, self.optimizer = TO.select_algo(loss_function=self.loss_function,
@@ -269,12 +272,19 @@ class Detector(Core2.Core):
             aucs_list += "%03.2f / " % auc_value
         return accuracy_z, losses, aucs_list
 
+    def cosine_decay(self):
+        lr_min = self.config.getfloat('DLParams', 'learning_rate_min')
+        lr_max = self.config.getfloat('DLParams', 'learning_rate')
+        return lr_min + 0.5 * (lr_max - lr_min) * (1.0 + np.cos(self.t_cur * np.pi / self.t_i))
+
     def learning(self, data, save_at_log=False, validation_batch_num=1, batch_ratio=[0.2, 0.3, 0.4]):
         s = time.time()
         epoch = int(float(len(data.train.files)) *
                     float(self.epoch) / float(self.batch))
+        one_epoch_step = int(float(len(data.train.files)) / float(self.batch))
         logger.debug("Step num: %d", epoch)
         for i in range(epoch):
+            self.learning_rate_value = self.cosine_decay()
             br = np.random.randint(len(batch_ratio))
             batch = data.train.next_batch(
                 self.batch, batch_ratio=batch_ratio[br % len(batch_ratio)])
@@ -331,6 +341,7 @@ class Detector(Core2.Core):
                         float((len(validation_data[0]) // self.batch))
                 logger.debug("Before val: %g, After val: %g" %
                              (self.prev_val, validation_loss))
+                '''
                 self.sess.run(tf.variables_initializer(self.optimizer.variables()))
                 logger.debug("INFO: Reader for Adam Gradient paramters initialized mode")
                 if validation_loss > self.prev_val:
@@ -346,6 +357,7 @@ class Detector(Core2.Core):
                         logger.debug("INFO: After Learning Rate: %g" %
                                      self.learning_rate_value)
                         self.gradient_init = 0
+                '''
 
                 self.prev_val = validation_loss
                 self.validation_save(str(int(validation_loss * 10000)))
@@ -382,6 +394,12 @@ class Detector(Core2.Core):
                 vs.add_log(writer=self.test_writer,
                            summary=summary, step=self.steps)
             self.steps += 1
+            if self.steps % one_epoch_step == 0 and self.steps != 0:
+                self.t_cur += 1
+            if self.epoch > self.t_i:
+                self.t_i *= self.config.getfloat('params', 't_mold')
+                self.t_cur = 0
+
         self.save_checkpoint()
         if self.network_mode == 'pretrain':
             self.save_transfer_checkpoint()
