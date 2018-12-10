@@ -90,7 +90,7 @@ class Detector(Core2.Core):
         self.config = config
         self.wd_value = self.config.getfloat('DLParams', 'weight_decay')
         self.t_cur = 0
-        self.t_i = 1
+        self.t_i = self.config.getfloat('DLParams', 't_i')
         print(self.optimizer_type)
         for i in range(self.steps):
             if i != 0 and i % self.dumping_period == 0:
