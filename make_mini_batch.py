@@ -99,7 +99,7 @@ class DataSet(object):
         img = self.shift(img=img, move_x=shift_width, move_y=shift_width)
         # small rotation
         angle = self.config.getfloat("Augmentation", "small_rotation_angle")
-        img = self.rotation(img, rot=angle * (2.0 * random.random() - 1.0))
+        img = self.rotation(img, rot=angle * (2.0 * np.random.rand() - 1.0))
         img = img.reshape((img.shape[0], img.shape[1], self.channel))
         return img
 
@@ -133,9 +133,10 @@ class DataSet(object):
         return cv2.warpAffine(img, affine_matrix, size, flags=cv2.INTER_LINEAR)
 
     def shift(self, img, move_x=0.1, move_y=0.1):
+        rnds = np.random.rand(2)
         size = tuple(np.array([img.shape[0], img.shape[1]]))
-        mx = int(img.shape[0] * move_x * random.random())
-        my = int(img.shape[1] * move_y * random.random())
+        mx = int(img.shape[0] * move_x * rnds[0])
+        my = int(img.shape[1] * move_y * rnds[1])
         matrix = [
             [1,  0, mx],
             [0,  1, my]
