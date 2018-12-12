@@ -198,7 +198,7 @@ class Detector(Core2.Core):
                                                       reuse=False)
             self.loss_function = self.loss(z=self.z)
             grads = TO.get_grads(optimizer=self.optimizer,
-                                             loss_function=loss,
+                                             loss_function=self.loss_function,
                                              var_list=var_list,
                                              gradient_clipping=gradient_cliiping,
                                              clipping_norm=clipping_norm,
