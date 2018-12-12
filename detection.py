@@ -405,8 +405,7 @@ class Detector(Core2.Core):
                 if i % self.tflog == 0:
                     feed_dict = self.make_feed_dict(
                         prob=False, data=batch[0], label=batch[2], is_Train=True, is_update=True, is_label=True)
-                    summary = self.sess.run(
-                        [self.summary], feed_dict=feed_dict)
+                    summary = self.sess.run(self.summary, feed_dict=feed_dict)
                     vs.add_log(writer=self.train_writer,
                                summary=summary, step=self.steps)
                     validation_batch = data.val.next_batch(
