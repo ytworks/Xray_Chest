@@ -121,7 +121,8 @@ class Detector(Core2.Core):
 
         logger.debug("04: TF Accuracy measure definition done")
         # セッションの定義
-        self.sess = tf.InteractiveSession()
+        config = tf.ConfigProto(allow_soft_placement = True)
+        self.sess = tf.InteractiveSession(config)
         # tensor board
         now = datetime.now()
         now = now.strftime("%Y-%m-%d")
@@ -219,7 +220,6 @@ class Detector(Core2.Core):
                                                     ini=self.config,
                                                     reuse=True)
                         loss = self.loss(z=z, z_=z_)
-                        tf.get_variable_scope().reuse_variables()
                         grads = TO.get_grads(optimizer=self.optimizer,
                                              loss_function=loss,
                                              var_list=var_list,
