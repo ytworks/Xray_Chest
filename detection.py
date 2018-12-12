@@ -398,11 +398,16 @@ class Detector(Core2.Core):
                 feed_dict = self.make_feed_dict(
                     prob=False, data=batch[0], label=batch[2], is_Train=True, is_update=True, is_label=True)
                 _, summary = self.sess.run(
-                    [self.train_op, self.summary], feed_dict=feed_dict)
-                vs.add_log(writer=self.train_writer,
-                           summary=summary, step=self.steps)
+                    [self.train_op], feed_dict=feed_dict)
+
 
                 if i % self.tflog == 0:
+                    feed_dict = self.make_feed_dict(
+                        prob=False, data=batch[0], label=batch[2], is_Train=True, is_update=True, is_label=True)
+                    summary = self.sess.run(
+                        [self.summary], feed_dict=feed_dict)
+                    vs.add_log(writer=self.train_writer,
+                               summary=summary, step=self.steps)
                     validation_batch = data.val.next_batch(
                         self.batch, augment=False, batch_ratio=batch_ratio[br % len(batch_ratio)])
                     feed_dict_val = self.make_feed_dict(
