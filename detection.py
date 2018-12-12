@@ -188,7 +188,7 @@ class Detector(Core2.Core):
         return loss_ce
 
     def training(self, var_list=None, gradient_cliiping=True, clipping_norm=0.01):
-        self.model = self.network
+        self.model = self.network()
         self.z, self.logit, self.y51 = self.model(x=self.x,
                                                   is_train=self.istraining,
                                                   rmax=self.rmax,
