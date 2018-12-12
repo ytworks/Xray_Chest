@@ -108,8 +108,6 @@ class Detector(Core2.Core):
         self.io_def()
         logger.debug("02: TF I/O definition done")
         # 学習
-        if self.network_mode == 'pretrain':
-            p_vars = self.p.model_weights_tensors
         self.training(var_list=None)
         logger.debug("03: TF Training operation done")
         # 精度の定義
