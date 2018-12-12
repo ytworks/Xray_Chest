@@ -107,17 +107,11 @@ class Detector(Core2.Core):
         # 入出力の定義
         self.io_def()
         logger.debug("02: TF I/O definition done")
-        # ネットワークの構成
-        self.network()
-        logger.debug("03: TF network construction done")
-        # 誤差関数の定義
-        self.loss()
-        logger.debug("04: TF Loss definition done")
         # 学習
         if self.network_mode == 'pretrain':
             p_vars = self.p.model_weights_tensors
         self.training(var_list=None)
-        logger.debug("05: TF Training operation done")
+        logger.debug("03: TF Training operation done")
         # 精度の定義
         if self.output_type.find('hinge') >= 0:
             self.accuracy_z = tf.sqrt(tf.reduce_mean(
@@ -127,7 +121,7 @@ class Detector(Core2.Core):
                 tf.sigmoid(self.z) - self.z_, tf.sigmoid(self.z) - self.z_)))
         vs.variable_summary(self.accuracy_z, 'Accuracy', is_scalar=True)
 
-        logger.debug("06: TF Accuracy measure definition done")
+        logger.debug("04: TF Accuracy measure definition done")
         # セッションの定義
         self.sess = tf.InteractiveSession()
         # tensor board
@@ -143,7 +137,7 @@ class Detector(Core2.Core):
         self.restore()
         if self.init and self.network_mode == 'pretrain':
             self.p.load_weights()
-        logger.debug("07: TF Model file definition done")
+        logger.debug("05: TF Model file definition done")
 
     def save_transfer_checkpoint(self):
         UT.save_checkpoint(saver=self.transfer_saver,
@@ -175,42 +169,32 @@ class Detector(Core2.Core):
         print(self.x)
 
     def network(self):
-        if self.network_mode == 'scratch':
-            self.z, self.logit, self.y51 = scratch_model(x=self.x,
-                                                         SIZE=self.SIZE,
-                                                         CH=self.CH,
-                                                         istraining=self.istraining,
-                                                         rmax=self.rmax,
-                                                         dmax=self.dmax,
-                                                         keep_probs=self.keep_probs)
-        elif self.network_mode == 'scratch_light':
-            self.z, self.logit, self.y51 = light_model(x=self.x,
-                                                       is_train=self.istraining,
-                                                       rmax=self.rmax,
-                                                       dmax=self.dmax,
-                                                       ini=self.config)
-        else:
-            self.z, self.logit, self.y51, self.p = pretrain_model(x=self.x,
-                                                                  is_train=self.istraining,
-                                                                  config=self.config)
-            
-    def loss(self):
+        return light_model()
+
+    def loss(self, z):
         diag_output_type = self.output_type
-        self.loss_ce = Loss.loss_func(y=self.z,
-                                      y_=self.z_,
-                                      regularization=self.regularization,
-                                      regularization_type=self.regularization_type,
-                                      output_type=diag_output_type,
-                                      alpha=self.config.getfloat(
-                                          'DLParams', 'focal_alpha'),
-                                      gamma=self.config.getfloat(
-                                          'DLParams', 'focal_gamma')
-                                      )
-        self.loss_function = self.loss_ce
-        vs.variable_summary(self.loss_function, 'Loss', is_scalar=True)
+        loss_ce = Loss.loss_func(y=z,
+                                 y_=self.z_,
+                                 regularization=self.regularization,
+                                 regularization_type=self.regularization_type,
+                                 output_type=diag_output_type,
+                                 alpha=self.config.getfloat(
+                                     'DLParams', 'focal_alpha'),
+                                 gamma=self.config.getfloat(
+                                     'DLParams', 'focal_gamma')
+                                 )
+        vs.variable_summary(loss_ce, 'Loss', is_scalar=True)
         vs.variable_summary(self.learning_rate, 'LearningRate')
+        return loss_ce
 
     def training(self, var_list=None, gradient_cliiping=True, clipping_norm=0.01):
+        self.model = self.network
+        self.z, self.logit, self.y51 = self.model(x=self.x,
+                                                  is_train=self.istraining,
+                                                  rmax=self.rmax,
+                                                  dmax=self.dmax,
+                                                  ini=self.config)
+        self.loss_function = self.loss(z=self.z)
         self.train_op, self.optimizer = TO.select_algo(loss_function=self.loss_function,
                                                        algo=self.optimizer_type,
                                                        learning_rate=self.learning_rate,
