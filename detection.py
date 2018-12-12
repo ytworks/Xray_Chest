@@ -173,12 +173,13 @@ class Detector(Core2.Core):
                                  gamma=self.config.getfloat(
                                      'DLParams', 'focal_gamma')
                                  )
-        vs.variable_summary(loss_ce, 'Loss', is_scalar=True)
-        vs.variable_summary(self.learning_rate, 'LearningRate')
+        with tf.device('/cpu:0'):
+            vs.variable_summary(loss_ce, 'Loss', is_scalar=True)
         return loss_ce
 
     def training(self, var_list=None, gradient_cliiping=True, clipping_norm=0.01):
         with tf.device('/cpu:0'):
+            vs.variable_summary(self.learning_rate, 'LearningRate')
             self.optimizer = TO.get_opt(algo=self.optimizer_type,
                                         learning_rate=self.learning_rate,
                                         b1=np.float32(self.beta1),
