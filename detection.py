@@ -178,7 +178,7 @@ class Detector(Core2.Core):
         return loss_ce
 
     def training(self, var_list=None, gradient_cliiping=True, clipping_norm=0.01):
-        with tf.device('/cpu:0'):
+        with tf.Graph().as_default(), tf.device('/cpu:0'):
             vs.variable_summary(self.learning_rate, 'LearningRate')
             self.optimizer = TO.get_opt(algo=self.optimizer_type,
                                         learning_rate=self.learning_rate,
@@ -209,29 +209,31 @@ class Detector(Core2.Core):
             self.loss_function = self.loss(z=self.z, z_=z_)
             logger.debug("03-04: CPU Model")
             tower_grads = []
-            for i in range(self.gpu_num):
-                x = xs[i, :, :, :, :]
-                x = tf.reshape(x, (self.distributed_batch,
-                                   self.SIZE, self.SIZE, self.CH))
-                z_ = z_s[i, :, :]
-                z_ = tf.reshape(z_, (self.distributed_batch, 15))
-                with tf.device('/device:GPU:%d' % i):
-                    with tf.name_scope('%s_%d' % ('g', i)) as scope:
-                        z, logit, y51 = self.model(x=x,
-                                                   is_train=self.istraining,
-                                                   rmax=self.rmax,
-                                                   dmax=self.dmax,
-                                                   ini=self.config,
-                                                   reuse=True)
-                        loss = self.loss(z=z, z_=z_)
-                        grads = TO.get_grads(optimizer=self.optimizer,
-                                             loss_function=loss,
-                                             var_list=var_list,
-                                             gradient_clipping=gradient_cliiping,
-                                             clipping_norm=clipping_norm,
-                                             clipping_type='norm')
-                        tower_grads.append(grads)
-                        logger.debug("03-05: Grads")
+            with tf.variable_scope(tf.get_variable_scope()):
+                for i in range(self.gpu_num):
+                    x = xs[i, :, :, :, :]
+                    x = tf.reshape(x, (self.distributed_batch,
+                                       self.SIZE, self.SIZE, self.CH))
+                    z_ = z_s[i, :, :]
+                    z_ = tf.reshape(z_, (self.distributed_batch, 15))
+                    with tf.device('/device:GPU:%d' % i):
+                        with tf.name_scope('%s_%d' % ('g', i)) as scope:
+                            z, logit, y51 = self.model(x=x,
+                                                       is_train=self.istraining,
+                                                       rmax=self.rmax,
+                                                       dmax=self.dmax,
+                                                       ini=self.config,
+                                                       reuse=True)
+                            loss = self.loss(z=z, z_=z_)
+                            tf.get_variable_scope().reuse_variables()
+                            grads = TO.get_grads(optimizer=self.optimizer,
+                                                 loss_function=loss,
+                                                 var_list=var_list,
+                                                 gradient_clipping=gradient_cliiping,
+                                                 clipping_norm=clipping_norm,
+                                                 clipping_type='norm')
+                            tower_grads.append(grads)
+                            logger.debug("03-05: Grads")
             grads = self.average_gradients(tower_grads)
             logger.debug("03-06: Average grads")
             self.train_op = TO.get_train_op(optimizer=self.optimizer,
