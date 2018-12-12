@@ -215,7 +215,7 @@ class Detector(Core2.Core):
                                    self.SIZE, self.SIZE, self.CH))
                 z_ = z_s[i, :, :]
                 z_ = tf.reshape(z_, (self.distributed_batch, 15))
-                with tf.device('/gpu:%d' % i):
+                with tf.device('/device:GPU::%d' % i):
                     with tf.name_scope('%s_%d' % ('g', i)) as scope:
                         z, logit, y51 = self.model(x=x,
                                                    is_train=self.istraining,
