@@ -404,7 +404,7 @@ class Detector(Core2.Core):
                     prob=False, data=batch[0], label=batch[2], is_Train=True, is_update=True, is_label=True)
                 self.sess.run([self.train_op], feed_dict=feed_dict)
 
-                if i % self.tflog == 0:
+                if i % self.tflog == 0 and i != 0:
                     feed_dict = self.make_feed_dict(
                         prob=False, data=batch[0], label=batch[2], is_Train=True, is_update=True, is_label=True)
                     summary = self.sess.run(self.summary, feed_dict=feed_dict)
