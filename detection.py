@@ -110,16 +110,6 @@ class Detector(Core2.Core):
         # 学習
         self.training(var_list=None)
         logger.debug("03: TF Training operation done")
-        # 精度の定義
-        if self.output_type.find('hinge') >= 0:
-            self.accuracy_z = tf.sqrt(tf.reduce_mean(
-                tf.multiply(self.z - self.z_, self.z - self.z_)))
-        else:
-            self.accuracy_z = tf.sqrt(tf.reduce_mean(tf.multiply(
-                tf.sigmoid(self.z) - self.z_, tf.sigmoid(self.z) - self.z_)))
-        vs.variable_summary(self.accuracy_z, 'Accuracy', is_scalar=True)
-
-        logger.debug("04: TF Accuracy measure definition done")
         # セッションの定義
         config = tf.ConfigProto(allow_soft_placement = True)
         self.sess = tf.InteractiveSession(config=config)
@@ -226,6 +216,12 @@ class Detector(Core2.Core):
                                              gradient_clipping=gradient_cliiping,
                                              clipping_norm=clipping_norm,
                                              clipping_type='norm')
+                        # 精度の定義
+                        accuracy = tf.sqrt(tf.reduce_mean(tf.multiply(tf.sigmoid(z) - z_, tf.sigmoid(z) - z_)))
+                        with tf.device('/cpu:0'):
+                            vs.variable_summary(accuracy, 'Accuracy', is_scalar=True)
+
+                        logger.debug("04: TF Accuracy measure definition done")
                         tower_grads.append(grads)
                         logger.debug("03-05: Grads")
             grads = self.average_gradients(tower_grads)
@@ -408,10 +404,7 @@ class Detector(Core2.Core):
         feed_dict = self.make_feed_dict(
             prob=True, data=data, is_Train=False, is_label=False)
         # Get logits
-        if self.output_type.find('hinge') >= 0:
-            result_z = self.sess.run(2.0 * self.z - 1.0, feed_dict=feed_dict)
-        else:
-            result_z = self.sess.run(self.logit, feed_dict=feed_dict)
+        result_z = self.sess.run(self.logit, feed_dict=feed_dict)
         result_y = [[1, 0] for i in range(len(result_z))]
         # Make ROI maps
         if not roi:
