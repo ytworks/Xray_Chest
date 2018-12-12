@@ -390,9 +390,9 @@ class Detector(Core2.Core):
                         l = [x for x in validation_data[2][sp:ep]]
                         feed_dict_val = self.make_feed_dict(
                             prob=True, data=np.array(imgs), label=np.array(l), is_Train=False, is_label=True)
-                        v = self.sess.run([self.losses],
+                        v = self.sess.run([self.losse_function],
                                           feed_dict=feed_dict_val)
-                        validation_loss += np.sum(v[0]) / \
+                        validation_loss += v[0] / \
                             float((len(validation_data[0]) // self.batch))
                     logger.debug("Before val: %g, After val: %g" %
                                  (self.prev_val, validation_loss))
