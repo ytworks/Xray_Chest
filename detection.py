@@ -178,7 +178,7 @@ class Detector(Core2.Core):
         return loss_ce
 
     def training(self, var_list=None, gradient_cliiping=True, clipping_norm=0.01):
-        with tf.Graph().as_default(), tf.device('/cpu:0'):
+        with tf.device('/cpu:0'):
             vs.variable_summary(self.learning_rate, 'LearningRate')
             self.optimizer = TO.get_opt(algo=self.optimizer_type,
                                         learning_rate=self.learning_rate,
