@@ -230,10 +230,11 @@ class Detector(Core2.Core):
                                                         dmax=self.dmax,
                                                         ini=self.config,
                                                         reuse=reuse)
+
                             loss = self.loss(z=z, z_=z_)
                             if i == 0:
                                 self.z, self.logit, self.y51 = z, logit, y51
-
+                            tf.get_variable_scope().reuse_variables()
                             grads = TO.get_grads(optimizer=self.optimizer,
                                                  loss_function=loss,
                                                  var_list=var_list,
