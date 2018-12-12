@@ -211,6 +211,12 @@ class Detector(Core2.Core):
                                             'DLParams', 'nesterov'),
                                         weight_decay=self.wd)
             logger.debug("03-01: Optimizer definition")
+            self.z, self.logit, self.y51 = light_model(x=self.x,
+                                                       is_train=self.istraining,
+                                                       rmax=self.rmax,
+                                                       dmax=self.dmax,
+                                                       ini=self.config,
+                                                       reuse=False)
             xs = tf.reshape(self.x,
                             (self.gpu_num, self.distributed_batch, self.SIZE, self.SIZE, self.CH))
             z_s = tf.reshape(
@@ -226,17 +232,14 @@ class Detector(Core2.Core):
                     z_ = tf.reshape(z_, (self.distributed_batch, 15))
                     with tf.device('/device:GPU:%d' % i):
                         with tf.name_scope('%s_%d' % ('g', i)) as scope:
-                            reuse = True if i != 0 else False
                             z, logit, y51 = light_model(x=x,
                                                         is_train=self.istraining,
                                                         rmax=self.rmax,
                                                         dmax=self.dmax,
                                                         ini=self.config,
-                                                        reuse=reuse)
+                                                        reuse=True)
 
                             loss = self.loss(z=z, z_=z_)
-                            if i == 0:
-                                self.z, self.logit, self.y51 = z, logit, y51
                             tf.get_variable_scope().reuse_variables()
                             grads = TO.get_grads(optimizer=self.optimizer,
                                                  loss_function=loss,
@@ -399,7 +402,6 @@ class Detector(Core2.Core):
                     prob=False, data=batch[0], label=batch[2], is_Train=True, is_update=True, is_label=True)
                 _, summary = self.sess.run(
                     [self.train_op], feed_dict=feed_dict)
-
 
                 if i % self.tflog == 0:
                     feed_dict = self.make_feed_dict(
