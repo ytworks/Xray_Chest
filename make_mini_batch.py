@@ -92,39 +92,35 @@ class DataSet(object):
         # flip
         img = self.flip(img=img)
         # rotation
-        if np.random.rand() < self.config.getfloat("Augmentation", "rotation"):
-            img = self.rotation(img, rot=random.choice(json.loads(self.config.get("Augmentation", "rotation_angle"))))
-            img = img.reshape((img.shape[0], img.shape[1], self.channel))
+        img = self.rotation(img, rot=random.choice(json.loads(self.config.get("Augmentation", "rotation_angle"))))
+        img = img.reshape((img.shape[0], img.shape[1], self.channel))
         # Shift
         shift_width = self.config.getfloat("Augmentation", "shift_width")
         img = self.shift(img=img, move_x=shift_width, move_y=shift_width)
         # small rotation
-        if np.random.rand() < self.config.getfloat("Augmentation", "small_rotation"):
-            angle = self.config.getfloat("Augmentation", "small_rotation_angle")
-            img = self.rotation(img, rot=angle * (2.0 * random.random() - 1.0))
-            img = img.reshape((img.shape[0], img.shape[1], self.channel))
+        angle = self.config.getfloat("Augmentation", "small_rotation_angle")
+        img = self.rotation(img, rot=angle * (2.0 * random.random() - 1.0))
+        img = img.reshape((img.shape[0], img.shape[1], self.channel))
         return img
 
     def zoom(self, img):
-        if np.random.rand() < self.config.getfloat("Augmentation", "zoom"):
-            return img
-        else:
-            zoom_width = self.config.getfloat("Augmentation", "zoom_width")
-            w, h = img.shape[0], img.shape[1]
-            w_crop, h_crop = int(w * zoom_width), int(h * zoom_width)
-            crop_size = min(w, h) - np.random.randint(1, min(w_crop, h_crop))
-            start_w = np.random.randint(w - crop_size)
-            start_h = np.random.randint(h - crop_size)
-            end_w = start_w + crop_size
-            end_h = start_h + crop_size
-            img = img[start_w:end_w, start_h:end_h]
-            return img
+        zoom_width = self.config.getfloat("Augmentation", "zoom_width")
+        w, h = img.shape[0], img.shape[1]
+        w_crop, h_crop = int(w * zoom_width), int(h * zoom_width)
+        crop_size = min(w, h) - np.random.randint(1, min(w_crop, h_crop))
+        start_w = np.random.randint(w - crop_size)
+        start_h = np.random.randint(h - crop_size)
+        end_w = start_w + crop_size
+        end_h = start_h + crop_size
+        img = img[start_w:end_w, start_h:end_h]
+        return img
 
     def flip(self, img):
-        if np.random.rand() < self.config.getfloat("Augmentation", "flip_v"):
+        rnd = np.random.rand()
+        if rnd > 0.5:
             img = cv2.flip(img, 0)
             img = img.reshape((img.shape[0], img.shape[1], self.channel))
-        if np.random.rand() < self.config.getfloat("Augmentation", "flip_h"):
+        if rnd > 0.25 and rnd < 0.75:
             img = cv2.flip(img, 1)
             img = img.reshape((img.shape[0], img.shape[1], self.channel))
         return img
@@ -137,21 +133,19 @@ class DataSet(object):
         return cv2.warpAffine(img, affine_matrix, size, flags=cv2.INTER_LINEAR)
 
     def shift(self, img, move_x=0.1, move_y=0.1):
-        if np.random.rand() < self.config.getfloat("Augmentation", "shift_prob"):
-            size = tuple(np.array([img.shape[0], img.shape[1]]))
-            mx = int(img.shape[0] * move_x * random.random())
-            my = int(img.shape[1] * move_y * random.random())
-            matrix = [
-                [1,  0, mx],
-                [0,  1, my]
-            ]
-            affine_matrix = np.float32(matrix)
-            img = cv2.warpAffine(img, affine_matrix, size,
-                                 flags=cv2.INTER_LINEAR)
-            img = img.reshape((img.shape[0], img.shape[1], self.channel))
-            return img
-        else:
-            return img
+        size = tuple(np.array([img.shape[0], img.shape[1]]))
+        mx = int(img.shape[0] * move_x * random.random())
+        my = int(img.shape[1] * move_y * random.random())
+        matrix = [
+            [1,  0, mx],
+            [0,  1, my]
+        ]
+        affine_matrix = np.float32(matrix)
+        img = cv2.warpAffine(img, affine_matrix, size,
+                             flags=cv2.INTER_LINEAR)
+        img = img.reshape((img.shape[0], img.shape[1], self.channel))
+        return img
+
 
     def get_all_data(self):
         imgs, labels0, labels1 = [], [], []
