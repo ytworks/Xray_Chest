@@ -193,6 +193,8 @@ class Detector(Core2.Core):
             self.z, self.logit, self.y51, self.p = pretrain_model(x=self.x,
                                                                   is_train=self.istraining,
                                                                   config=self.config)
+        self.vision_model = tf.keras.Model(inputs=self.x,
+                                           outputs=[self.z, self.logit, self.y51])
 
     def loss(self):
         diag_output_type = self.output_type
