@@ -122,7 +122,7 @@ class Detector(Core2.Core):
         logger.debug("04: TF Accuracy measure definition done")
         # セッションの定義
         config = tf.ConfigProto(allow_soft_placement = True)
-        self.sess = tf.InteractiveSession(config)
+        self.sess = tf.InteractiveSession(config=config)
         # tensor board
         now = datetime.now()
         now = now.strftime("%Y-%m-%d")
