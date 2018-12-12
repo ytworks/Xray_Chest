@@ -114,18 +114,19 @@ class Detector(Core2.Core):
             self.multi_training(var_list=None)
         logger.debug("03: TF Training operation done")
         # セッションの定義
-        config = tf.ConfigProto(allow_soft_placement = True)
-        self.sess = tf.InteractiveSession(config=config)
-        # tensor board
-        now = datetime.now()
-        now = now.strftime("%Y-%m-%d")
-        self.summary, self.train_writer, self.val_writer, self.test_writer = vs.file_writer(
-            sess=self.sess, file_name=self.config.get('OutputParams', 'logfile') + '/' + now)
-        # チェックポイントの呼び出し
-        self.saver = tf.train.Saver(
-            list(set(tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES))))
-        self.restore()
-        logger.debug("05: TF Model file definition done")
+        with tf.device('/cpu:0'):
+            config = tf.ConfigProto(allow_soft_placement = True)
+            self.sess = tf.InteractiveSession(config=config)
+            # tensor board
+            now = datetime.now()
+            now = now.strftime("%Y-%m-%d")
+            self.summary, self.train_writer, self.val_writer, self.test_writer = vs.file_writer(
+                sess=self.sess, file_name=self.config.get('OutputParams', 'logfile') + '/' + now)
+            # チェックポイントの呼び出し
+            self.saver = tf.train.Saver(
+                list(set(tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES))))
+            self.restore()
+            logger.debug("05: TF Model file definition done")
 
     def save_transfer_checkpoint(self):
         UT.save_checkpoint(saver=self.transfer_saver,
@@ -151,7 +152,7 @@ class Detector(Core2.Core):
             self.z_ = tf.placeholder(
                 "float", shape=[None, 15], name="Label_Diagnosis")
             self.keep_probs = []
-            
+
     def loss(self, z, z_):
         diag_output_type = self.output_type
         loss_ce = Loss.loss_func(y=z,
@@ -341,81 +342,82 @@ class Detector(Core2.Core):
         return lr_min + 0.5 * (lr_max - lr_min) * (1.0 + np.cos(self.t_cur * np.pi / self.t_i))
 
     def learning(self, data, save_at_log=False, validation_batch_num=1, batch_ratio=[0.2, 0.3, 0.4]):
-        s = time.time()
-        epoch = int(float(len(data.train.files)) *
-                    float(self.epoch) / float(self.batch))
-        one_epoch_step = int(float(len(data.train.files)) / float(self.batch))
-        logger.debug("Step num: %d", epoch)
-        for i in range(epoch):
-            self.learning_rate_value = self.cosine_decay()
-            br = np.random.randint(len(batch_ratio))
-            batch = data.train.next_batch(
-                self.batch, batch_ratio=batch_ratio[br % len(batch_ratio)])
-            # 途中経過のチェック
-            if i % self.log == 0 and i != 0:
-                # Output
-                logger.debug(
-                    "step %d / %d =================================================================================" % (i, epoch))
-                e = time.time()
-                elasped = e - s
-                logger.debug("elasped time: %g" % elasped)
-                s = e
+        with tf.device('/cpu:0'):
+            s = time.time()
+            epoch = int(float(len(data.train.files)) *
+                        float(self.epoch) / float(self.batch))
+            one_epoch_step = int(float(len(data.train.files)) / float(self.batch))
+            logger.debug("Step num: %d", epoch)
+            for i in range(epoch):
+                self.learning_rate_value = self.cosine_decay()
+                br = np.random.randint(len(batch_ratio))
+                batch = data.train.next_batch(
+                    self.batch, batch_ratio=batch_ratio[br % len(batch_ratio)])
+                # 途中経過のチェック
+                if i % self.log == 0 and i != 0:
+                    # Output
+                    logger.debug(
+                        "step %d / %d =================================================================================" % (i, epoch))
+                    e = time.time()
+                    elasped = e - s
+                    logger.debug("elasped time: %g" % elasped)
+                    s = e
 
-            # バリデーションチェック
-            if self.steps % self.dumping_period == 0 and self.steps != 0:
-                validation_data = data.val.get_all_files()
-                validation_loss = 0.0
-                for vnum in range(0, len(validation_data[0]), self.batch):
-                    sp, ep = vnum, min(vnum + self.batch,
-                                       len(validation_data[0]))
-                    imgs = []
-                    for f in validation_data[0][sp:ep]:
-                        imgs.append(data.val.img_reader(f, False)[0])
-                    l = [x for x in validation_data[2][sp:ep]]
+                # バリデーションチェック
+                if self.steps % self.dumping_period == 0 and self.steps != 0:
+                    validation_data = data.val.get_all_files()
+                    validation_loss = 0.0
+                    for vnum in range(0, len(validation_data[0]), self.batch):
+                        sp, ep = vnum, min(vnum + self.batch,
+                                           len(validation_data[0]))
+                        imgs = []
+                        for f in validation_data[0][sp:ep]:
+                            imgs.append(data.val.img_reader(f, False)[0])
+                        l = [x for x in validation_data[2][sp:ep]]
+                        feed_dict_val = self.make_feed_dict(
+                            prob=True, data=np.array(imgs), label=np.array(l), is_Train=False, is_label=True)
+                        v = self.sess.run([self.loss_function],
+                                          feed_dict=feed_dict_val)
+                        validation_loss += v[0] / \
+                            float((len(validation_data[0]) // self.batch))
+                    logger.debug("Before val: %g, After val: %g" %
+                                 (self.prev_val, validation_loss))
+                    self.prev_val = validation_loss
+                    self.validation_save(str(int(validation_loss * 10000)))
+
+                # 学習
+                feed_dict = self.make_feed_dict(
+                    prob=False, data=batch[0], label=batch[2], is_Train=True, is_update=True, is_label=True)
+                _, summary = self.sess.run(
+                    [self.train_op, self.summary], feed_dict=feed_dict)
+                vs.add_log(writer=self.train_writer,
+                           summary=summary, step=self.steps)
+
+                if i % self.tflog == 0:
+                    validation_batch = data.val.next_batch(
+                        self.batch, augment=False, batch_ratio=batch_ratio[br % len(batch_ratio)])
                     feed_dict_val = self.make_feed_dict(
-                        prob=True, data=np.array(imgs), label=np.array(l), is_Train=False, is_label=True)
-                    v = self.sess.run([self.loss_function],
-                                      feed_dict=feed_dict_val)
-                    validation_loss += v[0] / \
-                        float((len(validation_data[0]) // self.batch))
-                logger.debug("Before val: %g, After val: %g" %
-                             (self.prev_val, validation_loss))
-                self.prev_val = validation_loss
-                self.validation_save(str(int(validation_loss * 10000)))
+                        prob=True, data=validation_batch[0], label=validation_batch[2], is_Train=False, is_label=True)
+                    summary = self.sess.run(self.summary, feed_dict=feed_dict_val
+                                            )
+                    vs.add_log(writer=self.val_writer,
+                               summary=summary, step=self.steps)
+                    test_batch = data.test.next_batch(
+                        self.batch, augment=False, batch_ratio=batch_ratio[br % len(batch_ratio)])
+                    feed_dict_test = self.make_feed_dict(
+                        prob=True, data=test_batch[0], label=test_batch[2], is_Train=False, is_label=True)
+                    summary = self.sess.run(self.summary, feed_dict=feed_dict_test
+                                            )
+                    vs.add_log(writer=self.test_writer,
+                               summary=summary, step=self.steps)
+                self.steps += 1
+                if self.steps % one_epoch_step == 0 and self.steps != 0:
+                    self.t_cur += 1
+                if self.t_cur > self.t_i:
+                    self.t_i *= self.config.getfloat('DLParams', 't_mold')
+                    self.t_cur = 0
 
-            # 学習
-            feed_dict = self.make_feed_dict(
-                prob=False, data=batch[0], label=batch[2], is_Train=True, is_update=True, is_label=True)
-            _, summary = self.sess.run(
-                [self.train_op, self.summary], feed_dict=feed_dict)
-            vs.add_log(writer=self.train_writer,
-                       summary=summary, step=self.steps)
-
-            if i % self.tflog == 0:
-                validation_batch = data.val.next_batch(
-                    self.batch, augment=False, batch_ratio=batch_ratio[br % len(batch_ratio)])
-                feed_dict_val = self.make_feed_dict(
-                    prob=True, data=validation_batch[0], label=validation_batch[2], is_Train=False, is_label=True)
-                summary = self.sess.run(self.summary, feed_dict=feed_dict_val
-                                        )
-                vs.add_log(writer=self.val_writer,
-                           summary=summary, step=self.steps)
-                test_batch = data.test.next_batch(
-                    self.batch, augment=False, batch_ratio=batch_ratio[br % len(batch_ratio)])
-                feed_dict_test = self.make_feed_dict(
-                    prob=True, data=test_batch[0], label=test_batch[2], is_Train=False, is_label=True)
-                summary = self.sess.run(self.summary, feed_dict=feed_dict_test
-                                        )
-                vs.add_log(writer=self.test_writer,
-                           summary=summary, step=self.steps)
-            self.steps += 1
-            if self.steps % one_epoch_step == 0 and self.steps != 0:
-                self.t_cur += 1
-            if self.t_cur > self.t_i:
-                self.t_i *= self.config.getfloat('DLParams', 't_mold')
-                self.t_cur = 0
-
-        self.save_checkpoint()
+            self.save_checkpoint()
 
     def get_roi_map_base(self, feed_dict):
         return self.sess.run([self.y51], feed_dict=feed_dict)
