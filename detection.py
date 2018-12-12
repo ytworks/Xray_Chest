@@ -148,10 +148,6 @@ class Detector(Core2.Core):
     def validation_save(self, vname):
         ckpt = self.checkpoint.replace(".ckpt", vname + ".ckpt")
         t_ckpt = self.transfer_checkpoint.replace(".ckpt", vname + ".ckpt")
-        if self.network_mode == 'pretrain':
-            UT.save_checkpoint(saver=self.transfer_saver,
-                               checkpoint=t_ckpt,
-                               sess=self.sess)
         UT.save_checkpoint(saver=self.saver,
                            checkpoint=ckpt,
                            sess=self.sess)
