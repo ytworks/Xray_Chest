@@ -145,13 +145,13 @@ class Detector(Core2.Core):
                            sess=self.sess)
 
     def io_def(self):
-        self.x = tf.placeholder(
-            "float", shape=[None, self.SIZE, self.SIZE, self.CH], name="Input")
-        self.z_ = tf.placeholder(
-            "float", shape=[None, 15], name="Label_Diagnosis")
-        self.keep_probs = []
-        print(self.x)
-
+        with tf.device('/cpu:0'):
+            self.x = tf.placeholder(
+                "float", shape=[None, self.SIZE, self.SIZE, self.CH], name="Input")
+            self.z_ = tf.placeholder(
+                "float", shape=[None, 15], name="Label_Diagnosis")
+            self.keep_probs = []
+            
     def loss(self, z, z_):
         diag_output_type = self.output_type
         loss_ce = Loss.loss_func(y=z,
