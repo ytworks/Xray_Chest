@@ -227,7 +227,7 @@ class Detector(Core2.Core):
                                                     rmax=self.rmax,
                                                     dmax=self.dmax,
                                                     ini=self.config,
-                                                    reuse=True)
+                                                    reuse=reuse)
                         loss = self.loss(z=z, z_=z_)
                         if i == 0:
                             self.z, self.logit, self.y51 = z, logit, y51
