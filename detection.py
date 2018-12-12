@@ -197,7 +197,7 @@ class Detector(Core2.Core):
             x = xs[0, :, :, :, :]
             x = tf.reshape(x, (self.distributed_batch,
                                self.SIZE, self.SIZE, self.CH))
-            z_ = z_s[i, :, :]
+            z_ = z_s[0, :, :]
             z_ = tf.reshape(z_, (self.distributed_batch, 15))
             self.z, self.logit, self.y51 = self.model(x=x,
                                                       is_train=self.istraining,
