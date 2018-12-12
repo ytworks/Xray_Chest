@@ -130,13 +130,9 @@ class Detector(Core2.Core):
         self.summary, self.train_writer, self.val_writer, self.test_writer = vs.file_writer(
             sess=self.sess, file_name=self.config.get('OutputParams', 'logfile') + '/' + now)
         # チェックポイントの呼び出し
-        if self.network_mode == 'pretrain':
-            self.transfer_saver = tf.train.Saver(p_vars)
         self.saver = tf.train.Saver(
             list(set(tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES))))
         self.restore()
-        if self.init and self.network_mode == 'pretrain':
-            self.p.load_weights()
         logger.debug("05: TF Model file definition done")
 
     def save_transfer_checkpoint(self):
@@ -189,6 +185,14 @@ class Detector(Core2.Core):
 
     def training(self, var_list=None, gradient_cliiping=True, clipping_norm=0.01):
         with tf.device('/cpu:0'):
+            self.optimizer = TO.get_opt(algo=self.optimizer_type,
+                                        learning_rate=self.learning_rate,
+                                        b1=np.float32(self.beta1),
+                                        b2=np.float32(self.beta2),
+                                        nesterov=self.config.getboolean(
+                                            'DLParams', 'nesterov'),
+                                        weight_decay=self.wd)
+            logger.debug("03-01: Optimizer definition")
             self.model = self.network()
             self.z, self.logit, self.y51 = self.model(x=self.x,
                                                       is_train=self.istraining,
@@ -197,20 +201,19 @@ class Detector(Core2.Core):
                                                       ini=self.config,
                                                       reuse=False)
             self.loss_function = self.loss(z=self.z)
-            self.train_op, self.optimizer = TO.select_algo(loss_function=self.loss_function,
-                                                           algo=self.optimizer_type,
-                                                           learning_rate=self.learning_rate,
-                                                           b1=np.float32(self.beta1), b2=np.float32(self.beta2),
-                                                           var_list=var_list,
-                                                           gradient_clipping=gradient_cliiping,
-                                                           clipping_norm=clipping_norm,
-                                                           clipping_type='norm',
-                                                           ema=False,
-                                                           nesterov=self.config.getboolean(
-                                                               'DLParams', 'nesterov'),
-                                                           weight_decay=self.wd
-                                                           )
-            self.grad_op = self.optimizer.compute_gradients(self.loss_function)
+            grads = TO.get_grads(optimizer=self.optimizer,
+                                             loss_function=loss,
+                                             var_list=var_list,
+                                             gradient_clipping=gradient_cliiping,
+                                             clipping_norm=clipping_norm,
+                                             clipping_type='norm')
+            logger.debug("03-02: Grads")
+            self.train_op = TO.get_train_op(optimizer=self.optimizer,
+                                        grad_var_pairs=grads,
+                                        ema=False,
+                                        ema_decay=0.9999)
+            logger.debug("03-03: Train op")
+
 
     def make_feed_dict(self, prob, data, label=None, is_Train=True, is_update=False, is_label=False):
         if self.steps <= 5000:
@@ -339,8 +342,7 @@ class Detector(Core2.Core):
                 self.t_cur = 0
 
         self.save_checkpoint()
-        if self.network_mode == 'pretrain':
-            self.save_transfer_checkpoint()
+
 
     def get_roi_map_base(self, feed_dict):
         return self.sess.run([self.y51], feed_dict=feed_dict)
@@ -348,8 +350,6 @@ class Detector(Core2.Core):
     def prediction(self, data, height=128, width=128, roi=False, label_def=None, save_dir=None,
                    filenames=None):
         # Make feed dict for prediction
-        if self.network_mode == 'pretrain':
-            self.p.change_phase(False)
         feed_dict = self.make_feed_dict(
             prob=True, data=data, is_Train=False, is_label=False)
         # Get logits
