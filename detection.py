@@ -400,8 +400,7 @@ class Detector(Core2.Core):
                 # 学習
                 feed_dict = self.make_feed_dict(
                     prob=False, data=batch[0], label=batch[2], is_Train=True, is_update=True, is_label=True)
-                _, summary = self.sess.run(
-                    [self.train_op], feed_dict=feed_dict)
+                self.sess.run([self.train_op], feed_dict=feed_dict)
 
                 if i % self.tflog == 0:
                     feed_dict = self.make_feed_dict(
