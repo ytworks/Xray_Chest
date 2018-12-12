@@ -115,7 +115,11 @@ class Detector(Core2.Core):
         logger.debug("03: TF Training operation done")
         # セッションの定義
         with tf.device('/cpu:0'):
-            config = tf.ConfigProto(allow_soft_placement = True)
+            config = tf.ConfigProto(allow_soft_placement=True,
+                                    gpu_options=tf.GPUOptions(
+                                        per_process_gpu_memory_fraction=0.8,  # 最大値の80%まで
+                                        allow_growth=True  # True->必要になったら確保, False->全部
+                                    ))
             self.sess = tf.InteractiveSession(config=config)
             # tensor board
             now = datetime.now()
@@ -196,7 +200,6 @@ class Detector(Core2.Core):
                                         ema=False,
                                         ema_decay=0.9999)
 
-
     def multi_training(self, var_list=None, gradient_cliiping=True, clipping_norm=0.01):
         with tf.device('/cpu:0'):
             vs.variable_summary(self.learning_rate, 'LearningRate')
@@ -242,11 +245,14 @@ class Detector(Core2.Core):
                                                  clipping_norm=clipping_norm,
                                                  clipping_type='norm')
                             # 精度の定義
-                            accuracy = tf.sqrt(tf.reduce_mean(tf.multiply(tf.sigmoid(z) - z_, tf.sigmoid(z) - z_)))
+                            accuracy = tf.sqrt(tf.reduce_mean(tf.multiply(
+                                tf.sigmoid(z) - z_, tf.sigmoid(z) - z_)))
                             with tf.device('/cpu:0'):
-                                vs.variable_summary(accuracy, 'Accuracy', is_scalar=True)
+                                vs.variable_summary(
+                                    accuracy, 'Accuracy', is_scalar=True)
 
-                            logger.debug("04: TF Accuracy measure definition done")
+                            logger.debug(
+                                "04: TF Accuracy measure definition done")
                             tower_grads.append(grads)
                             logger.debug("03-05: Grads")
             grads = self.average_gradients(tower_grads)
@@ -348,7 +354,8 @@ class Detector(Core2.Core):
             s = time.time()
             epoch = int(float(len(data.train.files)) *
                         float(self.epoch) / float(self.batch))
-            one_epoch_step = int(float(len(data.train.files)) / float(self.batch))
+            one_epoch_step = int(
+                float(len(data.train.files)) / float(self.batch))
             logger.debug("Step num: %d", epoch)
             for i in range(epoch):
                 self.learning_rate_value = self.cosine_decay()
