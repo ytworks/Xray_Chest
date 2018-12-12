@@ -128,5 +128,5 @@ def pretrain_model(x, config, reuse=False, is_train=True):
     return z, logit, cwp, p
 
 
-def light_model(x, is_train, rmax, dmax, ini):
-    return densenet.densenet121(x, is_train, rmax, dmax, ini, reuse=False, se=True, renorm=True, act_f='Relu')
+def light_model(x, is_train, rmax, dmax, ini, reuse):
+    return densenet.densenet121(x, is_train, rmax, dmax, ini, reuse=reuse, se=True, renorm=True, act_f='Relu')

@@ -188,27 +188,29 @@ class Detector(Core2.Core):
         return loss_ce
 
     def training(self, var_list=None, gradient_cliiping=True, clipping_norm=0.01):
-        self.model = self.network()
-        self.z, self.logit, self.y51 = self.model(x=self.x,
-                                                  is_train=self.istraining,
-                                                  rmax=self.rmax,
-                                                  dmax=self.dmax,
-                                                  ini=self.config)
-        self.loss_function = self.loss(z=self.z)
-        self.train_op, self.optimizer = TO.select_algo(loss_function=self.loss_function,
-                                                       algo=self.optimizer_type,
-                                                       learning_rate=self.learning_rate,
-                                                       b1=np.float32(self.beta1), b2=np.float32(self.beta2),
-                                                       var_list=var_list,
-                                                       gradient_clipping=gradient_cliiping,
-                                                       clipping_norm=clipping_norm,
-                                                       clipping_type='norm',
-                                                       ema=False,
-                                                       nesterov=self.config.getboolean(
-                                                           'DLParams', 'nesterov'),
-                                                       weight_decay=self.wd
-                                                       )
-        self.grad_op = self.optimizer.compute_gradients(self.loss_function)
+        with tf.device('/cpu:0'):
+            self.model = self.network()
+            self.z, self.logit, self.y51 = self.model(x=self.x,
+                                                      is_train=self.istraining,
+                                                      rmax=self.rmax,
+                                                      dmax=self.dmax,
+                                                      ini=self.config,
+                                                      reuse=False)
+            self.loss_function = self.loss(z=self.z)
+            self.train_op, self.optimizer = TO.select_algo(loss_function=self.loss_function,
+                                                           algo=self.optimizer_type,
+                                                           learning_rate=self.learning_rate,
+                                                           b1=np.float32(self.beta1), b2=np.float32(self.beta2),
+                                                           var_list=var_list,
+                                                           gradient_clipping=gradient_cliiping,
+                                                           clipping_norm=clipping_norm,
+                                                           clipping_type='norm',
+                                                           ema=False,
+                                                           nesterov=self.config.getboolean(
+                                                               'DLParams', 'nesterov'),
+                                                           weight_decay=self.wd
+                                                           )
+            self.grad_op = self.optimizer.compute_gradients(self.loss_function)
 
     def make_feed_dict(self, prob, data, label=None, is_Train=True, is_update=False, is_label=False):
         if self.steps <= 5000:
