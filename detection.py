@@ -222,31 +222,32 @@ class Detector(Core2.Core):
                     z_ = z_s[i, :, :]
                     z_ = tf.reshape(z_, (self.distributed_batch, 15))
                     with tf.device('/device:GPU:%d' % i):
-                        reuse = True if i != 0 else False
-                        z, logit, y51 = light_model(x=x,
-                                                    is_train=self.istraining,
-                                                    rmax=self.rmax,
-                                                    dmax=self.dmax,
-                                                    ini=self.config,
-                                                    reuse=reuse)
-                        loss = self.loss(z=z, z_=z_)
-                        if i == 0:
-                            self.z, self.logit, self.y51 = z, logit, y51
+                        with tf.name_scope('%s_%d' % ('g', i)) as scope:
+                            reuse = True if i != 0 else False
+                            z, logit, y51 = light_model(x=x,
+                                                        is_train=self.istraining,
+                                                        rmax=self.rmax,
+                                                        dmax=self.dmax,
+                                                        ini=self.config,
+                                                        reuse=reuse)
+                            loss = self.loss(z=z, z_=z_)
+                            if i == 0:
+                                self.z, self.logit, self.y51 = z, logit, y51
 
-                        grads = TO.get_grads(optimizer=self.optimizer,
-                                             loss_function=loss,
-                                             var_list=var_list,
-                                             gradient_clipping=gradient_cliiping,
-                                             clipping_norm=clipping_norm,
-                                             clipping_type='norm')
-                        # 精度の定義
-                        accuracy = tf.sqrt(tf.reduce_mean(tf.multiply(tf.sigmoid(z) - z_, tf.sigmoid(z) - z_)))
-                        with tf.device('/cpu:0'):
-                            vs.variable_summary(accuracy, 'Accuracy', is_scalar=True)
+                            grads = TO.get_grads(optimizer=self.optimizer,
+                                                 loss_function=loss,
+                                                 var_list=var_list,
+                                                 gradient_clipping=gradient_cliiping,
+                                                 clipping_norm=clipping_norm,
+                                                 clipping_type='norm')
+                            # 精度の定義
+                            accuracy = tf.sqrt(tf.reduce_mean(tf.multiply(tf.sigmoid(z) - z_, tf.sigmoid(z) - z_)))
+                            with tf.device('/cpu:0'):
+                                vs.variable_summary(accuracy, 'Accuracy', is_scalar=True)
 
-                        logger.debug("04: TF Accuracy measure definition done")
-                        tower_grads.append(grads)
-                        logger.debug("03-05: Grads")
+                            logger.debug("04: TF Accuracy measure definition done")
+                            tower_grads.append(grads)
+                            logger.debug("03-05: Grads")
             grads = self.average_gradients(tower_grads)
             logger.debug("03-06: Average grads")
             self.train_op = TO.get_train_op(optimizer=self.optimizer,
