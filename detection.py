@@ -169,7 +169,7 @@ class Detector(Core2.Core):
         print(self.x)
 
     def network(self):
-        return light_model()
+        return light_model
 
     def loss(self, z):
         diag_output_type = self.output_type
