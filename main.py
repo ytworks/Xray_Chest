@@ -87,8 +87,7 @@ def main():
         else:
             logger.debug("Skipped learning")
         testdata = dataset.test.get_all_files()
-        dist_batch = config.getint("DLParams", "distributed_batch")
-        get_results(outfile.replace('result', 'nih_result'+str(n)), testdata, dist_batch, obj, roi, label_def,
+        get_results(outfile.replace('result', 'nih_result'+str(n)), testdata, batch, obj, roi, label_def,
                     img_reader=dataset.test.img_reader)
         # sensivity / specifity table
         get_roc_curve(filename=outfile.replace(

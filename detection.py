@@ -211,19 +211,13 @@ class Detector(Core2.Core):
                                             'DLParams', 'nesterov'),
                                         weight_decay=self.wd)
             logger.debug("03-01: Optimizer definition")
-            self.z, self.logit, self.y51 = light_model(x=self.x,
-                                                       is_train=self.istraining,
-                                                       rmax=self.rmax,
-                                                       dmax=self.dmax,
-                                                       ini=self.config,
-                                                       reuse=False)
             xs = tf.reshape(self.x,
                             (self.gpu_num, self.distributed_batch, self.SIZE, self.SIZE, self.CH))
             z_s = tf.reshape(
                 self.z_, (self.gpu_num, self.distributed_batch, 15))
             logger.debug("03-03: Data split")
             tower_grads = []
-            self.losses = []
+            self.losses, self.logits, self.y51s = [], [], []
             with tf.variable_scope(tf.get_variable_scope()):
                 for i in range(self.gpu_num):
                     x = xs[i, :, :, :, :]
@@ -242,6 +236,8 @@ class Detector(Core2.Core):
 
                             loss = self.loss(z=z, z_=z_)
                             self.losses.append(loss)
+                            self.logits.append(logit)
+                            self.y51s.append(y51)
                             tf.get_variable_scope().reuse_variables()
                             grads = TO.get_grads(optimizer=self.optimizer,
                                                  loss_function=loss,
@@ -261,6 +257,9 @@ class Detector(Core2.Core):
                             tower_grads.append(grads)
                             logger.debug("03-05: Grads")
             grads = self.average_gradients(tower_grads)
+            self.logit = Layers.concat(self.logits, concat_type='Batch')
+            self.y51 = Layers.concat(self.y51s, concat_type='Batch')
+            self.loss_function = Layers.concat(self.losses, concat_type='Batch')
             logger.debug("03-06: Average grads")
             self.train_op = TO.get_train_op(optimizer=self.optimizer,
                                             grad_var_pairs=grads,
