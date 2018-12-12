@@ -158,9 +158,6 @@ class Detector(Core2.Core):
         self.keep_probs = []
         print(self.x)
 
-    def network(self):
-        return light_model
-
     def loss(self, z, z_):
         diag_output_type = self.output_type
         loss_ce = Loss.loss_func(y=z,
@@ -188,8 +185,6 @@ class Detector(Core2.Core):
                                             'DLParams', 'nesterov'),
                                         weight_decay=self.wd)
             logger.debug("03-01: Optimizer definition")
-            self.model = self.network()
-            logger.debug("03-02: Model")
             xs = tf.reshape(self.x,
                             (self.gpu_num, self.distributed_batch, self.SIZE, self.SIZE, self.CH))
             z_s = tf.reshape(
@@ -200,12 +195,12 @@ class Detector(Core2.Core):
                                self.SIZE, self.SIZE, self.CH))
             z_ = z_s[0, :, :]
             z_ = tf.reshape(z_, (self.distributed_batch, 15))
-            self.z, self.logit, self.y51 = self.model(x=x,
-                                                      is_train=self.istraining,
-                                                      rmax=self.rmax,
-                                                      dmax=self.dmax,
-                                                      ini=self.config,
-                                                      reuse=False)
+            self.z, self.logit, self.y51 = light_model(x=x,
+                                                       is_train=self.istraining,
+                                                       rmax=self.rmax,
+                                                       dmax=self.dmax,
+                                                       ini=self.config,
+                                                       reuse=False)
             self.loss_function = self.loss(z=self.z, z_=z_)
             logger.debug("03-04: CPU Model")
             tower_grads = []
@@ -218,12 +213,12 @@ class Detector(Core2.Core):
                     z_ = tf.reshape(z_, (self.distributed_batch, 15))
                     with tf.device('/device:GPU:%d' % i):
                         with tf.name_scope('%s_%d' % ('g', i)) as scope:
-                            z, logit, y51 = self.model(x=x,
-                                                       is_train=self.istraining,
-                                                       rmax=self.rmax,
-                                                       dmax=self.dmax,
-                                                       ini=self.config,
-                                                       reuse=True)
+                            z, logit, y51 = light_model(x=x,
+                                                        is_train=self.istraining,
+                                                        rmax=self.rmax,
+                                                        dmax=self.dmax,
+                                                        ini=self.config,
+                                                        reuse=True)
                             loss = self.loss(z=z, z_=z_)
                             tf.get_variable_scope().reuse_variables()
                             grads = TO.get_grads(optimizer=self.optimizer,
