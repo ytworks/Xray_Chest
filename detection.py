@@ -223,6 +223,7 @@ class Detector(Core2.Core):
                 self.z_, (self.gpu_num, self.distributed_batch, 15))
             logger.debug("03-03: Data split")
             tower_grads = []
+            self.losses = []
             with tf.variable_scope(tf.get_variable_scope()):
                 for i in range(self.gpu_num):
                     x = xs[i, :, :, :, :]
@@ -240,6 +241,7 @@ class Detector(Core2.Core):
                                                         reuse=True)
 
                             loss = self.loss(z=z, z_=z_)
+                            self.losses.append(loss)
                             tf.get_variable_scope().reuse_variables()
                             grads = TO.get_grads(optimizer=self.optimizer,
                                                  loss_function=loss,
@@ -388,9 +390,9 @@ class Detector(Core2.Core):
                         l = [x for x in validation_data[2][sp:ep]]
                         feed_dict_val = self.make_feed_dict(
                             prob=True, data=np.array(imgs), label=np.array(l), is_Train=False, is_label=True)
-                        v = self.sess.run([self.loss_function],
+                        v = self.sess.run([self.losses],
                                           feed_dict=feed_dict_val)
-                        validation_loss += v[0] / \
+                        validation_loss += np.sum(v[0]) / \
                             float((len(validation_data[0]) // self.batch))
                     logger.debug("Before val: %g, After val: %g" %
                                  (self.prev_val, validation_loss))
