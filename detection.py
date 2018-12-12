@@ -108,7 +108,10 @@ class Detector(Core2.Core):
         self.io_def()
         logger.debug("02: TF I/O definition done")
         # 学習
-        self.training(var_list=None)
+        if self.gpu_num 2:
+            self.training(var_list=None)
+        else:
+            self.multi_training(var_list=None)
         logger.debug("03: TF Training operation done")
         # セッションの定義
         config = tf.ConfigProto(allow_soft_placement = True)
@@ -166,6 +169,34 @@ class Detector(Core2.Core):
         return loss_ce
 
     def training(self, var_list=None, gradient_cliiping=True, clipping_norm=0.01):
+        vs.variable_summary(self.learning_rate, 'LearningRate')
+        self.optimizer = TO.get_opt(algo=self.optimizer_type,
+                                    learning_rate=self.learning_rate,
+                                    b1=np.float32(self.beta1),
+                                    b2=np.float32(self.beta2),
+                                    nesterov=self.config.getboolean(
+                                        'DLParams', 'nesterov'),
+                                    weight_decay=self.wd)
+        self.z, self.logit, self.y51 = light_model(x=self.x,
+                                                   is_train=self.istraining,
+                                                   rmax=self.rmax,
+                                                   dmax=self.dmax,
+                                                   ini=self.config,
+                                                   reuse=False)
+        self.loss_function = self.loss(z=self.z, z_=z_)
+        grads = TO.get_grads(optimizer=self.optimizer,
+                             loss_function=self.loss_function,
+                             var_list=var_list,
+                             gradient_clipping=gradient_cliiping,
+                             clipping_norm=clipping_norm,
+                             clipping_type='norm')
+        self.train_op = TO.get_train_op(optimizer=self.optimizer,
+                                        grad_var_pairs=grads,
+                                        ema=False,
+                                        ema_decay=0.9999)
+
+
+    def multi_training(self, var_list=None, gradient_cliiping=True, clipping_norm=0.01):
         with tf.device('/cpu:0'):
             vs.variable_summary(self.learning_rate, 'LearningRate')
             self.optimizer = TO.get_opt(algo=self.optimizer_type,
@@ -181,19 +212,6 @@ class Detector(Core2.Core):
             z_s = tf.reshape(
                 self.z_, (self.gpu_num, self.distributed_batch, 15))
             logger.debug("03-03: Data split")
-            x = xs[0, :, :, :, :]
-            x = tf.reshape(x, (self.distributed_batch,
-                               self.SIZE, self.SIZE, self.CH))
-            z_ = z_s[0, :, :]
-            z_ = tf.reshape(z_, (self.distributed_batch, 15))
-            self.z, self.logit, self.y51 = light_model(x=x,
-                                                       is_train=self.istraining,
-                                                       rmax=self.rmax,
-                                                       dmax=self.dmax,
-                                                       ini=self.config,
-                                                       reuse=False)
-            self.loss_function = self.loss(z=self.z, z_=z_)
-            logger.debug("03-04: CPU Model")
             tower_grads = []
             with tf.variable_scope(tf.get_variable_scope()):
                 for i in range(self.gpu_num):
@@ -203,6 +221,7 @@ class Detector(Core2.Core):
                     z_ = z_s[i, :, :]
                     z_ = tf.reshape(z_, (self.distributed_batch, 15))
                     with tf.device('/device:GPU:%d' % i):
+                        reuse = True if i != 0 else False
                         z, logit, y51 = light_model(x=x,
                                                     is_train=self.istraining,
                                                     rmax=self.rmax,
@@ -210,6 +229,9 @@ class Detector(Core2.Core):
                                                     ini=self.config,
                                                     reuse=True)
                         loss = self.loss(z=z, z_=z_)
+                        if i == 0:
+                            self.z, self.logit, self.y51 = z, logit, y51
+
                         grads = TO.get_grads(optimizer=self.optimizer,
                                              loss_function=loss,
                                              var_list=var_list,
