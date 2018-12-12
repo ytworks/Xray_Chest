@@ -227,12 +227,13 @@ class Detector(Core2.Core):
                     z_ = tf.reshape(z_, (self.distributed_batch, 15))
                     with tf.device('/device:GPU:%d' % i):
                         with tf.name_scope('%s_%d' % ('g', i)) as scope:
+                            reuse = False if i == 0 else True
                             z, logit, y51 = light_model(x=x,
                                                         is_train=self.istraining,
                                                         rmax=self.rmax,
                                                         dmax=self.dmax,
                                                         ini=self.config,
-                                                        reuse=True)
+                                                        reuse=reuse)
 
                             loss = self.loss(z=z, z_=z_)
                             self.losses.append(loss)
