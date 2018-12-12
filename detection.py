@@ -276,40 +276,16 @@ class Detector(Core2.Core):
                 self.batch, batch_ratio=batch_ratio[br % len(batch_ratio)])
             # 途中経過のチェック
             if i % self.log == 0 and i != 0:
-                if self.network_mode == 'pretrain':
-                    self.p.change_phase(False)
-                # Train
-                feed_dict = self.make_feed_dict(
-                    prob=True, data=batch[0], label=batch[2], is_Train=False, is_label=True)
-                train_accuracy_z, losses, aucs_t = self.get_auc_list(
-                    feed_dict, batch)
-                # Validation sample
-                val_accuracy_y, val_accuracy_z, val_losses, test, prob = [], [], [], [], []
-                validation_batch = data.val.next_batch(
-                    self.batch, augment=False, batch_ratio=batch_ratio[br % len(batch_ratio)])
-                feed_dict_val = self.make_feed_dict(
-                    prob=True, data=validation_batch[0], label=validation_batch[2], is_Train=False, is_label=True)
-                val_accuracy_z, val_losses, aucs_v = self.get_auc_list(
-                    feed_dict_val, validation_batch)
                 # Output
                 logger.debug(
                     "step %d / %d =================================================================================" % (i, epoch))
-                logger.debug("Train: (diagnosis, loss, aucs) = (%g, %g, %s)" % (
-                    train_accuracy_z, losses, aucs_t))
-                logger.debug("Validation: (diagnosis, loss, aucs) = (%g, %g, %s)" % (
-                    val_accuracy_z, val_losses, aucs_v))
-                if save_at_log:
-                    self.save_checkpoint()
                 e = time.time()
                 elasped = e - s
                 logger.debug("elasped time: %g" % elasped)
                 s = e
 
-            # 学習係数の減衰
+            # バリデーションチェック
             if self.steps % self.dumping_period == 0 and self.steps != 0:
-                # バリデーションを入れる
-                if self.network_mode == 'pretrain':
-                    self.p.change_phase(False)
                 validation_data = data.val.get_all_files()
                 validation_loss = 0.0
                 for vnum in range(0, len(validation_data[0]), self.batch):
@@ -327,32 +303,10 @@ class Detector(Core2.Core):
                         float((len(validation_data[0]) // self.batch))
                 logger.debug("Before val: %g, After val: %g" %
                              (self.prev_val, validation_loss))
-                '''
-                self.sess.run(tf.variables_initializer(self.optimizer.variables()))
-                logger.debug("INFO: Reader for Adam Gradient paramters initialized mode")
-                if validation_loss > self.prev_val:
-                    if self.gradient_init < self.config.getint('DLParams', 'dumping_patient'):
-                        self.gradient_init += 1
-                    else:
-                        logger.debug("INFO: Before Learning Rate: %g" %
-                                     self.learning_rate_value)
-                        self.learning_rate_value = max(
-                            1.0e-8, self.learning_rate_value * self.dumping_rate)
-                        self.wd_value = max(
-                            1.0e-16, self.wd_value * self.dumping_rate)
-                        logger.debug("INFO: After Learning Rate: %g" %
-                                     self.learning_rate_value)
-                        self.gradient_init = 0
-                '''
-
                 self.prev_val = validation_loss
                 self.validation_save(str(int(validation_loss * 10000)))
 
             # 学習
-            if self.DP and i != 0:
-                self.dynamic_learning_rate(feed_dict)
-            if self.network_mode == 'pretrain':
-                self.p.change_phase(True)
             feed_dict = self.make_feed_dict(
                 prob=False, data=batch[0], label=batch[2], is_Train=True, is_update=True, is_label=True)
             _, summary = self.sess.run(
@@ -361,8 +315,6 @@ class Detector(Core2.Core):
                        summary=summary, step=self.steps)
 
             if i % self.tflog == 0:
-                if self.network_mode == 'pretrain':
-                    self.p.change_phase(False)
                 validation_batch = data.val.next_batch(
                     self.batch, augment=False, batch_ratio=batch_ratio[br % len(batch_ratio)])
                 feed_dict_val = self.make_feed_dict(
