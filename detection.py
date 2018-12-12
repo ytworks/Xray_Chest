@@ -260,7 +260,7 @@ class Detector(Core2.Core):
             grads = self.average_gradients(tower_grads)
             self.logit = Layers.concat(self.logits, concat_type='Batch')
             self.y51 = Layers.concat(self.y51s, concat_type='Batch')
-            self.loss_function = Layers.concat(self.losses, concat_type='Batch')
+            self.loss_function = tf.reduce_mean(self.losses)
             logger.debug("03-06: Average grads")
             self.train_op = TO.get_train_op(optimizer=self.optimizer,
                                             grad_var_pairs=grads,
