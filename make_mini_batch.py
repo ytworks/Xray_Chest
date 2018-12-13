@@ -278,7 +278,10 @@ class DataSet(object):
             self.start_abnormal = 0
         else:
             self.start_abnormal = end_abnormal
-        assert len(imgs) == batch_size, "Batch size error %g" % len(imgs)
+        try:
+            assert len(imgs) == batch_size, "Batch size error %g" % len(imgs)
+        except:
+            pass
         return [np.array(imgs), np.array(labels1), np.array(labels0), filenames, raw_data]
 
 
