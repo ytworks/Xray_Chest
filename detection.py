@@ -213,7 +213,7 @@ class Detector(Core2.Core):
             logger.debug("03-01: Optimizer definition")
             ds = tf.data.Dataset.from_tensor_slices((self.x, self.z_))
             ds = ds.batch(self.distributed_batch)
-            iterator = ds.make_one_shot_iterator()
+            iterator = ds.make_initializable_iterator()
             logger.debug("03-03: Data split")
             tower_grads = []
             self.losses, self.logits, self.y51s = [], [], []
