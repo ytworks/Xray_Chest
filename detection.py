@@ -212,7 +212,7 @@ class Detector(Core2.Core):
                                         weight_decay=self.wd)
             logger.debug("03-01: Optimizer definition")
             xs = tf.split(self.x, num_or_size_splits=self.gpu_num, axis=0)
-            zs = tf.split(self.z_, num_or_size_splits=self.gpu_num, axis=0)
+            z_s = tf.split(self.z_, num_or_size_splits=self.gpu_num, axis=0)
             logger.debug("03-03: Data split")
             tower_grads = []
             self.losses, self.logits, self.y51s = [], [], []
