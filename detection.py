@@ -211,17 +211,15 @@ class Detector(Core2.Core):
                                             'DLParams', 'nesterov'),
                                         weight_decay=self.wd)
             logger.debug("03-01: Optimizer definition")
-            n = self.distributed_batch
-            m = [-1].extend([n]*(self.gpu_num-1))
-            xs = tf.split(self.x, num_or_size_splits=m, axis=0)
-            z_s = tf.split(self.z_, num_or_size_splits=m, axis=0)
+            ds = tf.data.Dataset.from_tensor_slices((self.x, self.z_))
+            ds = ds.batch(self.distributed_batch)
+            iterator = dataset.make_one_shot_iterator()
             logger.debug("03-03: Data split")
             tower_grads = []
             self.losses, self.logits, self.y51s = [], [], []
             with tf.variable_scope(tf.get_variable_scope()):
                 for i in range(self.gpu_num):
-                    x = xs[i]
-                    z_ = z_s[i]
+                    x, z_ = iterator.get_next()
                     with tf.device('/device:GPU:%d' % i):
                         with tf.name_scope('%s_%d' % ('g', i)) as scope:
                             reuse = False if i == 0 else True
