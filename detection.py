@@ -212,19 +212,18 @@ class Detector(Core2.Core):
                                         weight_decay=self.wd)
             logger.debug("03-01: Optimizer definition")
             xs = tf.reshape(self.x,
-                            (self.gpu_num, self.distributed_batch, self.SIZE, self.SIZE, self.CH))
+                            (self.gpu_num, -1, self.SIZE, self.SIZE, self.CH))
             z_s = tf.reshape(
-                self.z_, (self.gpu_num, self.distributed_batch, 15))
+                self.z_, (self.gpu_num, -1, 15))
             logger.debug("03-03: Data split")
             tower_grads = []
             self.losses, self.logits, self.y51s = [], [], []
             with tf.variable_scope(tf.get_variable_scope()):
                 for i in range(self.gpu_num):
                     x = xs[i, :, :, :, :]
-                    x = tf.reshape(x, (self.distributed_batch,
-                                       self.SIZE, self.SIZE, self.CH))
+                    x = tf.reshape(x, (-1, self.SIZE, self.SIZE, self.CH))
                     z_ = z_s[i, :, :]
-                    z_ = tf.reshape(z_, (self.distributed_batch, 15))
+                    z_ = tf.reshape(z_, (-1, 15))
                     with tf.device('/device:GPU:%d' % i):
                         with tf.name_scope('%s_%d' % ('g', i)) as scope:
                             reuse = False if i == 0 else True
