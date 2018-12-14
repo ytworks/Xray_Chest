@@ -211,7 +211,7 @@ class Detector(Core2.Core):
                                             'DLParams', 'nesterov'),
                                         weight_decay=self.wd)
             logger.debug("03-01: Optimizer definition")
-            b = tf.shape(x)[0]
+            b = tf.shape(self.x)[0]
             n = b // self.gpu_num
             m = [-1].extend([n]*self.gpu_num)
             xs = tf.split(self.x, m)
