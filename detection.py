@@ -211,46 +211,50 @@ class Detector(Core2.Core):
                                             'DLParams', 'nesterov'),
                                         weight_decay=self.wd)
             logger.debug("03-01: Optimizer definition")
-            xs = tf.split(self.x, self.gpu_num)
-            z_s = tf.split(self.z_, self.gpu_num)
+            batch_size = tf.shape(self.x)[0]
+            effective_gpu_num = batch_size // self.distributed_batch
+            m = [-1].extend([self.distributed_batch] * effective_gpu_num)
+            xs = tf.split(self.x, m)
+            z_s = tf.split(self.z_, m)
             logger.debug("03-03: Data split")
             tower_grads = []
             self.losses, self.logits, self.y51s = [], [], []
             with tf.variable_scope(tf.get_variable_scope()):
                 for i in range(self.gpu_num):
-                    x, z_ = xs[i], z_s[i]
-                    with tf.device('/device:GPU:%d' % i):
-                        with tf.name_scope('%s_%d' % ('g', i)) as scope:
-                            reuse = False if i == 0 else True
-                            z, logit, y51 = light_model(x=x,
-                                                        is_train=self.istraining,
-                                                        rmax=self.rmax,
-                                                        dmax=self.dmax,
-                                                        ini=self.config,
-                                                        reuse=reuse)
+                    if i < effective_gpu_num:
+                        x, z_ = xs[i], z_s[i]
+                        with tf.device('/device:GPU:%d' % i):
+                            with tf.name_scope('%s_%d' % ('g', i)) as scope:
+                                reuse = False if i == 0 else True
+                                z, logit, y51 = light_model(x=x,
+                                                            is_train=self.istraining,
+                                                            rmax=self.rmax,
+                                                            dmax=self.dmax,
+                                                            ini=self.config,
+                                                            reuse=reuse)
 
-                            loss = self.loss(z=z, z_=z_)
-                            self.losses.append(loss)
-                            self.logits.append(logit)
-                            self.y51s.append(y51)
-                            tf.get_variable_scope().reuse_variables()
-                            grads = TO.get_grads(optimizer=self.optimizer,
-                                                 loss_function=loss,
-                                                 var_list=var_list,
-                                                 gradient_clipping=gradient_cliiping,
-                                                 clipping_norm=clipping_norm,
-                                                 clipping_type='norm')
-                            # 精度の定義
-                            accuracy = tf.sqrt(tf.reduce_mean(tf.multiply(
-                                tf.sigmoid(z) - z_, tf.sigmoid(z) - z_)))
-                            with tf.device('/cpu:0'):
-                                vs.variable_summary(
-                                    accuracy, 'Accuracy', is_scalar=True)
+                                loss = self.loss(z=z, z_=z_)
+                                self.losses.append(loss)
+                                self.logits.append(logit)
+                                self.y51s.append(y51)
+                                tf.get_variable_scope().reuse_variables()
+                                grads = TO.get_grads(optimizer=self.optimizer,
+                                                     loss_function=loss,
+                                                     var_list=var_list,
+                                                     gradient_clipping=gradient_cliiping,
+                                                     clipping_norm=clipping_norm,
+                                                     clipping_type='norm')
+                                # 精度の定義
+                                accuracy = tf.sqrt(tf.reduce_mean(tf.multiply(
+                                    tf.sigmoid(z) - z_, tf.sigmoid(z) - z_)))
+                                with tf.device('/cpu:0'):
+                                    vs.variable_summary(
+                                        accuracy, 'Accuracy', is_scalar=True)
 
-                            logger.debug(
-                                "04: TF Accuracy measure definition done")
-                            tower_grads.append(grads)
-                            logger.debug("03-05: Grads")
+                                logger.debug(
+                                    "04: TF Accuracy measure definition done")
+                                tower_grads.append(grads)
+                                logger.debug("03-05: Grads")
             grads = self.average_gradients(tower_grads)
             self.logit = Layers.concat(self.logits, concat_type='Batch')
             self.y51 = Layers.concat(self.y51s, concat_type='Batch')
