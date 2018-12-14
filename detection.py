@@ -211,7 +211,11 @@ class Detector(Core2.Core):
                                             'DLParams', 'nesterov'),
                                         weight_decay=self.wd)
             logger.debug("03-01: Optimizer definition")
-            xs, z_s = tf.split(tf.data.Dataset.zip((self.x, self.z_)), [-1]*self.gpu_num, num=self.gpu_num)
+            #b, _, _, _ = x.get_shape().as_list()
+            #n = b // self.gpu_num
+            m = [-1].extend([-1]*self.gpu_num)
+            xs = tf.split(self.x, m, num=self.gpu_num)
+            z_s = tf.split(self.z_, m, num=self.gpu_num)
             logger.debug("03-03: Data split")
             tower_grads = []
             self.losses, self.logits, self.y51s = [], [], []
